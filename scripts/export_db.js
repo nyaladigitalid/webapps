@@ -16,7 +16,7 @@ async function exportDb() {
 
     const conn = await mysql.createConnection(connectionUrl);
     
-    let sql = "SET FOREIGN_KEY_CHECKS=0;\n\n";
+    let sql = "SET FOREIGN_KEY_CHECKS=0;\nSET NAMES utf8mb4;\n\n";
 
     try {
         const [tables] = await conn.query('SHOW TABLES');
@@ -28,7 +28,12 @@ async function exportDb() {
             // Get Create Table statement
             const [createRows] = await conn.query(`SHOW CREATE TABLE \`${tableName}\``);
             sql += `DROP TABLE IF EXISTS \`${tableName}\`;\n`;
-            sql += `${createRows[0]['Create Table']};\n\n`;
+            let createTable = createRows[0]['Create Table'];
+            // Ensure table uses utf8mb4
+            if (!createTable.includes('CHARSET=utf8mb4')) {
+                 createTable = createTable.replace(/CHARSET=\w+/, 'CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+            }
+            sql += `${createTable};\n\n`;
 
             // Get Data
             const [dataRows] = await conn.query(`SELECT * FROM \`${tableName}\``);
