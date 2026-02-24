@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Daily Orders (Scalev)</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#ef7225",
+                        secondary: "#0d3b66",
+                        "background-dark": "#0b0e14",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "sans-serif"]
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-background-dark text-slate-300 min-h-screen font-sans p-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-white mb-2">Daily Orders</h1>
+                <p class="text-slate-400">Real-time data from Scalev Webhooks</p>
+            </div>
+            <div class="flex gap-4">
+                 <button onclick="loadOrders()" class="px-4 py-2 bg-secondary/50 hover:bg-secondary text-white rounded-lg transition border border-white/10 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-slate-900/50 border border-white/5 p-6 rounded-xl">
+                <div class="text-slate-400 text-sm font-medium mb-1">Today's Orders</div>
+                <div class="text-3xl font-bold text-white" id="stat-count">0</div>
+            </div>
+            <div class="bg-slate-900/50 border border-white/5 p-6 rounded-xl">
+                <div class="text-slate-400 text-sm font-medium mb-1">Status</div>
+                <div class="text-3xl font-bold text-green-500" id="stat-status">Active</div>
+            </div>
+            <div class="bg-slate-900/50 border border-white/5 p-6 rounded-xl">
+                <div class="text-slate-400 text-sm font-medium mb-1">Last Update</div>
+                <div class="text-xl font-mono text-slate-200" id="stat-last-update">-</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-slate-900/50 border border-white/5 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="bg-white/5 text-slate-200 border-b border-white/5">
+                            <th class="px-6 py-4 font-medium">Order ID / Invoice</th>
+                            <th class="px-6 py-4 font-medium">Customer</th>
+                            <th class="px-6 py-4 font-medium">Items</th>
+                            <th class="px-6 py-4 font-medium text-right">Total</th>
+                            <th class="px-6 py-4 font-medium text-center">Payment</th>
+                            <th class="px-6 py-4 font-medium text-center">Status</th>
+                            <th class="px-6 py-4 font-medium text-right">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table-body" class="divide-y divide-white/5">
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-slate-500">Loading orders...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="px-6 py-4 border-t border-white/5 flex justify-between items-center" id="pagination-controls">
+                <span class="text-slate-500 text-xs" id="page-info">Showing 0-0 of 0</span>
+                <div class="flex gap-2">
+                    <button id="prev-btn" class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded disabled:opacity-50 disabled:cursor-not-allowed text-xs" disabled>Previous</button>
+                    <button id="next-btn" class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded disabled:opacity-50 disabled:cursor-not-allowed text-xs" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Webhook URL Info -->
+        <div class="mt-8 p-6 bg-blue-900/20 border border-blue-500/20 rounded-xl">
+            <h3 class="text-lg font-medium text-blue-400 mb-2">Webhook Configuration</h3>
+            <p class="text-slate-400 text-sm mb-4">Use the URL below in your Scalev Webhook settings. Ensure you enable <code>order.created</code> event.</p>
+            <div class="flex flex-col md:flex-row gap-2">
+                <code class="bg-black/50 px-4 py-3 rounded-lg text-slate-200 font-mono text-sm flex-1 break-all" id="webhook-url">Loading...</code>
+                <button onclick="copyUrl()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition text-sm whitespace-nowrap">Copy URL</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const limit = 20;
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return new Intl.DateTimeFormat('id-ID', { 
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+            }).format(date);
+        }
+
+        async function loadOrders(page = 1) {
+            currentPage = page;
+            const tbody = document.getElementById('orders-table-body');
+            
+            try {
+                const res = await fetch(`/api/scalev/orders?page=${page}&limit=${limit}`);
+                const json = await res.json();
+                
+                if (json.error) throw new Error(json.error);
+
+                const orders = json.data || [];
+                const meta = json.meta;
+
+                // Update Stats
+                document.getElementById('stat-last-update').innerText = new Date().toLocaleTimeString();
+                if (page === 1) {
+                    document.getElementById('stat-count').innerText = meta.total;
+                }
+
+                if (orders.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500">No orders found yet. Waiting for Webhook...</td></tr>`;
+                    document.getElementById('page-info').innerText = 'Showing 0-0 of 0';
+                    return;
+                }
+
+                tbody.innerHTML = orders.map(order => {
+                    let itemsHtml = '<span class="text-slate-500 italic">No items</span>';
+                    try {
+                        const items = JSON.parse(order.items);
+                        if (items && items.length > 0) {
+                            itemsHtml = items.map(i => `
+                                <div class="text-xs mb-1">
+                                    <span class="text-white font-medium">${i.product_name}</span>
+                                    <span class="text-slate-500">x${i.quantity}</span>
+                                </div>
+                            `).join('');
+                        }
+                    } catch(e) {}
+
+                    const statusColor = {
+                        'pending': 'text-yellow-500 bg-yellow-500/10',
+                        'paid': 'text-green-500 bg-green-500/10',
+                        'canceled': 'text-red-500 bg-red-500/10',
+                        'draft': 'text-slate-400 bg-slate-500/10'
+                    }[order.status] || 'text-slate-400 bg-slate-500/10';
+
+                    const payStatusColor = {
+                        'paid': 'text-green-400',
+                        'unpaid': 'text-red-400',
+                        'refunded': 'text-yellow-400'
+                    }[order.payment_status] || 'text-slate-400';
+
+                    return `
+                        <tr class="hover:bg-white/5 transition">
+                            <td class="px-6 py-4">
+                                <div class="font-mono text-white text-sm">${order.scalev_order_id}</div>
+                                <div class="text-xs text-slate-500">${order.invoice_number}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-white font-medium text-sm">${order.customer_name}</div>
+                                <div class="text-xs text-slate-500">${order.customer_phone}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                ${itemsHtml}
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-white text-sm">
+                                ${formatCurrency(order.total_amount)}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="text-xs font-medium uppercase tracking-wider ${payStatusColor}">${order.payment_status}</div>
+                                <div class="text-[10px] text-slate-500 mt-1">${order.payment_method}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${statusColor}">${order.status}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-slate-400 text-xs">
+                                ${formatDate(order.created_at)}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Update Pagination
+                const start = ((page-1)*limit)+1;
+                const end = Math.min(page*limit, meta.total);
+                document.getElementById('page-info').innerText = `Showing ${start}-${end} of ${meta.total}`;
+                
+                document.getElementById('prev-btn').disabled = page <= 1;
+                document.getElementById('next-btn').disabled = page >= meta.totalPages;
+                
+                document.getElementById('prev-btn').onclick = () => loadOrders(page - 1);
+                document.getElementById('next-btn').onclick = () => loadOrders(page + 1);
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-red-400">Error loading data. Make sure server is running.</td></tr>`;
+            }
+        }
+
+        function copyUrl() {
+            const url = document.getElementById('webhook-url').innerText;
+            navigator.clipboard.writeText(url);
+            alert('Webhook URL copied to clipboard!');
+        }
+
+        // Set current URL
+        const fullUrl = window.location.origin + '/api/webhooks/scalev';
+        document.getElementById('webhook-url').innerText = fullUrl;
+
+        // Initial Load
+        loadOrders();
+        
+        // Auto refresh every 30s
+        setInterval(() => loadOrders(currentPage), 30000);
+    </script>
+</body>
+</html>

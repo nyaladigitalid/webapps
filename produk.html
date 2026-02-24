@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps - Produk</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                primary: "#ef7225",
+                secondary: "#0d3b66",
+                "background-light": "#f5f7f8",
+                "background-dark": "#0b0e14",
+                "sidebar-dark": "#101922"
+            },
+            fontFamily: {
+                display: ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+                DEFAULT: "0.5rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                full: "9999px"
+            }
+        }
+    }
+};
+</script>
+<style>
+body {
+    font-family: "Inter", sans-serif;
+}
+.glass-surface {
+    background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+.dark .glass-panel {
+    background: rgba(6, 12, 31, 0.94);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+}
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="products">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+<div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+<div id="include-header"></div>
+<div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+<!-- Sidebar -->
+<div id="include-sidebar"></div>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<div class="flex-1 overflow-y-auto space-y-6">
+<!-- Page Title Area -->
+<div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Produk & Paket</h1>
+        <p class="text-secondary/80 text-sm mt-1">Kelola paket layanan dan harga produk Anda.</p>
+    </div>
+    <button id="btn-add-product" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
+        <span class="material-symbols-outlined text-lg">add</span>
+        Tambah Produk
+    </button>
+</div>
+
+<!-- Filters & Stats (Optional for now, but kept for consistency) -->
+<div class="px-4 md:px-0 flex flex-col md:flex-row gap-4 justify-between items-center">
+     <div class="relative group w-full md:w-64">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 dark:text-white/40 text-[18px]">search</span>
+        <input type="text" id="search-input" placeholder="Cari produk..." 
+               class="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full pl-9 pr-4 py-1.5 text-xs text-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-slate-400 dark:placeholder:text-white/30">
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="glass-panel rounded-2xl overflow-hidden mx-4 md:mx-0 border border-slate-200 dark:border-white/10">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Kategori</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Kode</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Paket</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Durasi</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider text-right">Harga</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider text-center">Status</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-20 text-center">Aksi</th>
+</tr>
+</thead>
+<tbody id="products-tbody" class="divide-y divide-slate-100 dark:divide-white/5">
+    <!-- Data will be populated by JS -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="include-footer"></div>
+</main>
+</div>
+
+<!-- Product Modal -->
+<div id="product-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-4">
+        <div class="glass-panel rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <h2 id="modal-title" class="text-xl font-bold mb-6 text-slate-900 dark:text-white">Tambah Produk</h2>
+            <form id="product-form" class="space-y-4">
+                <input type="hidden" id="p-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Kategori</label>
+                        <select id="p-category" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                            <option value="ads">Ads Service</option>
+                            <option value="creative">Creative Studio</option>
+                            <option value="development">Software Development</option>
+                            <option value="training">Training</option>
+                            <option value="prodigi">Product Digital</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Kode Paket</label>
+                        <input type="text" id="p-code" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nama Paket</label>
+                    <input type="text" id="p-name" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                     <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Durasi</label>
+                        <input type="text" id="p-duration" placeholder="Contoh: 30 Hari" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Harga (Rp)</label>
+                        <input type="number" id="p-price" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Deskripsi</label>
+                    <textarea id="p-desc" rows="3" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="p-active" class="rounded bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-primary focus:ring-primary">
+                    <label for="p-active" class="text-sm text-slate-700 dark:text-slate-300">Aktif</label>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="js/include.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById('product-modal');
+    const form = document.getElementById('product-form');
+    const btnAdd = document.getElementById('btn-add-product');
+    const searchInput = document.getElementById('search-input');
+    let allProducts = [];
+
+    window.closeModal = function() {
+        modal.classList.add('hidden');
+        form.reset();
+        document.getElementById('p-id').value = '';
+    }
+
+    function openModal(product = null) {
+        document.getElementById('modal-title').textContent = product ? 'Edit Produk' : 'Tambah Produk';
+        if (product) {
+            document.getElementById('p-id').value = product.id;
+            document.getElementById('p-category').value = product.category || 'ads';
+            document.getElementById('p-code').value = product.code;
+            document.getElementById('p-name').value = product.name;
+            document.getElementById('p-duration').value = product.duration || '';
+            document.getElementById('p-price').value = product.price || product.priceMonthly || 0;
+            document.getElementById('p-desc').value = product.description || '';
+            document.getElementById('p-active').checked = product.active;
+        } else {
+            form.reset();
+            document.getElementById('p-id').value = '';
+            document.getElementById('p-active').checked = true;
+        }
+        modal.classList.remove('hidden');
+    }
+
+    btnAdd.addEventListener('click', () => openModal());
+
+    function formatRupiah(amount) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    }
+
+    function renderProducts(products) {
+        const tbody = document.getElementById('products-tbody');
+        tbody.innerHTML = '';
+        
+        products.forEach((p, index) => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5 last:border-0";
+            
+            const statusBadge = p.active 
+                ? '<span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400">Aktif</span>'
+                : '<span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400">Non-Aktif</span>';
+
+            tr.innerHTML = `
+                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${index + 1}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 capitalize">${p.category || '-'}</td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">${p.code}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${p.name}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${p.duration || '-'}</td>
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-white text-right font-medium">${formatRupiah(p.price || p.priceMonthly || 0)}</td>
+                <td class="px-6 py-4 text-center">${statusBadge}</td>
+                <td class="px-6 py-4 text-center">
+                    <button class="btn-edit text-blue-500 hover:text-blue-600 mr-2" data-id="${p.id}"><span class="material-symbols-outlined text-lg">edit</span></button>
+                    <button class="btn-delete text-red-500 hover:text-red-600" data-id="${p.id}"><span class="material-symbols-outlined text-lg">delete</span></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Attach event listeners
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const product = allProducts.find(p => p.id == id);
+                if (product) openModal(product);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                if(confirm('Hapus produk ini?')) {
+                    const id = this.getAttribute('data-id');
+                    try {
+                        const res = await fetch('/api/packages/' + id, { method: 'DELETE' });
+                        if(res.ok) fetchProducts();
+                        else alert('Gagal menghapus');
+                    } catch(e) {
+                        alert('Error: ' + e);
+                    }
+                }
+            });
+        });
+    }
+
+    async function fetchProducts() {
+        try {
+            const res = await fetch('/api/packages');
+            const data = await res.json();
+            allProducts = data;
+            renderProducts(allProducts);
+        } catch (e) {
+            console.error('Failed to fetch products', e);
+        }
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('p-id').value;
+        const payload = {
+            category: document.getElementById('p-category').value,
+            code: document.getElementById('p-code').value,
+            name: document.getElementById('p-name').value,
+            duration: document.getElementById('p-duration').value,
+            price: document.getElementById('p-price').value,
+            description: document.getElementById('p-desc').value,
+            active: document.getElementById('p-active').checked
+        };
+
+        try {
+            const url = id ? '/api/packages/' + id : '/api/packages';
+            const method = id ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if(res.ok) {
+                closeModal();
+                fetchProducts();
+            } else {
+                alert('Gagal menyimpan data');
+            }
+        } catch (e) {
+            alert('Error: ' + e);
+        }
+    });
+
+    searchInput.addEventListener('input', function(e) {
+        const val = e.target.value.toLowerCase();
+        const filtered = allProducts.filter(p => 
+            p.code.toLowerCase().includes(val) || 
+            p.name.toLowerCase().includes(val)
+        );
+        renderProducts(filtered);
+    });
+
+    fetchProducts();
+});
+</script>
+</body>
+</html>

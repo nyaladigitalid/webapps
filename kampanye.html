@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+    <script>
+        (function() {
+            try {
+                var t = localStorage.getItem("theme");
+                if (t === "light") {
+                    document.documentElement.classList.remove("dark");
+                } else {
+                    document.documentElement.classList.add("dark");
+                }
+            } catch (e) {
+                document.documentElement.classList.add("dark");
+            }
+        })();
+    </script>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Campaign Audit - Nyala Digital</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ef7225",
+                        "secondary": "#0d3b66",
+                        "accent": "#ef7225",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0b0e14",
+                        "sidebar-dark": "#101922"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-surface {
+            background:
+                radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%),
+                radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+        }
+        .dark .glass-panel {
+            background: rgba(6, 12, 31, 0.94);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="campaigns">
+    <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+        <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+    </div>
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <div id="include-header"></div>
+        <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+            <!-- Sidebar Navigation -->
+            <div id="include-sidebar"></div>
+            <!-- Main Content Area -->
+            <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <!-- Header Section -->
+                <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Audit Kampanye</h2>
+                        <p class="text-slate-500 text-sm mt-1">Monitor performa kampanye dan CPR secara realtime</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="syncAllCampaigns()" id="sync-all-btn" class="flex items-center gap-2 bg-primary hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">sync</span>
+                            <span>Sync Data</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Filters -->
+                <section class="glass-panel rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
+                        <select id="filter-status" class="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2 w-40 focus:ring-primary focus:border-primary">
+                            <option value="">Semua Status</option>
+                            <option value="ACTIVE" selected>Aktif</option>
+                            <option value="INACTIVE">Tidak Aktif</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Periode Laporan (Sync)</label>
+                        <div class="flex gap-2 items-center">
+                            <input type="date" id="filter-start-date" class="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2 focus:ring-primary focus:border-primary">
+                            <span class="self-center text-slate-400">-</span>
+                            <input type="date" id="filter-end-date" class="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="flex gap-1 mt-1.5">
+                            <button onclick="setDateRange('last_7')" class="px-2 py-1 text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition-colors">7 Hari</button>
+                            <button onclick="setDateRange('last_14')" class="px-2 py-1 text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition-colors">14 Hari</button>
+                            <button onclick="setDateRange('this_month')" class="px-2 py-1 text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-300 transition-colors">Bulan Ini</button>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="loadCampaigns()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors h-[38px]">
+                            Refresh List
+                        </button>
+                    </div>
+                    <div class="ml-auto">
+                         <button onclick="syncAllCampaigns()" id="sync-all-btn-filter" class="bg-secondary hover:bg-secondary/80 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors h-[38px] flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">sync</span>
+                            <span>Sync Metrics for Period</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Campaigns Table -->
+                <section class="glass-panel rounded-xl overflow-hidden mb-8 shadow-sm flex-1 flex flex-col">
+                    <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Daftar Kampanye (CPR Descending)</h3>
+                        <div class="text-xs text-slate-500" id="campaign-count">Memuat...</div>
+                    </div>
+                    <div class="overflow-x-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 dark:bg-slate-800/20 sticky top-0 z-10 backdrop-blur-sm">
+                                <tr>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kampanye</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Akun Iklan</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Targeting</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Impr.</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Clicks</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">CTR</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Spend</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Results</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">CPR</th>
+                                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaigns-table-body" class="divide-y divide-slate-200 dark:divide-slate-800">
+                                <tr>
+                                    <td colspan="11" class="px-6 py-8 text-center text-slate-500 italic">Memuat data kampanye...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination Controls -->
+                    <div class="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+                        <div class="text-xs text-slate-500 dark:text-slate-400" id="pagination-info">
+                            Menampilkan data...
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="prev-page" class="px-3 py-1.5 text-xs font-medium rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                                Previous
+                            </button>
+                            <button id="next-page" class="px-3 py-1.5 text-xs font-medium rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        <div id="include-footer"></div>
+    </div>
+    <script src="js/include.js"></script>
+    <script>
+        let currentPage = 1;
+        const LIMIT = 5;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set default dates (Current Month)
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('filter-start-date').valueAsDate = firstDay;
+            document.getElementById('filter-end-date').valueAsDate = lastDay;
+
+            await loadCampaigns();
+        });
+
+        async function loadCampaigns(page = 1) {
+            try {
+                currentPage = page;
+                const status = document.getElementById('filter-status').value;
+                // Note: We don't filter by date on the list API anymore, 
+                // because we want to see all campaigns and sync metrics for the selected period.
+                
+                let url = `/api/campaigns?status=${status}&page=${page}&limit=${LIMIT}`;
+
+                const res = await fetch(url);
+                const json = await res.json();
+                
+                let campaigns = [];
+                let total = 0;
+                let totalPages = 1;
+
+                if (Array.isArray(json)) {
+                     campaigns = json;
+                     total = json.length;
+                } else {
+                     campaigns = json.data;
+                     total = json.meta.total;
+                     totalPages = json.meta.totalPages;
+                }
+                
+                const tbody = document.getElementById('campaigns-table-body');
+                document.getElementById('campaign-count').innerText = `${total} kampanye ditemukan`;
+
+                if (campaigns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="11" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada kampanye ditemukan</td></tr>';
+                    updatePagination(0, 0, 0);
+                    return;
+                }
+
+                let html = '';
+                campaigns.forEach(camp => {
+                    const spend = parseFloat(camp.spend || 0);
+                    const results = parseFloat(camp.results || 0);
+                    const cpr = results > 0 ? spend / results : 0;
+                    const impressions = parseInt(camp.impressions || 0);
+                    const clicks = parseInt(camp.clicks || 0);
+                    const ctr = parseFloat(camp.ctr || 0);
+                    
+                    let statusColor = 'bg-slate-100 text-slate-600';
+                    if (camp.status === 'ACTIVE') statusColor = 'bg-emerald-100 text-emerald-600 border border-emerald-200';
+                    else if (camp.status === 'PAUSED') statusColor = 'bg-amber-100 text-amber-600 border border-amber-200';
+                    else if (camp.status === 'ARCHIVED') statusColor = 'bg-red-100 text-red-600 border border-red-200';
+
+                    let cprColor = 'text-emerald-500';
+                    if (cpr > 10000) cprColor = 'text-red-500';
+                    else if (cpr > 7000) cprColor = 'text-amber-500';
+
+                    // Format Targeting
+                    let targetingDisplay = '-';
+                    try {
+                        if (camp.targeting) {
+                             // Try to parse if it looks like JSON
+                             if (camp.targeting.trim().startsWith('{') || camp.targeting.trim().startsWith('[')) {
+                                 const t = JSON.parse(camp.targeting);
+                                 let parts = [];
+                                 if (t.geo_locations && t.geo_locations.countries) parts.push(`Loc: ${t.geo_locations.countries.join(', ')}`);
+                                 if (t.age_min && t.age_max) parts.push(`Age: ${t.age_min} - ${t.age_max}`);
+                                 // Facebook gender: 1=Male, 2=Female, if missing usually All
+                                 if (t.genders) parts.push(`Gender: ${t.genders.map(g => g === 1 ? 'Male' : g === 2 ? 'Female' : 'All').join(', ')}`);
+                                 
+                                 if (parts.length > 0) targetingDisplay = parts.join('<br>');
+                                 else targetingDisplay = 'Custom Audience'; 
+                             } else {
+                                 targetingDisplay = camp.targeting;
+                             }
+                        }
+                    } catch (e) {
+                        targetingDisplay = camp.targeting || '-';
+                    }
+
+                    html += `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-slate-800 dark:text-white text-sm break-all">${camp.campaign_name}</div>
+                                <div class="text-xs text-slate-500 font-mono mt-0.5">${camp.campaign_id}</div>
+                                <div class="text-[10px] text-slate-400 mt-1">${new Date(camp.created_at).toLocaleDateString('id-ID')}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-slate-700 dark:text-slate-300">${camp.ad_account_name || '-'}</div>
+                                <div class="text-xs text-slate-500 font-mono">${camp.ad_account_id || '-'}</div>
+                            </td>
+                            <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 leading-tight">
+                                ${targetingDisplay}
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor}">
+                                    ${camp.status}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                                ${new Intl.NumberFormat('id-ID').format(impressions)}
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                                ${new Intl.NumberFormat('id-ID').format(clicks)}
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                                ${ctr.toFixed(2)}%
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                                ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(spend)}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="font-mono text-sm text-slate-700 dark:text-slate-300 font-bold">${results}</div>
+                                <div class="text-[10px] text-slate-500 leading-tight">${camp.result_type || 'Results'}</div>
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-sm font-bold ${cprColor}">
+                                ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cpr)}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="syncCampaign(${camp.id})" class="text-secondary hover:text-primary transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800" title="Sync Metrics">
+                                    <span class="material-symbols-outlined text-[18px]">sync</span>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+                updatePagination(page, total, totalPages);
+
+
+            } catch (e) {
+                console.error('Error loading campaigns:', e);
+                document.getElementById('campaigns-table-body').innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-red-500 italic">Gagal memuat data</td></tr>';
+            }
+        }
+
+        function updatePagination(page, total, totalPages) {
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            const info = document.getElementById('pagination-info');
+            
+            if (!prevBtn || !nextBtn || !info) return;
+
+            const start = total === 0 ? 0 : (page - 1) * LIMIT + 1;
+            const end = Math.min(page * LIMIT, total);
+            
+            info.textContent = `Menampilkan ${start} - ${end} dari ${total} data`;
+            
+            prevBtn.disabled = page <= 1;
+            prevBtn.onclick = () => loadCampaigns(page - 1);
+            
+            nextBtn.disabled = page >= totalPages;
+            nextBtn.onclick = () => loadCampaigns(page + 1);
+        }
+
+        async function syncCampaign(id) {
+            try {
+                const btn = event.currentTarget;
+                const icon = btn.querySelector('span');
+                icon.classList.add('animate-spin');
+                
+                const startDate = document.getElementById('filter-start-date').value;
+                const endDate = document.getElementById('filter-end-date').value;
+                
+                const payload = {};
+                if (startDate && endDate) {
+                    payload.time_range = { since: startDate, until: endDate };
+                }
+
+                const res = await fetch(`/api/campaigns/${id}/sync`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                
+                if (json.success) {
+                    await loadCampaigns();
+                } else {
+                    alert('Sync failed: ' + (json.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Sync error');
+            }
+        }
+
+        async function syncAllCampaigns() {
+            const btn = document.getElementById('sync-all-btn-filter') || document.getElementById('sync-all-btn');
+            if (!btn) return;
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span><span>Syncing...</span>';
+            btn.disabled = true;
+
+            try {
+                const status = document.getElementById('filter-status').value;
+                let url = `/api/campaigns?status=${status}`;
+                
+                const res = await fetch(url);
+                const campaigns = await res.json();
+                
+                const startDate = document.getElementById('filter-start-date').value;
+                const endDate = document.getElementById('filter-end-date').value;
+                
+                const payload = {};
+                if (startDate && endDate) {
+                    payload.time_range = { since: startDate, until: endDate };
+                }
+
+                let count = 0;
+                for (const camp of campaigns) {
+                    try {
+                        await fetch(`/api/campaigns/${camp.id}/sync`, { 
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        count++;
+                        btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-[18px]">sync</span><span>Syncing ${count}/${campaigns.length}...</span>`;
+                    } catch (e) {
+                        console.error(`Failed to sync campaign ${camp.id}`, e);
+                    }
+                }
+                
+                await loadCampaigns();
+                alert(`Synced ${count} campaigns successfully.`);
+
+            } catch (e) {
+                console.error(e);
+                alert('Sync All failed');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function setDateRange(range) {
+            const today = new Date();
+            let start = new Date();
+            let end = new Date();
+
+            if (range === 'last_7') {
+                start.setDate(today.getDate() - 6);
+            } else if (range === 'last_14') {
+                start.setDate(today.getDate() - 13);
+            } else if (range === 'this_month') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            }
+            
+            const fmt = d => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('filter-start-date').value = fmt(start);
+            document.getElementById('filter-end-date').value = fmt(end);
+        }
+    </script>
+</body>
+</html>

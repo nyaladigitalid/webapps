@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM &amp; Follow-up Dashboard | Nyala Digital Apps</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#ef7225",
+        secondary: "#0d3b66",
+        "background-light": "#f5f7f8",
+        "background-dark": "#0b0e14",
+        "sidebar-dark": "#101922"
+      },
+      fontFamily: {
+        display: ["Inter", "sans-serif"]
+      },
+      borderRadius: {
+        DEFAULT: "0.5rem",
+        lg: "0.5rem",
+        xl: "0.75rem",
+        full: "9999px"
+      }
+    }
+  }
+};
+</script>
+<style>
+body { font-family: 'Inter', sans-serif; }
+.glass-surface {
+  background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%),
+              radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+  background: rgba(6, 12, 31, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+.glass-card {
+  background: rgba(34, 54, 73, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(49, 77, 104, 0.5);
+}
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="crm">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+  <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+  <div id="include-header"></div>
+  <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+    <div id="include-sidebar"></div>
+    <main class="flex-1 flex flex-col min-w-0">
+      <!-- Page Title -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-black tracking-tight">CRM &amp; Follow-up</h2>
+          <p class="text-secondary/80 text-sm mt-1">Kelola relasi klien dan aktivitas follow-up.</p>
+        </div>
+      </div>
+      <!-- Dashboard Content -->
+      <div class="space-y-8">
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="glass-card rounded-xl p-6">
+<p class="text-[#90aecb] text-sm font-medium mb-2">Total Active Clients</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-white">45</h3>
+<span class="text-accent-success text-sm font-bold flex items-center">
+<span class="material-symbols-outlined text-sm">arrow_upward</span>
+                                5%
+                            </span>
+</div>
+</div>
+<div class="glass-card rounded-xl p-6">
+<p class="text-[#90aecb] text-sm font-medium mb-2">Follow-up Today</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-white">8</h3>
+<span class="bg-primary/20 text-primary px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Priority</span>
+</div>
+</div>
+<div class="glass-card rounded-xl p-6">
+<p class="text-[#90aecb] text-sm font-medium mb-2">Churned (&gt;30 days)</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-white">12</h3>
+<span class="text-accent-danger text-sm font-bold flex items-center">
+<span class="material-symbols-outlined text-sm">arrow_downward</span>
+                                2%
+                            </span>
+</div>
+</div>
+<div class="glass-card rounded-xl p-6 border-l-4 border-accent-success">
+<p class="text-[#90aecb] text-sm font-medium mb-2">Retention Rate</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-white">67%</h3>
+<span class="text-accent-success text-sm font-bold flex items-center">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                +3%
+                            </span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Left: Contact List -->
+<div class="xl:col-span-2 space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold text-white">Perlu Dihubungi Hari Ini</h3>
+<button class="text-primary text-sm font-semibold hover:underline">View All Task</button>
+</div>
+<div class="space-y-3">
+<!-- Client Row 1 -->
+<div class="glass-card rounded-xl p-4 flex items-center justify-between hover:bg-[#223649]/60 transition-all border-l-4 border-accent-warning">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-center bg-cover" data-alt="Avatar of Erik N" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAvt6sTwzE3yDOz-MQ832fp25pqzLPIJcX44c4-M_utqxMEsJ6C3G6_wh4DrnNlbsoE8P_wyhopeX1ckhjefG7IdDCyZ2j-SqO7HcDCJwURnzRsfPsICS5B3dWCXkHXFwH0GjvHqX2qd19Cm2KB9BvAlSpcqyPUpFBbqBiUOp58v9Ya1VioPWybsIqNG4ksOOSDwNconB8ALMQcXTXtKVIDsxOrSn5jYTIlOGnx8w0E-NbNHmoeE3mtA2JITbY_zjbaHOTinIkcwkU')"></div>
+<div>
+<h4 class="text-white font-bold">Erik N</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-accent-warning text-xs font-medium">Iklan habis 2 hari</span>
+<span class="w-1 h-1 rounded-full bg-[#314d68]"></span>
+<span class="text-[#90aecb] text-xs">High Intent</span>
+</div>
+</div>
+</div>
+<button class="bg-[#25D366] hover:bg-[#20bd5c] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-base">chat</span>
+                                    Hubungi WhatsApp
+                                </button>
+</div>
+<!-- Client Row 2 -->
+<div class="glass-card rounded-xl p-4 flex items-center justify-between hover:bg-[#223649]/60 transition-all border-l-4 border-accent-danger">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-center bg-cover" data-alt="Avatar of Sari" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBO5HEGwM6tRSviEt-JUinvdQ7uQblEhq-XdwJC7o1PjpbqbgowF8fixFPLIlTySh4nUbbVM51qyEx5yn6Gxp6KOBoS5T923XYif6GxG-Fi2gCv3tYrml9V3go2ZSYN_9XRIy7eXlBrTvT6kGxMSRU0YZMgkud2r40u-FQixxqijJVOThsCmGzAImw5J36Ti1mN0rADAcx9yV56xa4KRh9iBnRJUjzSRESdDNkDv_Eb7xvcTqWJppjunGOclxReEkhdsMzunipl5aw')"></div>
+<div>
+<h4 class="text-white font-bold">Sari</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-accent-danger text-xs font-medium">Churned 35 hari</span>
+<span class="w-1 h-1 rounded-full bg-[#314d68]"></span>
+<span class="text-[#90aecb] text-xs">Win-back Opportunity</span>
+</div>
+</div>
+</div>
+<button class="bg-[#25D366] hover:bg-[#20bd5c] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-base">chat</span>
+                                    Hubungi WhatsApp
+                                </button>
+</div>
+<!-- Retention & Growth Chart Placeholder -->
+<div class="glass-card rounded-xl p-6 mt-8">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h3 class="text-lg font-bold text-white">Retention Trends</h3>
+<p class="text-[#90aecb] text-xs">Performance analysis over the last 6 months</p>
+</div>
+<div class="flex items-center gap-2 bg-[#223649] rounded-lg p-1">
+<button class="px-3 py-1 text-xs font-medium text-white bg-primary rounded-md shadow-sm">6M</button>
+<button class="px-3 py-1 text-xs font-medium text-[#90aecb] hover:text-white rounded-md">1Y</button>
+</div>
+</div>
+<div class="h-48 flex items-end justify-between gap-2 px-2">
+<!-- Simple Bar Chart Visualization -->
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary/20 rounded-t h-[40%] group-hover:bg-primary/40 transition-all relative">
+<div class="absolute inset-x-0 bottom-0 h-1/2 bg-primary rounded-t" style="background-color: #ef7225;"></div>
+</div>
+<span class="text-[10px] text-[#90aecb]">Jan</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary/20 rounded-t h-[55%] group-hover:bg-primary/40 transition-all relative">
+<div class="absolute inset-x-0 bottom-0 h-1/2 bg-primary rounded-t" style="background-color: #ef7225;"></div>
+</div>
+<span class="text-[10px] text-[#90aecb]">Feb</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary/20 rounded-t h-[45%] group-hover:bg-primary/40 transition-all relative">
+<div class="absolute inset-x-0 bottom-0 h-1/2 bg-primary rounded-t" style="background-color: #ef7225;"></div>
+</div>
+<span class="text-[10px] text-[#90aecb]">Mar</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary/20 rounded-t h-[70%] group-hover:bg-primary/40 transition-all relative">
+<div class="absolute inset-x-0 bottom-0 h-1/2 bg-primary rounded-t" style="background-color: #ef7225;"></div>
+</div>
+<span class="text-[10px] text-[#90aecb]">Apr</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary/20 rounded-t h-[65%] group-hover:bg-primary/40 transition-all relative">
+<div class="absolute inset-x-0 bottom-0 h-1/2 bg-primary rounded-t" style="background-color: #ef7225;"></div>
+</div>
+<span class="text-[10px] text-[#90aecb]">May</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-full group">
+<div class="w-full bg-primary/20 rounded-t h-[85%] group-hover:bg-primary/40 transition-all relative">
+<div class="absolute inset-x-0 bottom-0 h-1/2 bg-primary rounded-t shadow-[0_0_15px_rgba(13,131,242,0.4)]" style="background-color: #ef7225; box-shadow: 0 0 15px rgba(239, 114, 37, 0.4);"></div>
+</div>
+<span class="text-[10px] text-[#90aecb]">Jun</span>
+</div>
+</div>
+      </div>
+      <div class="space-y-6">
+        <div class="glass-card rounded-xl overflow-hidden border border-primary/30">
+          <div class="bg-primary/10 px-6 py-4 border-b border-primary/20 flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">smart_toy</span>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Suggested Script</h3>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="bg-primary/5 rounded-lg p-3 border border-primary/10">
+              <div class="flex items-center gap-2 text-accent-success mb-1">
+                <span class="material-symbols-outlined text-sm">auto_graph</span>
+                <p class="text-[10px] font-bold uppercase">Performance Insight</p>
+              </div>
+              <p class="text-sm text-white font-medium">Berdasarkan data: Iklan <span class="text-primary font-bold">Erik</span> CPR membaik <span class="text-accent-success font-bold">15%</span></p>
+            </div>
+            <div class="bg-[#101a23] rounded-lg p-4 relative group">
+              <p class="text-[#90aecb] text-sm leading-relaxed italic">
+                "Halo Kak Erik, iklan lagi murah banget nih CPR-nya cuma <span class="text-white font-semibold">Rp3.467</span>! Sayang kalau stop. Mau lanjut paket Premium?"
+              </p>
+              <div class="mt-4 flex justify-end">
+                <button class="bg-primary hover:bg-primary/90 text-white text-xs font-bold py-2 px-4 rounded flex items-center gap-2 transition-all">
+                  <span class="material-symbols-outlined text-sm">content_copy</span>
+                  Copy Script
+                </button>
+              </div>
+            </div>
+            <p class="text-[#90aecb] text-[10px] text-center">Script ini dibuat otomatis berdasarkan data performa iklan terakhir klien.</p>
+          </div>
+        </div>
+        <div class="glass-card rounded-xl p-6">
+          <h3 class="text-white font-bold mb-4">Retention Tactics</h3>
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <div class="w-8 h-8 rounded bg-accent-warning/20 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-accent-warning text-lg">redeem</span>
+              </div>
+              <div>
+                <p class="text-xs text-white font-bold">Diskon Perpanjangan</p>
+                <p class="text-[10px] text-[#90aecb]">Tawarkan diskon 10% untuk perpanjangan hari ini.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-8 h-8 rounded bg-accent-success/20 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-accent-success text-lg">support_agent</span>
+              </div>
+              <div>
+                <p class="text-xs text-white font-bold">Free Audit Sesi</p>
+                <p class="text-[10px] text-[#90aecb]">Berikan sesi 15 menit audit gratis untuk klien churned.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </main>
+  </div>
+  <div id="include-footer"></div>
+</div>
+<script src="js/include.js"></script>
+</body></html>

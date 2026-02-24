@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();// Content Workflow Logic
+async function loadContentStatus(orderId) {
+    if (!orderId) return;
+    
+    const container = document.getElementById('content-action-area');
+    const stepBaru = document.getElementById('step-baru').querySelector('div');
+    const stepProcess = document.getElementById('step-process').querySelector('div');
+    const stepReady = document.getElementById('step-ready').querySelector('div');
+    
+    // Reset Stepper
+    [stepBaru, stepProcess, stepReady].forEach(el => {
+        el.className = "size-10 rounded-full flex items-center justify-center bg-slate-200 text-slate-500 font-bold transition-colors";
+        el.innerHTML = el.parentElement.id === 'step-baru' ? '1' : el.parentElement.id === 'step-process' ? '2' : '3';
+    });
+
+    try {
+        const response = await fetch(`/api/orders/${orderId}/content`);
+        const data = await response.json();
+        const status = data.status || 'Baru';
+        const links = data.links || [];
+        
+        // Update Stepper
+        if (status === 'Baru') {
+            stepBaru.className = "size-10 rounded-full flex items-center justify-center bg-primary text-white font-bold transition-colors shadow-lg shadow-primary/30";
+        } else if (status === 'Proses Konten') {
+            stepBaru.className = "size-10 rounded-full flex items-center justify-center bg-success text-white font-bold transition-colors";
+            stepBaru.innerHTML = '<span class="material-symbols-outlined">check</span>';
+            
+            stepProcess.className = "size-10 rounded-full flex items-center justify-center bg-primary text-white font-bold transition-colors shadow-lg shadow-primary/30";
+        } else if (status === 'Siap Iklan') {
+            stepBaru.className = "size-10 rounded-full flex items-center justify-center bg-success text-white font-bold transition-colors";
+            stepBaru.innerHTML = '<span class="material-symbols-outlined">check</span>';
+            
+            stepProcess.className = "size-10 rounded-full flex items-center justify-center bg-success text-white font-bold transition-colors";
+            stepProcess.innerHTML = '<span class="material-symbols-outlined">check</span>';
+            
+            stepReady.className = "size-10 rounded-full flex items-center justify-center bg-success text-white font-bold transition-colors shadow-lg shadow-success/30";
+            stepReady.innerHTML = '<span class="material-symbols-outlined">check</span>';
+        }
+
+        // Render Action Area
+        if (status === 'Baru') {
+            container.innerHTML = `
+                <div class="flex flex-col items-center gap-4">
+                    <div class="p-4 bg-primary/10 rounded-full text-primary mb-2">
+                        <span class="material-symbols-outlined text-4xl">movie_edit</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-slate-900 dark:text-white">Siap Memulai Produksi?</h4>
+                    <p class="text-slate-500 text-sm max-w-md mx-auto mb-4">
+                        Klik tombol di bawah untuk mengubah status menjadi "Proses Konten" dan mulai pengerjaan.
+                    </p>
+                    <button onclick="startContentProduction(${orderId})" class="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                        Mulai Produksi Konten
+                    </button>
+                </div>
+            `;
+        } else if (status === 'Proses Konten') {
+            // Render Table for input
+            let rows = links.map((l, i) => `
+                <tr class="border-b border-slate-100 dark:border-white/5">
+                    <td class="p-3">
+                        <select class="content-type-select w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs py-1.5 px-2 focus:ring-primary focus:border-primary">
+                            <option value="image" ${(!l.type || l.type === 'image') ? 'selected' : ''}>Image</option>
+                            <option value="video" ${l.type === 'video' ? 'selected' : ''}>Video</option>
+                        </select>
+                    </td>
+                    <td class="p-3">
+                        <input type="text" value="${l.description || ''}" class="content-desc-input w-full bg-transparent border-none focus:ring-0 text-sm" placeholder="Deskripsi (Opsional)">
+                    </td>
+                    <td class="p-3">
+                        <input type="url" value="${l.url}" class="content-url-input w-full bg-transparent border-none focus:ring-0 text-sm text-primary" placeholder="https://...">
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="this.closest('tr').remove()" class="text-slate-400 hover:text-danger">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="w-full max-w-3xl mx-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">edit_note</span>
+                            Daftar Konten
+                        </h4>
+                        <button onclick="addContentRow()" class="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-white/20 transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                            Tambah Baris
+                        </button>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden mb-6">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 dark:bg-white/5 text-xs uppercase font-bold text-slate-500">
+                                <tr>
+                                    <th class="p-3 w-24">Tipe</th>
+                                    <th class="p-3 w-1/3">Deskripsi</th>
+                                    <th class="p-3">URL Link</th>
+                                    <th class="p-3 w-16 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="content-links-body">
+                                ${rows}
+                            </tbody>
+                        </table>
+                        ${rows.length === 0 ? '<div id="empty-msg" class="p-8 text-center text-slate-500 text-sm italic">Belum ada link konten. Klik "Tambah Baris" untuk memulai.</div>' : ''}
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button onclick="submitContentLinks(${orderId})" class="px-6 py-3 bg-success text-white rounded-xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center gap-2">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Simpan Semua & Selesai
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (status === 'Siap Iklan') {
+            let rows = links.map(l => `
+                <tr class="border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td class="p-3 w-16 text-center">
+                        <span class="material-symbols-outlined text-slate-400" title="${l.type === 'video' ? 'Video' : 'Image'}">
+                            ${l.type === 'video' ? 'videocam' : 'image'}
+                        </span>
+                    </td>
+                    <td class="p-3 font-medium text-slate-700 dark:text-slate-300">${l.description || '-'}</td>
+                    <td class="p-3">
+                        <a href="${l.url}" target="_blank" class="text-primary hover:underline flex items-center gap-1 truncate max-w-xs">
+                            <span class="material-symbols-outlined text-sm">link</span>
+                            ${l.url}
+                        </a>
+                    </td>
+                    <td class="p-3 text-center">
+                        <a href="${l.url}" target="_blank" class="text-slate-400 hover:text-primary">
+                            <span class="material-symbols-outlined">open_in_new</span>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="flex flex-col items-center gap-6 w-full max-w-3xl mx-auto">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center p-3 bg-success/10 rounded-full text-success mb-2">
+                            <span class="material-symbols-outlined text-3xl">verified</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-slate-900 dark:text-white">Konten Siap Iklan!</h4>
+                        <p class="text-slate-500 text-sm">
+                            Berikut adalah daftar link konten yang telah disubmit.
+                        </p>
+                    </div>
+                    
+                    <div class="w-full bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 dark:bg-white/5 text-xs uppercase font-bold text-slate-500">
+                                <tr>
+                                    <th class="p-3 w-16 text-center">Tipe</th>
+                                    <th class="p-3 w-1/3">Deskripsi</th>
+                                    <th class="p-3">URL Link</th>
+                                    <th class="p-3 w-16 text-center">Buka</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows}
+                            </tbody>
+                        </table>
+                        ${links.length === 0 ? '<div class="p-4 text-center text-slate-500 italic">Tidak ada link tersimpan.</div>' : ''}
+                    </div>
+                    
+                    <button onclick="startContentProduction(${orderId})" class="text-xs text-slate-400 hover:text-primary underline">
+                        Edit / Revisi Konten
+                    </button>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error("Error loading content status:", e);
+        container.innerHTML = `<div class="text-danger">Error loading status</div>`;
+    }
+}
+
+function addContentRow() {
+    const tbody = document.getElementById('content-links-body');
+    const emptyMsg = document.getElementById('empty-msg');
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    
+    const tr = document.createElement('tr');
+    tr.className = "border-b border-slate-100 dark:border-white/5";
+    tr.innerHTML = `
+        <td class="p-3">
+            <select class="content-type-select w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-xs py-1.5 px-2 focus:ring-primary focus:border-primary">
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+            </select>
+        </td>
+        <td class="p-3">
+            <input type="text" class="content-desc-input w-full bg-transparent border-none focus:ring-0 text-sm" placeholder="Deskripsi (Opsional)">
+        </td>
+        <td class="p-3">
+            <input type="url" class="content-url-input w-full bg-transparent border-none focus:ring-0 text-sm text-primary" placeholder="https://...">
+        </td>
+        <td class="p-3 text-center">
+            <button onclick="this.closest('tr').remove()" class="text-slate-400 hover:text-danger">
+                <span class="material-symbols-outlined">delete</span>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+}
+
+async function startContentProduction(orderId) {
+    if (!confirm("Mulai produksi konten untuk pesanan ini? Status akan berubah menjadi 'Proses Konten'.")) return;
+    
+    try {
+        const res = await fetch(`/api/orders/${orderId}/content/start`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            loadContentStatus(orderId);
+        } else {
+            alert("Gagal memulai produksi: " + data.error);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+async function submitContentLinks(orderId) {
+    const rows = document.querySelectorAll('#content-links-body tr');
+    const links = [];
+    
+    rows.forEach(row => {
+        const urlInput = row.querySelector('.content-url-input');
+        const descInput = row.querySelector('.content-desc-input');
+        const typeSelect = row.querySelector('.content-type-select');
+        if (urlInput) {
+            const url = urlInput.value.trim();
+            const desc = descInput ? descInput.value.trim() : '';
+            const type = typeSelect ? typeSelect.value : 'image';
+            if (url) {
+                links.push({ url, description: desc, type });
+            }
+        }
+    });
+    
+    if (links.length === 0) {
+        alert("Mohon masukkan setidaknya satu link konten.");
+        return;
+    }
+    
+    // Validate URLs
+    for (const l of links) {
+        try {
+            new URL(l.url);
+        } catch (_) {
+            alert(`Link tidak valid: ${l.url}\nMohon gunakan format http:// atau https://`);
+            return;
+        }
+    }
+    
+    if (!confirm("Simpan semua konten dan tandai sebagai 'Siap Iklan'?")) return;
+
+    try {
+        const userId = localStorage.getItem('user_id');
+        const userRole = localStorage.getItem('role');
+
+        const res = await fetch(`/api/orders/${orderId}/content/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                links,
+                userId: userId,
+                userRole: (userRole || '').toLowerCase()
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            loadContentStatus(orderId);
+        } else {
+            alert("Gagal menyimpan: " + data.error);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+// Team Assignment Logic
+let teamDataLoaded = false;
+
+async function loadTeamAssignments(orderId) {
+    if (!orderId || teamDataLoaded) return;
+    
+    try {
+        const packageId = document.getElementById('input-package-id') ? document.getElementById('input-package-id').value : null;
+
+        // 1. Fetch all users
+        const usersRes = await fetch('/api/users');
+        const users = await usersRes.json();
+        
+        // Populate all dropdowns
+        const selects = [
+            'assign-cs', 'assign-advertiser', 'assign-bengkel', 
+            'assign-editor-image', 'assign-editor-video'
+        ];
+        
+        selects.forEach(id => {
+            const select = document.getElementById(id);
+            if (!select) return;
+            // Clear existing options except first
+            while (select.options.length > 1) select.remove(1);
+            
+            users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.text = `${u.name} (${u.role || '-'})`;
+                select.appendChild(opt);
+            });
+        });
+
+        // 2. Fetch current assignments
+        const assignRes = await fetch(`/api/orders/${orderId}/assignments`);
+        const assignments = await assignRes.json();
+        
+        // 3. Fetch commission rules if packageId exists
+        let rules = [];
+        if (packageId) {
+            const rulesRes = await fetch(`/api/commissions?package_id=${packageId}`);
+            rules = await rulesRes.json();
+        }
+
+        // Set values
+        assignments.forEach(a => {
+            let selectId = '';
+            if (a.role === 'CS') selectId = 'assign-cs';
+            else if (a.role === 'Advertiser') selectId = 'assign-advertiser';
+            else if (a.role === 'Team Bengkel') selectId = 'assign-bengkel';
+            else if (a.role === 'Editor') {
+                if (a.content_type === 'image') selectId = 'assign-editor-image';
+                else if (a.content_type === 'video') selectId = 'assign-editor-video';
+            }
+            
+            if (selectId) {
+                const el = document.getElementById(selectId);
+                if (el) el.value = a.user_id;
+            }
+        });
+
+        // 4. Apply Rules and Display Amounts
+        const slots = [
+            { role: 'CS', type: 'general', id: 'comm-cs' },
+            { role: 'Advertiser', type: 'general', id: 'comm-advertiser' },
+            { role: 'Team Bengkel', type: 'general', id: 'comm-bengkel' },
+            { role: 'Editor', type: 'image', id: 'comm-editor-image' },
+            { role: 'Editor', type: 'video', id: 'comm-editor-video' }
+        ];
+
+        slots.forEach(slot => {
+            const rule = rules.find(r => r.role === slot.role && r.content_type === slot.type);
+            const amount = rule ? parseFloat(rule.amount) : 0;
+            const el = document.getElementById(slot.id);
+            if (el) {
+                el.textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+                el.dataset.amount = amount;
+                el.classList.remove('hidden');
+            }
+        });
+
+        recalcTotalCommission();
+        
+        teamDataLoaded = true;
+    } catch (e) {
+        console.error("Error loading team:", e);
+    }
+}
+
+function recalcTotalCommission() {
+    let total = 0;
+    const slots = [
+        { selectId: 'assign-cs', commId: 'comm-cs' },
+        { selectId: 'assign-advertiser', commId: 'comm-advertiser' },
+        { selectId: 'assign-bengkel', commId: 'comm-bengkel' },
+        { selectId: 'assign-editor-image', commId: 'comm-editor-image' },
+        { selectId: 'assign-editor-video', commId: 'comm-editor-video' }
+    ];
+
+    slots.forEach(slot => {
+        const select = document.getElementById(slot.selectId);
+        const commEl = document.getElementById(slot.commId);
+        if (select && select.value && commEl && commEl.dataset.amount) {
+            total += parseFloat(commEl.dataset.amount) || 0;
+        }
+    });
+
+    const totalEl = document.getElementById('total-commission');
+    if (totalEl) {
+        totalEl.textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(total);
+    }
+}
+
+async function updateAssignment(role, type, userId) {
+    const orderId = new URLSearchParams(window.location.search).get('id');
+    if (!orderId) return;
+    
+    // Recalculate total immediately for UI feedback
+    recalcTotalCommission();
+
+    // Find feedback element
+    let msgId = '';
+    if (role === 'CS') msgId = 'msg-cs';
+    else if (role === 'Advertiser') msgId = 'msg-advertiser';
+    else if (role === 'Team Bengkel') msgId = 'msg-bengkel';
+    else if (role === 'Editor') {
+        if (type === 'image') msgId = 'msg-editor-image';
+        else if (type === 'video') msgId = 'msg-editor-video';
+    }
+    const msgEl = document.getElementById(msgId);
+    
+    try {
+        const res = await fetch(`/api/orders/${orderId}/assignments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                role: role,
+                content_type: type
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            if (msgEl) {
+                msgEl.textContent = "Tersimpan";
+                msgEl.className = "text-[10px] text-success font-bold block animate-pulse";
+                setTimeout(() => {
+                    msgEl.className = "text-[10px] hidden";
+                }, 2000);
+            }
+        } else {
+            alert("Gagal menyimpan: " + (data.error || 'Unknown error'));
+            if (msgEl) {
+                 msgEl.textContent = "Gagal";
+                 msgEl.className = "text-[10px] text-danger font-bold block";
+            }
+        }
+    } catch (e) {
+        console.error("Error updating assignment:", e);
+        alert("Error network/server");
+    }
+}
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps – Detail Pesanan</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#ef7225",
+        secondary: "#0d3b66",
+        "background-light": "#f5f7f8",
+        "background-dark": "#0b0e14",
+        success: "#00c896",
+        danger: "#ef4444",
+        surface: "#1a2632"
+      },
+      fontFamily: { display: ["Inter", "sans-serif"] },
+      borderRadius: { DEFAULT: "0.5rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }
+    }
+  }
+}
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-surface {
+            background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%),
+                      radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+        }
+        .dark .glass-panel {
+            background: rgba(6, 12, 31, 0.94);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="orders">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+  <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+  <div id="include-header"></div>
+  <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+    <div id="include-sidebar"></div>
+    <main class="flex-1 min-w-0">
+      <div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h1 id="od-title" class="text-xl md:text-2xl font-semibold tracking-tight">Detail Pesanan</h1>
+          <p id="od-subtitle" class="text-secondary/80 text-sm mt-1"></p>
+        </div>
+        <div class="flex items-center gap-2 hidden">
+          <div class="hidden md:flex items-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full px-3 py-1.5 w-64">
+            <span class="material-symbols-outlined text-slate-500 dark:text-[#90aecb] text-lg">search</span>
+            <input type="text" placeholder="Cari pesanan..." class="bg-transparent border-none focus:ring-0 text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-[#90aecb] w-full">
+          </div>
+          <button class="px-4 py-2 bg-white dark:bg-surface text-slate-700 dark:text-white border border-slate-200 dark:border-white/10 rounded-lg text-sm font-semibold hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">print</span>
+            Invoice
+          </button>
+          <button class="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">edit</span>
+            Edit Pesanan
+          </button>
+        </div>
+      </div>
+      <div class="mt-2">
+        <div id="tab-nav" class="flex items-center gap-8 border-b border-slate-200 dark:border-white/10">
+          <button data-tab="client" onclick="switchTab('client')" class="tab-btn pb-4 px-1 text-sm font-semibold text-primary border-b-2 border-primary transition-all">Data Klien</button>
+          <button data-tab="content" onclick="switchTab('content')" class="tab-btn pb-4 px-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-b-2 border-transparent transition-all">Konten</button>
+          <button data-tab="campaign" onclick="switchTab('campaign')" class="tab-btn pb-4 px-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-b-2 border-transparent transition-all">Campaign</button>
+          <button data-tab="team" onclick="switchTab('team')" class="tab-btn pb-4 px-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-b-2 border-transparent transition-all">Tim</button>
+          <button data-tab="performance" onclick="switchTab('performance')" class="tab-btn pb-4 px-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-b-2 border-transparent transition-all">Performa</button>
+          <button data-tab="keuangan" onclick="switchTab('keuangan')" class="tab-btn pb-4 px-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-b-2 border-transparent transition-all">Keuangan</button>
+          <button data-tab="log" onclick="switchTab('log')" class="tab-btn pb-4 px-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border-b-2 border-transparent transition-all">Log</button>
+        </div>
+      </div>
+      <div class="pt-6">
+        <div id="panel-client" class="tab-content">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div class="xl:col-span-1 space-y-6">
+            <div class="glass-panel p-6 rounded-2xl">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-slate-900 dark:text-white font-bold flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">person</span>
+                  Informasi Dasar
+                </h3>
+                <button class="text-primary text-xs font-bold hover:underline">Edit</button>
+              </div>
+              <div class="space-y-5">
+                <div>
+                  <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Nama Lengkap</p>
+                  <p id="client-name" class="text-slate-900 dark:text-white font-semibold"></p>
+                </div>
+                <div>
+                  <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">WhatsApp</p>
+                  <div class="flex items-center justify-between">
+                    <p id="client-wa" class="text-slate-900 dark:text-white font-semibold"></p>
+                    <button class="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success text-[10px] font-bold rounded-lg border border-success/20 hover:bg-success hover:text-white transition-all">
+                      <span class="material-symbols-outlined text-sm">chat</span>
+                      KIRIM PESAN
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Nama Usaha</p>
+                  <p id="business-name" class="text-slate-900 dark:text-white font-semibold"></p>
+                </div>
+                <div>
+                  <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Alamat Operasional</p>
+                  <p id="client-address" class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed"></p>
+                  <button class="mt-2 flex items-center gap-1 text-primary text-xs font-bold hover:underline">
+                    <span class="material-symbols-outlined text-sm">location_on</span>
+                    Lihat di Map
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl">
+              <h3 class="text-slate-900 dark:text-white font-bold flex items-center gap-2 mb-6">
+                <span class="material-symbols-outlined text-primary">verified_user</span>
+                Status Akun Iklan
+              </h3>
+              <div class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                <div class="size-10 bg-success/20 text-success rounded-lg flex items-center justify-center">
+                  <span class="material-symbols-outlined">check_circle</span>
+                </div>
+                <div>
+                  <p class="text-slate-900 dark:text-white text-sm font-semibold">Active &amp; Connected</p>
+                  <p class="text-slate-500 text-xs">Meta Ads Manager ID: 8829-102</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="xl:col-span-2">
+            <!-- Service Specific Details -->
+            <div id="service-details-panel" class="glass-panel p-6 rounded-2xl mb-6 hidden">
+              <h3 class="text-slate-900 dark:text-white font-bold flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-primary">tune</span>
+                Spesifikasi Layanan
+                <span id="service-type-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ml-2"></span>
+              </h3>
+              <div id="service-meta-content" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <div id="brief-card-container" class="glass-panel p-8 rounded-2xl flex flex-col min-h-[500px]">
+              <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                  <div class="size-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                    <span class="material-symbols-outlined">assignment</span>
+                  </div>
+                  <div>
+                    <h3 class="text-slate-900 dark:text-white font-bold text-lg leading-tight">Brief Iklan</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-xs">Instruksi kampanye dari klien</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="brief-updated" class="text-slate-500 dark:text-slate-400 text-xs italic"></span>
+                  <button class="p-2 bg-slate-50 dark:bg-surface text-slate-500 dark:text-slate-300 rounded-lg hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5">
+                    <span class="material-symbols-outlined text-lg">content_copy</span>
+                  </button>
+                </div>
+              </div>
+              <div class="flex-1 space-y-8 overflow-y-auto pr-2">
+                <div>
+                  <h4 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span class="size-1.5 bg-primary rounded-full"></span>
+                    Tujuan Utama (Objectives)
+                  </h4>
+                  <div class="bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5">
+                    <p id="brief-objectives" class="text-slate-700 dark:text-slate-200 leading-relaxed italic text-sm"></p>
+                  </div>
+                </div>
+                <div id="target-usp-section" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                    <div>
+                      <h4 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span class="size-1.5 bg-primary rounded-full"></span>
+                        Target Audience
+                      </h4>
+                      <ul id="target-list" class="space-y-2">
+                        <!-- Dynamic Content -->
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span class="size-1.5 bg-primary rounded-full"></span>
+                        Key Selling Points
+                      </h4>
+                      <ul id="usp-list" class="space-y-2">
+                         <!-- Dynamic Content -->
+                      </ul>
+                    </div>
+                  </div>
+                <div>
+                  <h4 class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span class="size-1.5 bg-primary rounded-full"></span>
+                    Catatan Tambahan
+                  </h4>
+                  <p id="brief-notes" class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed"></p>
+                </div>
+              </div>
+              <div class="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                <div class="flex -space-x-2">
+                  <img alt="Contributor" class="size-8 rounded-full border-2 border-white dark:border-background-dark" data-alt="Small avatar of a contributor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5ziZh62OB6CaS6Pp4U5cnOdjt5K_ETcuB7X1a0jCUgfnTJIq-fDLbBDCpzENJV8m8aV70e0K1sNQrNY0qdubM0q8zKBukwrfa745uTQRG7TngLi7ZcdaCEE5yzSAfIYYu2LYLOa5eUukmSeYCazW_teo0AqyF6RRemE5dBwJNcH9bpbaoKHnY1IbHVQh2qKMwgTc-B2LfMsM4rUcgzy8S9jomrVKCUxp8VavVxi2XBG6Y8Bzuch9fjIqOY94rGzMjPcOzLwu5G6Q"/>
+                  <img alt="Contributor" class="size-8 rounded-full border-2 border-white dark:border-background-dark" data-alt="Small avatar of another contributor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5fvFL6FQ6jXx-tiLG2IDlYC580TBT6mOK7w3PUFIE9xcY47Nf3UHNIZgx3shTwVEWB9trbLuuTZqcex_zHbfxGe_ewrwCPOfPPe3NqGhmsxXbxQJ3kRpzgMD7wZ7h5A9ewatfNYicmVkvBjXaoj2eT1Gw-FR53wWmUbqluug27SQhiXorgNY-uCVoLWi0sgs7JI14HFzt3xpqGZBad4o6qmy15GZBXviRxEb0IkyoC6G9hH0F4bbFVIhU-JWkqwljLPpX3UfCoCQ"/>
+                  <div class="size-8 rounded-full border-2 border-white dark:border-background-dark bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">+3</div>
+                </div>
+                <button class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-medium flex items-center gap-1">
+                  <span class="material-symbols-outlined text-base">history</span>
+                  Riwayat Perubahan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+        
+        <!-- Campaign Panel -->
+        <div id="panel-campaign" class="tab-content hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Campaign Management</h2>
+            <button id="btn-create-campaign" class="px-4 py-2 bg-primary text-white rounded-lg font-bold shadow-lg hover:brightness-110 transition-all flex items-center gap-2">
+              <span class="material-symbols-outlined">add</span>
+              Buat Kampanye
+            </button>
+          </div>
+          <div class="space-y-8">
+             <!-- Performance Cards -->
+             <div>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                    <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Performa Iklan
+                        <span id="active-period-label" class="text-xs font-normal text-slate-500 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full">Last 7 Days</span>
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <select id="date-preset-select" onchange="handleDateFilterChange()" class="text-xs bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-primary">
+                            <option value="last_7d" selected>7 Hari Terakhir</option>
+                            <option value="today">Hari Ini</option>
+                            <option value="yesterday">Kemarin</option>
+                            <option value="this_month">Bulan Ini</option>
+                            <option value="last_30d">30 Hari Terakhir</option>
+                            <option value="maximum">Lifetime (Semua)</option>
+                            <option value="custom">Custom Tanggal</option>
+                        </select>
+                        <div id="custom-date-inputs" class="hidden flex items-center gap-2">
+                            <input type="date" id="date-start" class="text-xs bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg px-2 py-2 text-slate-700 dark:text-slate-300">
+                            <span class="text-slate-400">-</span>
+                            <input type="date" id="date-end" class="text-xs bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg px-2 py-2 text-slate-700 dark:text-slate-300">
+                            <button onclick="applyCustomDateFilter()" class="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20" title="Terapkan">
+                                <span class="material-symbols-outlined text-base">check</span>
+                            </button>
+                        </div>
+                        <button id="btn-sync-all" onclick="triggerBatchSync()" class="p-2 text-slate-400 hover:text-primary transition-colors" title="Sync Now">
+                            <span class="material-symbols-outlined text-base">sync</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                   <!-- Impressions -->
+                   <div class="glass-panel p-4 rounded-xl flex flex-col justify-between h-full relative overflow-hidden group hover:border-primary/50 transition-colors">
+                      <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <span class="material-symbols-outlined text-4xl text-primary">visibility</span>
+                      </div>
+                      <p class="text-xs text-slate-500 mb-2 relative z-10">Impressions</p>
+                      <div class="flex items-end justify-between relative z-10">
+                         <p id="metric-impressions" class="text-2xl font-bold text-slate-900 dark:text-white">0</p>
+                         <!-- <span class="text-[10px] text-success flex items-center bg-success/10 px-1.5 py-0.5 rounded font-bold"><span class="material-symbols-outlined text-[10px] mr-0.5">trending_up</span> +12%</span> -->
+                      </div>
+                   </div>
+                   
+                   <!-- Clicks -->
+                   <div class="glass-panel p-4 rounded-xl flex flex-col justify-between h-full relative overflow-hidden group hover:border-blue-500/50 transition-colors">
+                      <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <span class="material-symbols-outlined text-4xl text-blue-500">touch_app</span>
+                      </div>
+                      <p class="text-xs text-slate-500 mb-2 relative z-10">Clicks</p>
+                      <div class="flex items-end justify-between relative z-10">
+                         <p id="metric-clicks" class="text-2xl font-bold text-slate-900 dark:text-white">0</p>
+                         <!-- <span class="text-[10px] text-success flex items-center bg-success/10 px-1.5 py-0.5 rounded font-bold"><span class="material-symbols-outlined text-[10px] mr-0.5">trending_up</span> +5%</span> -->
+                      </div>
+                   </div>
+
+                   <!-- CTR -->
+                   <div class="glass-panel p-4 rounded-xl flex flex-col justify-between h-full relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+                      <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <span class="material-symbols-outlined text-4xl text-purple-500">percent</span>
+                      </div>
+                      <p class="text-xs text-slate-500 mb-2 relative z-10">CTR</p>
+                      <div class="flex items-end justify-between relative z-10">
+                         <p id="metric-ctr" class="text-2xl font-bold text-slate-900 dark:text-white">0.00%</p>
+                         <!-- <span class="text-[10px] text-danger flex items-center bg-danger/10 px-1.5 py-0.5 rounded font-bold"><span class="material-symbols-outlined text-[10px] mr-0.5">trending_down</span> -1%</span> -->
+                      </div>
+                   </div>
+
+                   <!-- Spend -->
+                   <div class="glass-panel p-4 rounded-xl flex flex-col justify-between h-full relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
+                      <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <span class="material-symbols-outlined text-4xl text-emerald-500">payments</span>
+                      </div>
+                      <p class="text-xs text-slate-500 mb-2 relative z-10">Spend</p>
+                      <div class="flex items-end justify-between relative z-10">
+                         <p id="metric-spend" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</p>
+                      </div>
+                   </div>
+                   
+                   <!-- Results -->
+                   <div class="glass-panel p-4 rounded-xl flex flex-col justify-between h-full relative overflow-hidden group hover:border-orange-500/50 transition-colors">
+                      <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <span class="material-symbols-outlined text-4xl text-orange-500">check_circle</span>
+                      </div>
+                      <p class="text-xs text-slate-500 mb-2 relative z-10">Results</p>
+                      <div class="flex items-end justify-between relative z-10">
+                         <p id="metric-results" class="text-2xl font-bold text-slate-900 dark:text-white">0</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+
+             <!-- Campaign List Table -->
+             <div class="glass-panel rounded-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-white/5 flex justify-between items-center">
+                   <h3 class="font-bold text-slate-900 dark:text-white">Daftar Kampanye</h3>
+                   <button onclick="loadCampaigns(document.getElementById('input-order-id').value)" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                      <span class="material-symbols-outlined text-sm">refresh</span>
+                      Refresh
+                   </button>
+                </div>
+                <div class="overflow-x-auto">
+                   <table class="w-full text-left text-sm">
+                      <thead class="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-white/5">
+                         <tr>
+                            <th class="px-6 py-3">Campaign Name</th>
+                            <th class="px-6 py-3">Ad Account</th>
+                            <th class="px-6 py-3">Targeting</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3 text-right">Impressions</th>
+                            <th class="px-6 py-3 text-right">Clicks</th>
+                            <th class="px-6 py-3 text-right">CTR</th>
+                            <th class="px-6 py-3 text-right">Spend</th>
+                            <th class="px-6 py-3 text-right">Results</th>
+                            <th class="px-6 py-3 text-center">Action</th>
+                         </tr>
+                      </thead>
+                      <tbody id="campaign-list-body" class="divide-y divide-slate-200 dark:divide-white/5 text-slate-700 dark:text-slate-300">
+                         <tr>
+                            <td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">
+                               Memuat data kampanye...
+                            </td>
+                         </tr>
+                      </tbody>
+                   </table>
+                </div>
+             </div>
+             
+             <!-- Brief Slot -->
+             <div id="campaign-brief-slot" class="w-full">
+                <!-- Slot for moved Brief Card -->
+             </div>
+          </div>
+        </div>
+        
+        <!-- Content Panel -->
+        <div id="panel-content" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl w-full mx-auto">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">video_library</span>
+                    Status Produksi Konten
+                </h3>
+                
+                <!-- Status Indicator -->
+                <div class="flex items-center justify-between mb-8 relative">
+                    <div class="absolute left-0 top-1/2 w-full h-1 bg-slate-200 dark:bg-slate-700 -z-10"></div>
+                    
+                    <!-- Step 1: Baru -->
+                    <div id="step-baru" class="flex flex-col items-center gap-2 bg-white dark:bg-surface px-2 z-10">
+                        <div class="size-10 rounded-full flex items-center justify-center bg-slate-200 text-slate-500 font-bold transition-colors">1</div>
+                        <span class="text-xs font-semibold text-slate-500">Baru</span>
+                    </div>
+                    
+                    <!-- Step 2: Proses Konten -->
+                    <div id="step-process" class="flex flex-col items-center gap-2 bg-white dark:bg-surface px-2 z-10">
+                        <div class="size-10 rounded-full flex items-center justify-center bg-slate-200 text-slate-500 font-bold transition-colors">2</div>
+                        <span class="text-xs font-semibold text-slate-500">Proses</span>
+                    </div>
+                    
+                    <!-- Step 3: Siap Iklan -->
+                    <div id="step-ready" class="flex flex-col items-center gap-2 bg-white dark:bg-surface px-2 z-10">
+                        <div class="size-10 rounded-full flex items-center justify-center bg-slate-200 text-slate-500 font-bold transition-colors">3</div>
+                        <span class="text-xs font-semibold text-slate-500">Siap Iklan</span>
+                    </div>
+                </div>
+                
+                <!-- Content Area -->
+                <div id="content-action-area" class="text-center py-8">
+                    <!-- Dynamic Content -->
+                    <div class="animate-pulse flex flex-col items-center">
+                        <div class="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4"></div>
+                        <div class="h-10 w-48 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Panel -->
+        <div id="panel-team" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl max-w-3xl mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">group</span>
+                        Penugasan Tim
+                    </h3>
+                    <div class="px-4 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                        <span class="text-xs text-slate-500 block">Total Komisi</span>
+                        <span id="total-commission" class="text-lg font-bold text-primary">Rp 0</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- CS -->
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Customer Service</p>
+                            <p class="text-xs text-slate-500">Menangani komunikasi dengan klien</p>
+                            <p id="comm-cs" class="text-xs font-bold text-success mt-1 hidden">Rp 0</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <select id="assign-cs" onchange="updateAssignment('CS', 'general', this.value)" class="w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm py-2 px-3 focus:ring-primary focus:border-primary">
+                                <option value="">Pilih CS...</option>
+                            </select>
+                            <span id="msg-cs" class="text-[10px] hidden">Saved!</span>
+                        </div>
+                    </div>
+                    <!-- Advertiser -->
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Advertiser</p>
+                            <p class="text-xs text-slate-500">Mengelola kampanye iklan</p>
+                            <p id="comm-advertiser" class="text-xs font-bold text-success mt-1 hidden">Rp 0</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <select id="assign-advertiser" onchange="updateAssignment('Advertiser', 'general', this.value)" class="w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm py-2 px-3 focus:ring-primary focus:border-primary">
+                                <option value="">Pilih Advertiser...</option>
+                            </select>
+                            <span id="msg-advertiser" class="text-[10px] hidden">Saved!</span>
+                        </div>
+                    </div>
+                    <!-- Team Bengkel -->
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Team Bengkel</p>
+                            <p class="text-xs text-slate-500">Teknis dan troubleshooting</p>
+                            <p id="comm-bengkel" class="text-xs font-bold text-success mt-1 hidden">Rp 0</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <select id="assign-bengkel" onchange="updateAssignment('Team Bengkel', 'general', this.value)" class="w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm py-2 px-3 focus:ring-primary focus:border-primary">
+                                <option value="">Pilih Team Bengkel...</option>
+                            </select>
+                            <span id="msg-bengkel" class="text-[10px] hidden">Saved!</span>
+                        </div>
+                    </div>
+                    <!-- Editor Image -->
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Editor (Image)</p>
+                            <p class="text-xs text-slate-500">Editor khusus konten gambar</p>
+                            <p id="comm-editor-image" class="text-xs font-bold text-success mt-1 hidden">Rp 0</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <select id="assign-editor-image" onchange="updateAssignment('Editor', 'image', this.value)" class="w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm py-2 px-3 focus:ring-primary focus:border-primary">
+                                <option value="">Pilih Editor Image...</option>
+                            </select>
+                            <span id="msg-editor-image" class="text-[10px] hidden">Saved!</span>
+                        </div>
+                    </div>
+                    <!-- Editor Video -->
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white">Editor (Video)</p>
+                            <p class="text-xs text-slate-500">Editor khusus konten video</p>
+                            <p id="comm-editor-video" class="text-xs font-bold text-success mt-1 hidden">Rp 0</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <select id="assign-editor-video" onchange="updateAssignment('Editor', 'video', this.value)" class="w-64 bg-white dark:bg-surface border border-slate-200 dark:border-white/10 rounded-lg text-sm py-2 px-3 focus:ring-primary focus:border-primary">
+                                <option value="">Pilih Editor Video...</option>
+                            </select>
+                            <span id="msg-editor-video" class="text-[10px] hidden">Saved!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keuangan Panel -->
+        <div id="panel-keuangan" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl w-full mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">payments</span>
+                        Rincian Komisi
+                    </h3>
+                    <div class="px-4 py-2 bg-success/10 rounded-lg border border-success/20">
+                        <span class="text-xs text-slate-500 block">Total Komisi Terhitung</span>
+                        <span id="total-commission-value" class="text-lg font-bold text-success">Rp 0</span>
+                    </div>
+                </div>
+
+                <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 dark:bg-white/5 text-xs uppercase font-bold text-slate-500">
+                            <tr>
+                                <th class="p-4">Role</th>
+                                <th class="p-4">Nama User</th>
+                                <th class="p-4">Tipe Konten</th>
+                                <th class="p-4 text-right">Jumlah Komisi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commission-list-body" class="divide-y divide-slate-100 dark:divide-white/5">
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-slate-500 italic">Memuat data komisi...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <p class="mt-4 text-xs text-slate-500 italic">
+                    * Komisi dihitung berdasarkan aturan paket dan peran user yang melakukan aksi (Input Order / Submit Konten).
+                </p>
+            </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <div id="include-footer"></div>
+</div>
+<script src="js/include.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  window.switchTab = function(tabName) {
+    // Hide all panels
+    document.querySelectorAll('.tab-content').forEach(function(el) {
+        el.classList.add('hidden');
+    });
+    // Show selected panel
+    var panel = document.getElementById('panel-' + tabName);
+    if (panel) {
+        panel.classList.remove('hidden');
+    } else {
+        // Fallback to client panel if no specific panel exists
+        if (tabName === 'client' && document.getElementById('panel-client')) {
+             document.getElementById('panel-client').classList.remove('hidden');
+        }
+    }
+    
+    // Update Tab Styles
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        if (btn.dataset.tab === tabName) {
+            btn.classList.remove('text-slate-500', 'dark:text-slate-400', 'border-transparent');
+            btn.classList.add('text-primary', 'border-primary', 'font-semibold');
+        } else {
+            btn.classList.add('text-slate-500', 'dark:text-slate-400', 'border-transparent');
+            btn.classList.remove('text-primary', 'border-primary', 'font-semibold');
+        }
+    });
+
+    // Load data if needed
+    const orderId = new URLSearchParams(window.location.search).get('id');
+    if (tabName === 'content') loadContentStatus(orderId);
+    if (tabName === 'team') loadTeamAssignments(orderId);
+    if (tabName === 'keuangan') loadCommissions(orderId);
+  };
+
+  async function loadCommissions(orderId) {
+      if (!orderId) return;
+      const tbody = document.getElementById('commission-list-body');
+      const totalEl = document.getElementById('total-commission-value');
+      
+      try {
+          const res = await fetch(`/api/orders/${orderId}/commissions`);
+          const data = await res.json();
+          
+          if (!Array.isArray(data)) {
+              tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-danger">Gagal memuat data</td></tr>';
+              return;
+          }
+          
+          if (data.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">Belum ada komisi terhitung.</td></tr>';
+              totalEl.textContent = 'Rp 0';
+              return;
+          }
+          
+          let total = 0;
+          let html = '';
+          
+          data.forEach(item => {
+              const amount = Number(item.amount || 0);
+              total += amount;
+              const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+              
+              html += `
+                  <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      <td class="p-4 font-bold capitalize text-slate-700 dark:text-slate-300">${item.role.replace('_', ' ')}</td>
+                      <td class="p-4 text-slate-900 dark:text-white font-medium">${item.user_name}</td>
+                      <td class="p-4 capitalize text-slate-500 text-xs">${item.content_type || '-'}</td>
+                      <td class="p-4 text-right font-mono font-bold text-success">${formattedAmount}</td>
+                  </tr>
+              `;
+          });
+          
+          tbody.innerHTML = html;
+          totalEl.textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(total);
+          
+      } catch (e) {
+          console.error(e);
+          tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-danger">Error: ' + e.message + '</td></tr>';
+      }
+  }
+
+  function q(k){ return document.getElementById(k); }
+  function getId(){
+    var s = new URLSearchParams(window.location.search);
+    return s.get("id");
+  }
+  function getRole(){
+    try { return localStorage.getItem("role") || "super_admin"; } catch(_) { return "super_admin"; }
+  }
+  function applyTabsByRole(role){
+    var tabs = document.querySelectorAll('.mt-2 .border-b button');
+    var show = {
+      super_admin: ['Data Klien','Konten','Campaign','Tim','Performa','Keuangan','Log'],
+      cs: ['Data Klien','Konten','Campaign','Tim'],
+      keuangan: ['Data Klien','Konten','Campaign','Keuangan','Log'],
+      editor: ['Data Klien','Konten','Campaign','Log'],
+      advertiser: ['Data Klien','Konten','Campaign','Performa','Log'],
+      crm: ['Data Klien','Konten','Campaign','Performa','Log']
+    }[role] || ['Data Klien','Konten','Campaign'];
+    tabs.forEach(function(btn){
+      var label = (btn.textContent || '').trim();
+      if (show.indexOf(label) === -1) btn.style.display = 'none';
+    });
+  }
+  function fmtUpdated(dt){
+    if (!dt) return "";
+    try {
+      var d = new Date(dt);
+      return "Terakhir diperbarui: " + d.toLocaleString();
+    } catch(_) {
+      return "";
+    }
+  }
+  applyTabsByRole(getRole());
+  var id = getId();
+  if (!id) return;
+  fetch("/api/orders/" + encodeURIComponent(id))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (!data || data.error) return;
+      var o = data.order || {};
+      var c = data.client || {};
+      var d = data.details || {};
+      var t = data.targets || {};
+      if (q("od-subtitle")) {
+        var sub = [];
+        if (c.business_name) sub.push(`<span class="font-bold text-slate-700 dark:text-slate-200">${c.business_name}</span>`);
+        if (o.id) sub.push("#" + o.id);
+        if (o.package_name) sub.push(o.package_name);
+        
+        var statusBadge = '';
+        var s = (o.status || '').toLowerCase();
+        
+        if (s === 'baru' || s === 'new') {
+            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30 ml-2"><span class="size-1.5 rounded-full bg-blue-500 dark:bg-blue-400"></span>Baru</span>';
+        } else if (s === 'proses konten') {
+            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30 ml-2"><span class="size-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse"></span>Proses Konten</span>';
+        } else if (s === 'siap iklan') {
+            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30 ml-2"><span class="size-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400"></span>Siap Iklan</span>';
+        } else if (s === 'perpanjang' || s === 'extend' || s === 'repeat') {
+            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-purple-500/10 text-purple-600 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30 ml-2"><span class="size-1.5 rounded-full bg-purple-500 dark:bg-purple-400"></span>Perpanjang</span>';
+        } else {
+             // Default or other status
+             if (s) statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-500/10 text-slate-600 border border-slate-500/20 dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/30 ml-2">' + s + '</span>';
+        }
+        
+        q("od-subtitle").innerHTML = sub.join(" • ") + statusBadge;
+        q("od-subtitle").className = "text-secondary/80 text-sm mt-1 flex items-center flex-wrap gap-y-1";
+      }
+
+      // Campaign Logic based on Status
+      var s = (o.status || '').toLowerCase();
+      var btnCreate = document.getElementById('btn-create-campaign');
+      
+      if (s === 'perpanjang' || s === 'extend' || s === 'repeat') {
+          if (btnCreate) {
+              btnCreate.disabled = true;
+              btnCreate.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+              btnCreate.innerHTML = '<span class="material-symbols-outlined">block</span> Kampanye Existing';
+          }
+      } else {
+          // Status is BARU or others, enable button and reset metrics if BARU
+          if (btnCreate) {
+              btnCreate.disabled = false;
+              btnCreate.classList.remove('opacity-50', 'cursor-not-allowed', 'grayscale');
+              btnCreate.innerHTML = '<span class="material-symbols-outlined">add</span> Buat Kampanye';
+              
+              // Attach click event to open modal with current data
+              btnCreate.onclick = function() {
+                  openCampaignModal(c, o);
+              };
+          }
+          
+          if (s === 'baru' || s === 'new') {
+             // Reset metrics
+             if (q("metric-impressions")) q("metric-impressions").textContent = "0";
+             if (q("metric-clicks")) q("metric-clicks").textContent = "0";
+             if (q("metric-ctr")) q("metric-ctr").textContent = "0%";
+             if (q("metric-spend")) q("metric-spend").textContent = "Rp 0";
+             
+             // Hide percentage indicators
+             document.querySelectorAll('#panel-campaign .text-success, #panel-campaign .text-danger').forEach(function(el) {
+                 if (el.textContent.includes('%')) el.style.display = 'none';
+             });
+          }
+      }
+      if (q("client-name")) q("client-name").textContent = c.name || "";
+      if (q("client-wa")) q("client-wa").textContent = c.whatsapp || "";
+      if (q("business-name")) q("business-name").textContent = c.business_name || "";
+      if (q("client-address")) q("client-address").textContent = c.address || "";
+      if (q("brief-objectives")) q("brief-objectives").textContent = d && d.description ? d.description : "";
+      if (q("brief-notes")) q("brief-notes").textContent = o && o.notes ? o.notes : (d && d.promo ? d.promo : "");
+      if (q("brief-updated")) q("brief-updated").textContent = fmtUpdated(o && o.updated_at ? o.updated_at : o && o.created_at ? o.created_at : null);
+      
+      // --- Campaign Logic Update ---
+      // Populate hidden inputs for campaign creation
+      if (q("input-order-id")) q("input-order-id").value = o.id || '';
+      if (q("input-package-id")) q("input-package-id").value = o.package_id || '';
+      // Use client id from order or client object
+      var clientId = o.client_id || (c.id || '');
+      if (q("input-client-id")) q("input-client-id").value = clientId;
+
+      // Load Campaigns List
+      if (o.id) {
+          loadCampaigns(o.id);
+          // Load Content Status
+          loadContentStatus(o.id);
+      }
+      // -----------------------------
+
+      // Target Audience
+      var tList = q("target-list");
+      if (tList) {
+          var items = [];
+          if (t.locations) items.push({ icon: 'location_on', text: t.locations });
+          if (t.age_range) items.push({ icon: 'groups', text: 'Usia: ' + t.age_range });
+          if (t.gender) items.push({ icon: 'wc', text: 'Gender: ' + t.gender });
+          
+          tList.innerHTML = items.map(function(i) {
+              return '<li class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">' +
+                  '<span class="material-symbols-outlined text-primary text-base">' + i.icon + '</span>' +
+                  '<span>' + i.text + '</span>' +
+              '</li>';
+          }).join('');
+      }
+
+      // Key Selling Points
+      var uList = q("usp-list");
+      if (uList) {
+          var usps = [];
+          if (d.advantages) usps = usps.concat(d.advantages.split('\n'));
+          if (d.uniqueness) usps = usps.concat(d.uniqueness.split('\n'));
+          
+          uList.innerHTML = usps.filter(function(s){ return s.trim().length > 0; }).map(function(s) {
+              return '<li class="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">' +
+                  '<span class="material-symbols-outlined text-success text-base mt-0.5">bolt</span>' +
+                  '<span class="leading-snug">' + s.trim() + '</span>' +
+              '</li>';
+          }).join('');
+      }
+      
+      // Render Service Details
+      var meta = o.meta_data || {};
+      if (typeof meta === 'string') {
+        try { meta = JSON.parse(meta); } catch(e) { meta = {}; }
+      }
+      
+      var panel = document.getElementById('service-details-panel');
+      var content = document.getElementById('service-meta-content');
+      var badge = document.getElementById('service-type-badge');
+      var stype = (o.service_type || 'ads').toLowerCase();
+      
+      var targetUspSection = document.getElementById('target-usp-section');
+      if (targetUspSection) {
+          if (stype === 'ads') {
+              targetUspSection.classList.remove('hidden');
+          } else {
+              targetUspSection.classList.add('hidden');
+          }
+      }
+      
+      var briefCard = document.getElementById('brief-card-container');
+      
+      if (stype === 'ads') {
+          if (briefCard) {
+              briefCard.classList.remove('hidden');
+          }
+      } else {
+          // Hide Brief Card for non-ads services
+          if (briefCard) {
+              briefCard.classList.add('hidden');
+          }
+      }
+      
+      if (panel && content && Object.keys(meta).length > 0) {
+        panel.classList.remove('hidden');
+        
+        var badgeClass = "text-slate-600 border-slate-200 bg-slate-100 dark:text-slate-300 dark:border-white/20 dark:bg-white/10";
+        if (stype === 'ads') badgeClass = "text-blue-600 border-blue-200 bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:bg-blue-900/20";
+        else if (stype === 'creative') badgeClass = "text-purple-600 border-purple-200 bg-purple-50 dark:text-purple-400 dark:border-purple-800 dark:bg-purple-900/20";
+        else if (stype === 'development') badgeClass = "text-emerald-600 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:bg-emerald-900/20";
+        
+        if (badge) {
+            badge.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ml-2 " + badgeClass;
+            badge.textContent = stype.replace(/_/g, ' ');
+        }
+
+        var html = '';
+        for (var key in meta) {
+           if (meta.hasOwnProperty(key)) {
+             var val = meta[key];
+             if(!val) continue;
+             
+             var label = key.replace(stype + '_', '').replace(/_/g, ' ');
+             label = label.charAt(0).toUpperCase() + label.slice(1);
+             
+             if (key.includes('budget') || key.includes('price')) {
+                try { val = 'Rp ' + Number(val).toLocaleString('id-ID'); } catch(_) {}
+             }
+             
+             html += `
+               <div>
+                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-0.5">${label}</p>
+                 <p class="text-sm text-slate-900 dark:text-white font-semibold leading-snug break-words">${val}</p>
+               </div>
+             `;
+           }
+        }
+        content.innerHTML = html;
+      }
+    })
+    .catch(function(){});
+});
+
+// Campaign Modal Logic
+function openCampaignModal(client, order) {
+    var modal = document.getElementById('campaign-modal');
+    if (!modal) return;
+    
+    // Auto-fill Campaign Name
+    // Format: ON-Nama Usaha Klien-TanggalPembuatan+DurasiIklan-NoHandphone
+    // Example: ON-BIG Media Advertising-12112025+10-628973668569
+    
+    var businessName = (client.business_name || 'Client').trim();
+    var phone = (client.whatsapp || '').replace(/[^0-9]/g, '');
+    
+    // Date formatting (DDMMYYYY)
+    var dateStr = '';
+    if (order.created_at) {
+        var d = new Date(order.created_at);
+        var dd = String(d.getDate()).padStart(2, '0');
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var yyyy = d.getFullYear();
+        dateStr = dd + mm + yyyy;
+    } else {
+        // Fallback to today if no created_at
+        var d = new Date();
+        var dd = String(d.getDate()).padStart(2, '0');
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var yyyy = d.getFullYear();
+        dateStr = dd + mm + yyyy;
+    }
+    
+    // Duration
+    var duration = '';
+    // Try to find duration in meta_data or infer from package name if possible
+    var meta = order.meta_data || {};
+    if (typeof meta === 'string') {
+        try { meta = JSON.parse(meta); } catch(e) { meta = {}; }
+    }
+    
+    // Check for duration in meta
+    if (meta.duration) duration = meta.duration;
+    else if (meta.ads_duration) duration = meta.ads_duration;
+    else {
+        // Infer from package name (e.g., "Package A (30 Days)")
+        var pkg = order.package_name || '';
+        var match = pkg.match(/(\d+)\s*(Hari|Days)/i);
+        if (match) duration = match[1];
+        else duration = '30'; // Default
+    }
+    
+    // Construct Name
+    // Clean Business Name: Remove special chars, spaces to -, max 20 chars
+    var cleanName = businessName.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').substring(0, 20);
+    
+    var campaignName = `ON-${cleanName}-${dateStr}+${duration}-${phone}`;
+    
+    // Set to Input
+    var nameInput = document.getElementById('input-campaign-name');
+    if (nameInput) nameInput.value = campaignName;
+    
+    // Set Duration Input
+    var durationInput = document.getElementById('input-duration');
+    if (durationInput) durationInput.value = duration;
+    
+    // Clear previous status messages
+    const statusMsg = document.getElementById('campaign-status-message');
+    if (statusMsg) {
+        statusMsg.classList.add('hidden');
+        statusMsg.className = 'hidden rounded-md p-4 text-sm font-medium';
+        statusMsg.innerHTML = '';
+    }
+    // Reset button state
+    const btnSave = document.getElementById('btn-save-process');
+    if (btnSave) {
+        btnSave.disabled = false;
+        btnSave.innerHTML = 'Simpan & Proses';
+    }
+
+    // Populate Dropdowns from API (Meta Ads Config)
+    fetch('/api/meta-config')
+        .then(response => response.json())
+        .then(config => {
+            // Populate Ad Accounts
+            var adAccountSelect = document.getElementById('select-ad-account');
+            if (adAccountSelect) {
+                adAccountSelect.innerHTML = '<option value="">-- Pilih Ad Account --</option>';
+                if (config.accounts && Array.isArray(config.accounts)) {
+                    config.accounts.forEach(function(acc) {
+                        var opt = document.createElement('option');
+                        opt.value = acc.id;
+                        opt.textContent = (acc.name || 'Account') + ' (' + acc.id + ')';
+                        adAccountSelect.appendChild(opt);
+                    });
+                }
+            }
+            
+            // Populate Fanspages
+            var fanspageSelect = document.getElementById('select-fanspage');
+            if (fanspageSelect) {
+                fanspageSelect.innerHTML = '<option value="">-- Pilih Fanspage --</option>';
+                if (config.fanspages && Array.isArray(config.fanspages)) {
+                    config.fanspages.forEach(function(fp) {
+                        var opt = document.createElement('option');
+                        opt.value = fp.id;
+                        opt.textContent = (fp.name || 'Page') + ' (' + fp.id + ')';
+                        fanspageSelect.appendChild(opt);
+                    });
+                }
+            }
+        })
+        .catch(e => console.error("Error loading meta config:", e));
+    
+    modal.classList.remove('hidden');
+}
+
+// Close Modal
+function closeCampaignModal() {
+    var modal = document.getElementById('campaign-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+// Toggle Improvements
+function toggleImprovements(id) {
+    const row = document.getElementById(`imp-row-${id}`);
+    const icon = document.getElementById(`icon-expand-${id}`);
+    if (row) {
+        if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+        } else {
+            row.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+// Load Campaigns List
+async function loadCampaigns(orderId) {
+    if (!orderId) return;
+    
+    const tbody = document.getElementById('campaign-list-body');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Memuat data kampanye...</td></tr>';
+    
+    try {
+        const response = await fetch(`/api/orders/${orderId}/campaigns`);
+        const campaigns = await response.json();
+        
+        if (campaigns.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Belum ada kampanye untuk pesanan ini.</td></tr>';
+            return;
+        }
+        
+        let totalImpressions = 0;
+        let totalClicks = 0;
+        let totalSpend = 0;
+        let totalResults = 0;
+        
+        let html = '';
+        campaigns.forEach(camp => {
+            // Aggregate totals
+            totalImpressions += Number(camp.impressions || 0);
+            totalClicks += Number(camp.clicks || 0);
+            totalSpend += Number(camp.spend || 0);
+            totalResults += Number(camp.results || 0);
+
+            const statusClass = camp.status === 'ACTIVE' ? 'bg-success/10 text-success border-success/20' : 
+                              camp.status === 'PAUSED' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20 dark:text-yellow-400' : 
+                              'bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400';
+            
+            // Format currency
+            const spend = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(camp.spend || 0);
+            
+            // Format Targeting Data
+            let targetingHtml = '<span class="text-xs text-slate-400 italic">No Data</span>';
+            if (camp.targeting) {
+                try {
+                    const tData = typeof camp.targeting === 'string' ? JSON.parse(camp.targeting) : camp.targeting;
+                    if (Array.isArray(tData) && tData.length > 0) {
+                        const t = tData[0].targeting; // Take first adset for now
+                        const locs = t.geo_locations ? (t.geo_locations.countries || []).join(', ') : '-';
+                        const age = (t.age_min || '?') + ' - ' + (t.age_max || '?');
+                        
+                        let gender = 'All';
+                        if (t.genders) {
+                             if (t.genders.length === 1 && t.genders[0] === 1) gender = 'Male';
+                             else if (t.genders.length === 1 && t.genders[0] === 2) gender = 'Female';
+                        }
+                        
+                        targetingHtml = `
+                            <div class="text-[10px] leading-tight text-slate-600 dark:text-slate-400">
+                                <div><span class="font-bold">Loc:</span> ${locs}</div>
+                                <div><span class="font-bold">Age:</span> ${age}</div>
+                                <div><span class="font-bold">Gender:</span> ${gender}</div>
+                            </div>
+                        `;
+                    }
+                } catch (e) {
+                    console.error('Error parsing targeting:', e);
+                }
+            }
+
+            // Facebook Ads Manager Link
+            // Format: https://adsmanager.facebook.com/adsmanager/manage/campaigns?act={account_id}&filter_set=...&nav_source=no_referrer
+            
+            let actId = camp.ad_account_id || '';
+            // Handle "Name - ID" format (e.g., "R10 - 123456789") or "act_123456789"
+            // We want just the numeric ID part.
+            // If it contains " - ", split and take the last part.
+            if (actId.includes(' - ')) {
+                actId = actId.split(' - ').pop();
+            } else if (actId.includes('-')) {
+                 // Fallback if hyphen without spaces
+                 // Check if the part after hyphen is numeric
+                 const parts = actId.split('-');
+                 const lastPart = parts[parts.length - 1];
+                 if (/^\d+$/.test(lastPart)) {
+                     actId = lastPart;
+                 }
+            }
+
+            // Strip 'act_' prefix if present
+            if (actId.startsWith('act_')) {
+                actId = actId.substring(4);
+            }
+            // Ensure we have only digits/numeric string for act parameter
+            actId = actId.trim();
+
+            // Construct filter_set
+            // Logic: Extract keyword after "ON-" from campaign name.
+            // Example: "ON-Veronica-..." -> "Veronica"
+            
+            let searchKeyword = camp.campaign_name || '';
+            if (searchKeyword.startsWith('ON-')) {
+                const parts = searchKeyword.split('-');
+                if (parts.length >= 2) {
+                    searchKeyword = parts[1]; // Take the part after "ON-"
+                }
+            } else {
+                // Fallback: use first word if not ON- format, or just the whole name?
+                // User said "ambil kata pertama setelah ON-". If no ON-, maybe just use the whole name or nothing?
+                // Let's use the whole name as fallback to be safe, or maybe the first word.
+                // Let's stick to the name to ensure something is found.
+            }
+            
+            const innerJson = JSON.stringify([searchKeyword]);
+            const escapedJson = innerJson.replace(/"/g, '\\"');
+            const outerString = `"${escapedJson}"`;
+            const encodedValue = encodeURIComponent(outerString);
+            
+            // Record Separator is \x1E (encoded as %1E)
+            const filterSet = `SEARCH_BY_CAMPAIGN_GROUP_NAME-STRING%1ECONTAINS_ALL%1E${encodedValue}`;
+            
+            const fbLink = `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${actId}&filter_set=${filterSet}&nav_source=no_referrer`;
+
+            html += `
+                <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                        <div>${camp.campaign_name}</div>
+                        <a href="${fbLink}" target="_blank" class="text-[10px] text-primary hover:underline font-mono mt-0.5 flex items-center gap-1 w-fit" title="Buka di Ads Manager">
+                            ${camp.campaign_id}
+                            <span class="material-symbols-outlined text-[10px]">open_in_new</span>
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-slate-700 dark:text-slate-300">${camp.ad_account_name || '-'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${camp.ad_account_id || ''}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        ${targetingHtml}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight border ${statusClass}">
+                            <span class="size-1.5 rounded-full bg-current"></span>
+                            ${camp.status || 'UNKNOWN'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right font-mono text-xs">${Number(camp.impressions).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-right font-mono text-xs">${Number(camp.clicks).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-right font-mono text-xs">${camp.ctr}%</td>
+                    <td class="px-6 py-4 text-right font-mono text-xs">${spend}</td>
+                    <td class="px-6 py-4 text-right font-mono text-xs">
+                        <div>${Number(camp.results || 0).toLocaleString('id-ID')}</div>
+                        <div class="text-[10px] text-slate-400">${camp.result_type || 'Results'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="syncCampaign(${camp.id})" class="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Sync Metrics">
+                                <span class="material-symbols-outlined text-lg">sync</span>
+                            </button>
+                            <button onclick="openImprovementModal(${camp.id}, '${camp.campaign_name}')" class="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors" title="Perbaikan Kampanye (Bengkel)">
+                                <span class="material-symbols-outlined text-lg">edit</span>
+                            </button>
+                            ${camp.improvements && camp.improvements.length > 0 ? `
+                                <button onclick="toggleImprovements(${camp.id})" class="p-1.5 text-slate-500 hover:bg-slate-500/10 rounded-lg transition-colors" title="Lihat Riwayat Perbaikan">
+                                    <span id="icon-expand-${camp.id}" class="material-symbols-outlined text-lg transition-transform">expand_more</span>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+                ${camp.improvements && camp.improvements.length > 0 ? `
+                <tr id="imp-row-${camp.id}" class="hidden bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
+                    <td colspan="10" class="p-4 pl-12">
+                        <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                            <div class="px-4 py-2 bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-500 text-sm">history</span>
+                                    Riwayat Perbaikan
+                                </h4>
+                                <span class="text-[10px] text-slate-400">${camp.improvements.length} catatan</span>
+                            </div>
+                            <table class="w-full text-left text-xs">
+                                <thead class="text-slate-400 font-medium border-b border-slate-100 dark:border-white/5">
+                                    <tr>
+                                        <th class="px-4 py-2 w-24">Tanggal</th>
+                                        <th class="px-4 py-2 w-32">Oleh</th>
+                                        <th class="px-4 py-2">Detail Perbaikan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-white/5 text-slate-600 dark:text-slate-400">
+                                    ${camp.improvements.map(imp => `
+                                        <tr>
+                                            <td class="px-4 py-2 font-mono text-[10px]">
+                                                ${new Date(imp.improvement_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})}
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <div class="flex items-center gap-1.5">
+                                                    <div class="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+                                                        ${(imp.user_name || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span>${imp.user_name || 'Unknown'}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-2 italic">
+                                                "${imp.details}"
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+                ` : ''}
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        
+        // Update Summary Cards
+        if (document.getElementById('metric-impressions')) document.getElementById('metric-impressions').textContent = totalImpressions.toLocaleString('id-ID');
+        if (document.getElementById('metric-clicks')) document.getElementById('metric-clicks').textContent = totalClicks.toLocaleString('id-ID');
+        if (document.getElementById('metric-spend')) document.getElementById('metric-spend').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalSpend);
+        if (document.getElementById('metric-results')) document.getElementById('metric-results').textContent = totalResults.toLocaleString('id-ID');
+        
+        // Calculate CTR
+        const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
+        if (document.getElementById('metric-ctr')) document.getElementById('metric-ctr').textContent = avgCtr + '%';
+        
+    } catch (error) {
+        console.error('Error loading campaigns:', error);
+        tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-danger italic">Gagal memuat data kampanye.</td></tr>';
+    }
+}
+
+// Sync Campaign Metrics
+async function syncCampaign(campaignId) {
+    if (!campaignId) return;
+    
+    // Get current filter settings
+    const presetSelect = document.getElementById('date-preset-select');
+    const preset = presetSelect ? presetSelect.value : 'last_7d';
+    let timeRange = null;
+    
+    if (preset === 'custom') {
+        const start = document.getElementById('date-start').value;
+        const end = document.getElementById('date-end').value;
+        if (start && end) timeRange = { since: start, until: end };
+    }
+
+    // Find button to show loading state
+    const btn = event.currentTarget;
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span>';
+    
+    try {
+        const response = await fetch(`/api/campaigns/${campaignId}/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                date_preset: preset === 'custom' ? undefined : preset,
+                time_range: timeRange
+            })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            // Reload list to show updated data
+            const orderId = document.getElementById('input-order-id').value;
+            if (orderId) loadCampaigns(orderId);
+            
+            // Optional: Show toast success
+        } else {
+            alert('Sync failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Sync error:', error);
+        alert('Sync error: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    }
+}
+
+async function processCampaignCreation(btn) {
+    const statusMsg = document.getElementById('campaign-status-message');
+    const campaignName = document.getElementById('input-campaign-name').value;
+    const adAccountId = document.getElementById('select-ad-account').value;
+    const fanspageId = document.getElementById('select-fanspage').value;
+    const duration = document.getElementById('input-duration') ? document.getElementById('input-duration').value : 30;
+    const orderId = document.getElementById('input-order-id') ? document.getElementById('input-order-id').value : null;
+    const clientId = document.getElementById('input-client-id') ? document.getElementById('input-client-id').value : null;
+    
+    // Extract Business Name from Campaign Name (ON-BusinessName-...) or use global variable
+    // Format: ON-BusinessName-Date+Dur-Phone
+    let businessName = "Business";
+    if (typeof order !== 'undefined' && order.client_name) {
+        businessName = order.client_name; // Fallback
+    }
+    // Try to parse from campaign name if strictly formatted
+    const parts = campaignName.split('-');
+    if (parts.length >= 2 && parts[0] === 'ON') {
+        businessName = parts[1];
+    }
+    
+    // Basic Validation
+    if (!adAccountId) {
+        alert('Mohon pilih Ad Account terlebih dahulu.');
+        return;
+    }
+    if (!fanspageId) {
+        alert('Mohon pilih Fanspage terlebih dahulu.');
+        return;
+    }
+    
+    // UI Loading State
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm mr-2">refresh</span> Processing...';
+    
+    if (statusMsg) {
+        statusMsg.classList.add('hidden');
+        statusMsg.className = 'hidden rounded-md p-4 text-sm font-medium';
+        statusMsg.innerHTML = '';
+    }
+    
+    try {
+        const payload = {
+            name: campaignName,
+            ad_account_id: adAccountId,
+            page_id: fanspageId,
+            duration: duration,
+            business_name: businessName
+        };
+        
+        if (orderId) payload.order_id = orderId;
+        if (clientId) payload.client_id = clientId;
+
+        // Add User Info for Assignment (Advertiser)
+        const currentUserId = localStorage.getItem('userId');
+        const currentUserRole = localStorage.getItem('userRole');
+        if (currentUserId) payload.userId = currentUserId;
+        if (currentUserRole) payload.userRole = currentUserRole;
+
+        const response = await fetch('/api/meta/campaigns', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        
+        if (statusMsg) {
+            statusMsg.classList.remove('hidden');
+            if (response.ok && result.success) {
+                // Success
+                statusMsg.classList.add('bg-green-50', 'text-green-700', 'border', 'border-green-200');
+                const campId = result.data.id || 'Unknown ID';
+                statusMsg.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg">check_circle</span>
+                        <strong>Berhasil!</strong>
+                    </div>
+                    <p class="mt-1">Campaign berhasil diduplikasi dan dibuat.</p>
+                    <p class="mt-1 font-mono text-xs">ID: ${campId}</p>
+                `;
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm mr-2">check</span> Selesai';
+                
+                // Refresh Campaign List
+                if (orderId) {
+                    loadCampaigns(orderId);
+                }
+                
+                // Close modal after 2 seconds
+                setTimeout(() => {
+                    closeCampaignModal();
+                    // Reset button
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    statusMsg.classList.add('hidden');
+                }, 2000);
+                
+            } else {
+                // Error
+                statusMsg.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-200');
+                const errMsg = result.error || 'Unknown error occurred';
+                statusMsg.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg">error</span>
+                        <strong>Gagal!</strong>
+                    </div>
+                    <p class="mt-1">${errMsg}</p>
+                `;
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    } catch (e) {
+        console.error("Error creating campaign:", e);
+        if (statusMsg) {
+            statusMsg.classList.remove('hidden');
+            statusMsg.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-200');
+            statusMsg.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">error</span>
+                    <strong>Error Sistem!</strong>
+                </div>
+                <p class="mt-1">${e.message}</p>
+            `;
+        }
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+</script>
+
+<!-- Campaign Modal -->
+<div id="campaign-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm transition-opacity"></div>
+
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-surface text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-slate-200 dark:border-white/10">
+        <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 sm:mx-0 sm:h-10 sm:w-10">
+              <span class="material-symbols-outlined text-primary">campaign</span>
+            </div>
+            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+              <h3 class="text-lg font-semibold leading-6 text-slate-900 dark:text-white" id="modal-title">Buat Kampanye Baru</h3>
+              <div class="mt-4 space-y-4">
+                
+                <!-- Campaign Name -->
+                <div>
+                  <label for="input-campaign-name" class="block text-sm font-medium leading-6 text-slate-900 dark:text-white">Nama Kampanye</label>
+                  <div class="mt-2">
+                    <input type="text" name="campaign-name" id="input-campaign-name" disabled
+                      class="block w-full rounded-lg border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-slate-100 dark:bg-white/5 dark:text-slate-300 dark:ring-white/10 cursor-not-allowed">
+                      <p class="mt-1 text-xs text-slate-500">Format otomatis: ON-Nama Usaha-Tanggal+Durasi-NoHP</p>
+                  </div>
+                </div>
+
+                <!-- Ad Account -->
+                <div>
+                  <label for="select-ad-account" class="block text-sm font-medium leading-6 text-slate-900 dark:text-white">Pilih Ad Account</label>
+                  <div class="mt-2">
+                    <select id="select-ad-account" name="ad-account" class="block w-full rounded-lg border-0 py-2.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-primary sm:text-sm sm:leading-6 dark:bg-white/5 dark:text-white dark:ring-white/10">
+                      <option value="">-- Pilih Ad Account --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Fanspage -->
+                <div>
+                  <label for="select-fanspage" class="block text-sm font-medium leading-6 text-slate-900 dark:text-white">Pilih Fanspage</label>
+                  <div class="mt-2">
+                    <select id="select-fanspage" name="fanspage" class="block w-full rounded-lg border-0 py-2.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-primary sm:text-sm sm:leading-6 dark:bg-white/5 dark:text-white dark:ring-white/10">
+                      <option value="">-- Pilih Fanspage --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Hidden inputs for logic -->
+                <input type="hidden" id="input-duration" value="30">
+                <input type="hidden" id="input-order-id">
+                <input type="hidden" id="input-client-id">
+                <input type="hidden" id="input-package-id">
+                
+                <!-- Status Message Area -->
+                <div id="campaign-status-message" class="hidden rounded-md p-4 text-sm font-medium"></div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-50 dark:bg-white/5 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-slate-100 dark:border-white/5">
+          <button type="button" id="btn-save-process" class="inline-flex w-full justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110 sm:ml-3 sm:w-auto transition-all" onclick="processCampaignCreation(this)">Simpan & Proses</button>
+          <button type="button" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white dark:bg-transparent px-3 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-white/5 sm:mt-0 sm:w-auto transition-all" onclick="closeCampaignModal()">Batal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Improvement Modal -->
+<div class="relative z-10 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="improvement-modal">
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"></div>
+  <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-xl bg-white dark:bg-slate-900 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-slate-200 dark:border-white/10">
+        <div class="bg-white dark:bg-slate-900 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/10 sm:mx-0 sm:h-10 sm:w-10">
+              <span class="material-symbols-outlined text-amber-500">handyman</span>
+            </div>
+            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+              <h3 class="text-lg font-semibold leading-6 text-slate-900 dark:text-white" id="improvement-modal-title">Input Perbaikan Kampanye</h3>
+              <div class="mt-4 space-y-4">
+                
+                <input type="hidden" id="input-imp-campaign-id">
+                
+                <!-- Campaign Info -->
+                <div class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                    Kampanye: <span id="display-imp-campaign-name" class="font-medium text-slate-900 dark:text-white"></span>
+                </div>
+
+                <!-- Detail Perbaikan -->
+                <div>
+                  <label for="input-imp-details" class="block text-sm font-medium leading-6 text-slate-900 dark:text-white">Detail Perbaikan</label>
+                  <div class="mt-2">
+                    <textarea id="input-imp-details" rows="4" class="block w-full rounded-lg border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-white/5 dark:text-white dark:ring-white/10" placeholder="Jelaskan detail perbaikan yang dilakukan..."></textarea>
+                  </div>
+                </div>
+
+                <!-- Tanggal Perbaikan -->
+                <div>
+                  <label for="input-imp-date" class="block text-sm font-medium leading-6 text-slate-900 dark:text-white">Tanggal Perbaikan</label>
+                  <div class="mt-2">
+                    <input type="date" id="input-imp-date" class="block w-full rounded-lg border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 dark:bg-white/5 dark:text-white dark:ring-white/10">
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-50 dark:bg-white/5 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-slate-100 dark:border-white/5">
+          <button type="button" id="btn-save-improvement" class="inline-flex w-full justify-center rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 sm:ml-3 sm:w-auto transition-all" onclick="submitImprovement(this)">Simpan</button>
+          <button type="button" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white dark:bg-transparent px-3 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-white/10 hover:bg-slate-50 dark:hover:bg-white/5 sm:mt-0 sm:w-auto transition-all" onclick="closeImprovementModal()">Batal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openImprovementModal(campaignId, campaignName) {
+    const modal = document.getElementById('improvement-modal');
+    const inputId = document.getElementById('input-imp-campaign-id');
+    const displayName = document.getElementById('display-imp-campaign-name');
+    const inputDate = document.getElementById('input-imp-date');
+    const inputDetails = document.getElementById('input-imp-details');
+    
+    if (modal && inputId && displayName) {
+        inputId.value = campaignId;
+        displayName.textContent = campaignName;
+        
+        // Reset fields
+        if (inputDetails) inputDetails.value = '';
+        if (inputDate) {
+            const today = new Date().toISOString().split('T')[0];
+            inputDate.value = today;
+        }
+        
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeImprovementModal() {
+    const modal = document.getElementById('improvement-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function submitImprovement(btn) {
+    const campaignId = document.getElementById('input-imp-campaign-id').value;
+    const details = document.getElementById('input-imp-details').value;
+    const date = document.getElementById('input-imp-date').value;
+    // Check multiple possible keys for user ID
+    const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+    
+    if (!campaignId || !details || !date) {
+        alert('Mohon lengkapi semua field.');
+        return;
+    }
+    
+    if (!userId) {
+        alert('Sesi user tidak valid. Silakan login ulang.');
+        return;
+    }
+    
+    // Disable button
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Menyimpan...';
+    
+    try {
+        const response = await fetch(`/api/campaigns/${campaignId}/improvements`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userId: userId,
+                details: details,
+                date: date
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Data perbaikan berhasil disimpan dan komisi telah dihitung.');
+            closeImprovementModal();
+            // Refresh order details to update commission table if visible (optional)
+            // But we might want to refresh campaigns list or assignments
+            // location.reload(); // Simple reload to refresh everything
+        } else {
+            alert('Gagal menyimpan: ' + (result.error || 'Unknown error'));
+        }
+    } catch (e) {
+        console.error('Error submitting improvement:', e);
+        alert('Terjadi kesalahan saat menyimpan data.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+// Date Filter Logic
+async function handleDateFilterChange() {
+    const preset = document.getElementById('date-preset-select').value;
+    const customInputs = document.getElementById('custom-date-inputs');
+    const label = document.getElementById('active-period-label');
+    
+    // Update Label
+    const presetLabels = {
+        'last_7d': 'Last 7 Days',
+        'today': 'Hari Ini',
+        'yesterday': 'Kemarin',
+        'this_month': 'Bulan Ini',
+        'last_30d': 'Last 30 Days',
+        'maximum': 'Lifetime',
+        'custom': 'Custom'
+    };
+    label.textContent = presetLabels[preset] || preset;
+
+    if (preset === 'custom') {
+        customInputs.classList.remove('hidden');
+    } else {
+        customInputs.classList.add('hidden');
+        await triggerBatchSync(preset);
+    }
+}
+
+async function applyCustomDateFilter() {
+    const start = document.getElementById('date-start').value;
+    const end = document.getElementById('date-end').value;
+    if (!start || !end) {
+        alert('Mohon pilih tanggal mulai dan selesai');
+        return;
+    }
+    const label = document.getElementById('active-period-label');
+    label.textContent = `${start} - ${end}`;
+    
+    await triggerBatchSync('custom', { since: start, until: end });
+}
+
+async function triggerBatchSync(preset = null, timeRange = null) {
+    if (!preset) {
+        preset = document.getElementById('date-preset-select').value;
+        if (preset === 'custom') {
+             const start = document.getElementById('date-start').value;
+             const end = document.getElementById('date-end').value;
+             if (start && end) timeRange = { since: start, until: end };
+             else if (!timeRange) return; // Don't sync if incomplete custom
+        }
+    }
+
+    const btn = document.getElementById('btn-sync-all');
+    if (!btn) return;
+    
+    const originalIcon = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">sync</span>';
+    
+    // Show loading on table?
+    const tbody = document.getElementById('campaign-list-body');
+    if (tbody) tbody.style.opacity = '0.5';
+
+    try {
+        const orderId = document.getElementById('input-order-id').value;
+        const response = await fetch(`/api/orders/${orderId}/campaigns/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                date_preset: preset === 'custom' ? undefined : preset,
+                time_range: timeRange 
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            // Reload campaigns to show updated data
+            await loadCampaigns(orderId);
+            // Optional: Show toast success
+        } else {
+            console.error('Sync failed:', result.error);
+            alert('Gagal sinkronisasi: ' + (result.error || 'Unknown error'));
+        }
+    } catch (e) {
+        console.error('Sync error:', e);
+        alert('Terjadi kesalahan saat sinkronisasi');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalIcon;
+        if (tbody) tbody.style.opacity = '1';
+    }
+}
+
+</script>
+</body></html>

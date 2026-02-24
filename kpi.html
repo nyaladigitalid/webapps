@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps – Team KPI &amp; Audit</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#ef7225",
+        secondary: "#0d3b66",
+        "background-light": "#f5f7f8",
+        "background-dark": "#0b0e14",
+        "sidebar-dark": "#101922"
+      },
+      fontFamily: { display: ["Inter", "sans-serif"] },
+      borderRadius: { DEFAULT: "0.5rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }
+    }
+  }
+};
+</script>
+<style>
+body { font-family: 'Inter', sans-serif; }
+.glass-surface {
+  background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%),
+              radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+  background: rgba(6, 12, 31, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+.glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+.glass-dark { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="team">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+  <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+  <div id="include-header"></div>
+  <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+    <div id="include-sidebar"></div>
+    <main class="flex-1 min-w-0">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-black tracking-tight">Manajemen Tim &amp; KPI</h2>
+          <p class="text-secondary/80 text-sm mt-1">Pantau performa tim dan catatan aktivitas.</p>
+        </div>
+        <div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full px-3 py-1.5 w-72">
+          <span class="material-symbols-outlined text-[#90aecb] text-lg">search</span>
+          <input type="text" placeholder="Cari anggota atau aktivitas..." class="bg-transparent border-none focus:ring-0 text-sm text-white placeholder-[#90aecb] w-full">
+        </div>
+      </div>
+      <div class="space-y-8">
+<!-- Team Section -->
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Team List Table (Main Column) -->
+<div class="xl:col-span-2 space-y-4">
+<div class="glass dark:glass-dark rounded-xl overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+<th class="px-6 py-4">Nama</th>
+<th class="px-6 py-4">Role</th>
+<th class="px-6 py-4">Performance</th>
+<th class="px-6 py-4 text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200 dark:divide-white/10">
+<tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">AW</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold">Ani Wijaya</span>
+<span class="text-xs text-slate-500">ani.wijaya@adsflow.com</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded uppercase">Customer Service</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="text-sm font-medium">45 order/bln</span>
+<div class="w-24 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-emerald-500 h-full w-[85%]"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit_square</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold">BS</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold">Budi Santoso</span>
+<span class="text-xs text-slate-500">budi.s@adsflow.com</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded uppercase">Advertiser</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="text-sm font-medium">Avg CPR: Rp3.200</span>
+<div class="w-24 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[92%]"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit_square</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-500 font-bold">CL</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold">Citra Lestari</span>
+<span class="text-xs text-slate-500">citra.l@adsflow.com</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-purple-500/10 text-purple-500 text-[10px] font-bold rounded uppercase">Editor</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="text-sm font-medium">2.1 hari/konten</span>
+<div class="w-24 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-purple-500 h-full w-[70%]"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit_square</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 font-bold">DR</div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold">Dedi Ramdan</span>
+<span class="text-xs text-slate-500">dedi.r@adsflow.com</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-orange-500/10 text-orange-500 text-[10px] font-bold rounded uppercase">Finance</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col gap-1">
+<span class="text-sm font-medium">98% Akurasi</span>
+<div class="w-24 h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-orange-500 h-full w-[98%]"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit_square</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Audit Log Section (Side Column) -->
+<div class="flex flex-col gap-4">
+<div class="glass dark:glass-dark rounded-xl flex flex-col h-[600px]">
+<div class="p-6 border-b border-white/10 flex items-center justify-between">
+<h3 class="font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+                                Audit Log
+                            </h3>
+<button class="text-[10px] font-bold text-primary hover:underline uppercase">View All</button>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6 relative">
+<!-- Vertical Line -->
+<div class="absolute left-9 top-6 bottom-6 w-0.5 bg-slate-200 dark:bg-white/10 z-0"></div>
+<!-- Log Items -->
+<div class="relative z-10 flex gap-4">
+<div class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[12px]">add_circle</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">18 Feb 09:12</span>
+</div>
+<p class="text-xs">
+<span class="font-bold text-slate-900 dark:text-white">Ani (CS)</span>
+<span class="text-slate-500 dark:text-slate-400">membuat order baru</span>
+<span class="text-primary font-medium">#047</span>
+</p>
+</div>
+</div>
+<div class="relative z-10 flex gap-4">
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[12px]">payments</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">18 Feb 08:45</span>
+</div>
+<p class="text-xs">
+<span class="font-bold text-slate-900 dark:text-white">Dedi (Finance)</span>
+<span class="text-slate-500 dark:text-slate-400">menyetujui penarikan saldo</span>
+<span class="text-emerald-500 font-medium">Rp1.250.000</span>
+</p>
+</div>
+</div>
+<div class="relative z-10 flex gap-4">
+<div class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center shrink-0 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[12px]">edit</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">17 Feb 21:30</span>
+</div>
+<p class="text-xs">
+<span class="font-bold text-slate-900 dark:text-white">Citra (Editor)</span>
+<span class="text-slate-500 dark:text-slate-400">mengunggah revisi aset video</span>
+<span class="text-purple-400 italic">Campaign_Spring_v2.mp4</span>
+</p>
+</div>
+</div>
+<div class="relative z-10 flex gap-4">
+<div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shrink-0 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[12px]">trending_up</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">17 Feb 16:12</span>
+</div>
+<p class="text-xs">
+<span class="font-bold text-slate-900 dark:text-white">Budi (Adv)</span>
+<span class="text-slate-500 dark:text-slate-400">mengubah budget harian pada</span>
+<span class="text-blue-400 font-medium">Flash Sale Feb</span>
+</p>
+</div>
+</div>
+<div class="relative z-10 flex gap-4">
+<div class="w-6 h-6 rounded-full bg-slate-500 flex items-center justify-center shrink-0 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[12px]">login</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">17 Feb 09:00</span>
+</div>
+<p class="text-xs">
+<span class="font-bold text-slate-900 dark:text-white">Ani (CS)</span>
+<span class="text-slate-500 dark:text-slate-400">berhasil login ke sistem</span>
+</p>
+</div>
+</div>
+<!-- Placeholder for more logs -->
+<div class="relative z-10 flex gap-4 opacity-50">
+<div class="w-6 h-6 rounded-full bg-slate-400 flex items-center justify-center shrink-0 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-white text-[12px]">settings</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] font-bold">16 Feb 23:45</span>
+<p class="text-xs">System maintenance completed</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Mini Stats for Admins -->
+<div class="grid grid-cols-2 gap-4">
+<div class="glass dark:glass-dark p-4 rounded-xl">
+<span class="text-[10px] font-bold text-slate-500 uppercase">Aktif Hari Ini</span>
+<div class="text-2xl font-black mt-1">12</div>
+</div>
+<div class="glass dark:glass-dark p-4 rounded-xl">
+<span class="text-[10px] font-bold text-slate-500 uppercase">Log Baru</span>
+<div class="text-2xl font-black mt-1 text-primary">248</div>
+</div>
+</div>
+      </div>
+    </main>
+  </div>
+  <div id="include-footer"></div>
+</div>
+<script src="js/include.js"></script>
+</body></html>

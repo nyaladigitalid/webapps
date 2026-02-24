@@ -1,0 +1,28 @@
+CREATE TABLE `ad_accounts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`config_id` int NOT NULL,
+	`account_id` varchar(100) NOT NULL,
+	`name` varchar(191),
+	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT `ad_accounts_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `fanspages` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`config_id` int NOT NULL,
+	`fanspage_id` varchar(100) NOT NULL,
+	`name` varchar(191),
+	`account_id` varchar(100),
+	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT `fanspages_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `meta_ads_configs` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`access_token` text,
+	`pixel_id` varchar(100),
+	`is_active` boolean DEFAULT true,
+	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `meta_ads_configs_id` PRIMARY KEY(`id`)
+);

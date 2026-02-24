@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                primary: "#ef7225",
+                secondary: "#0d3b66",
+                "background-light": "#f5f7f8",
+                "background-dark": "#0b0e14",
+                "sidebar-dark": "#101922"
+            },
+            fontFamily: {
+                display: ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+                DEFAULT: "0.5rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                full: "9999px"
+            }
+        }
+    }
+};
+</script>
+<style>
+body {
+    font-family: "Inter", sans-serif;
+}
+.glass-surface {
+    background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel { background: rgba(255,255,255,0.7); border: 1px solid rgba(15,23,42,0.1); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+.metric-card { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92)); border: 1px solid rgba(15,23,42,0.08); }
+.pill { background: linear-gradient(135deg, rgba(29,155,240,0.08), rgba(249,115,22,0.08)); }
+.dark .glass-panel { background: rgba(6, 12, 31, 0.94); border: 1px solid rgba(148, 163, 184, 0.35); }
+.dark .metric-card { background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92)); border: 1px solid rgba(255,255,255,0.1); }
+.dark .pill { background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(29, 155, 240, 0.22)); }
+.layout-sidebar {
+    display: flex;
+}
+.sidebar-hidden .layout-sidebar {
+    display: none;
+}
+html:not(.dark) body[data-active="overview"].bg-background-light {
+    background-color: #fafaf9 !important;
+}
+html:not(.dark) body[data-active="overview"] .metric-card {
+    background: linear-gradient(180deg, #fffbf7 0%, #ffffff 100%) !important;
+    border: 1px solid rgba(239, 114, 37, 0.08) !important;
+    box-shadow: 0 2px 10px rgba(239, 114, 37, 0.04), 0 10px 25px -5px rgba(239, 114, 37, 0.06) !important;
+}
+
+html:not(.dark) body[data-active="overview"] .accent-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(242, 223, 214, 0.6) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02) !important;
+}
+html:not(.dark) body[data-active="overview"] .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03) !important;
+}
+html:not(.dark) body[data-active="overview"] table tbody {
+    color: #1e293b !important;
+}
+html:not(.dark) body[data-active="overview"] table tbody .text-secondary\/70 {
+    color: #64748b !important;
+}
+html:not(.dark) body[data-active="overview"] h1,
+html:not(.dark) body[data-active="overview"] .font-semibold,
+html:not(.dark) body[data-active="overview"] .font-medium {
+    color: #334155 !important;
+}
+html:not(.dark) body[data-active="overview"] .text-secondary\/80,
+html:not(.dark) body[data-active="overview"] .text-secondary\/60,
+html:not(.dark) body[data-active="overview"] p,
+html:not(.dark) body[data-active="overview"] .text-\[\#c7d2fe\] {
+    color: #64748b !important;
+}
+html:not(.dark) body[data-active="overview"] .text-white,
+html:not(.dark) body[data-active="overview"] .text-white\/90 {
+    color: #334155 !important;
+}
+html:not(.dark) body[data-active="overview"] .metric-card .text-lg {
+    color: #1e293b !important;
+}
+html:not(.dark) body[data-active="overview"] .accent-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 20px;
+    bottom: 20px;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: #ef7225;
+}
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="overview">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+<div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+<div id="include-header"></div>
+<div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+<div id="include-sidebar"></div>
+<main class="flex-1 flex flex-col gap-4">
+<section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+<div>
+<h1 class="text-xl md:text-2xl font-semibold tracking-tight">Ringkasan performa hari ini</h1>
+<p class="text-xs text-secondary/80 mt-1">Terkonsolidasi dari seluruh akun iklan yang terhubung.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-secondary/80 bg-white/5 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-sm">calendar_month</span>
+<span>Hari ini • 07:00–23:59</span>
+</button>
+<button class="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition">
+<span class="material-symbols-outlined text-sm">ios_share</span>
+<span>Share ke klien</span>
+</button>
+</div>
+</section>
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-1">
+<div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+<div class="flex items-center justify-between text-[11px] text-secondary/80">
+<span>Impresi</span>
+<span class="inline-flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[15px]">arrow_drop_up</span>
+<span>+18%</span>
+</span>
+</div>
+<div class="flex items-end justify-between">
+<p class="text-lg font-semibold">1,2 jt</p>
+<p class="text-[10px] text-secondary/60">vs kemarin</p>
+</div>
+</div>
+<div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+<div class="flex items-center justify-between text-[11px] text-secondary/80">
+<span>Clicks</span>
+<span class="inline-flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[15px]">arrow_drop_up</span>
+<span>+9%</span>
+</span>
+</div>
+<div class="flex items-end justify-between">
+<p class="text-lg font-semibold">34.829</p>
+<p class="text-[10px] text-secondary/60">CTR 2,9%</p>
+</div>
+</div>
+<div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+<div class="flex items-center justify-between text-[11px] text-secondary/80">
+<span>Konversi</span>
+<span class="inline-flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[15px]">arrow_drop_up</span>
+<span>+4%</span>
+</span>
+</div>
+<div class="flex items-end justify-between">
+<p class="text-lg font-semibold">1.287</p>
+<p class="text-[10px] text-secondary/60">CPC Rp 1.420</p>
+</div>
+</div>
+<div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+<div class="flex items-center justify-between text-[11px] text-secondary/80">
+<span>ROAS</span>
+<span class="inline-flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[15px]">arrow_drop_up</span>
+<span>+0,7x</span>
+</span>
+</div>
+<div class="flex items-end justify-between">
+<p class="text-lg font-semibold">4,3x</p>
+<p class="text-[10px] text-secondary/60">Revenue Rp 245 jt</p>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-1">
+<div class="glass-panel rounded-2xl border border-white/10 p-4 col-span-2 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-xs text-secondary/80">Trend performa 7 hari terakhir</p>
+<p class="text-sm font-medium text-white mt-0.5">Revenue vs Spend</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-[11px] px-2 py-1 rounded-full bg-white/5 text-secondary/80 hover:bg-white/10 transition-colors">Revenue</button>
+<button class="text-[11px] px-2 py-1 rounded-full bg-white/5 text-secondary/80 hover:bg-white/10 transition-colors">Spend</button>
+</div>
+</div>
+<div class="mt-1 h-40 rounded-xl bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.38),transparent_55%),_radial-gradient(circle_at_bottom,_rgba(29,155,240,0.42),transparent_55%)] border border-white/10 relative overflow-hidden">
+<div class="absolute inset-x-6 bottom-4 flex justify-between text-[10px] text-secondary/80">
+<span>Sen</span>
+<span>Sel</span>
+<span>Rab</span>
+<span>Kam</span>
+<span>Jum</span>
+<span>Sab</span>
+<span>Min</span>
+</div>
+<div class="absolute inset-4 border-t border-white/10"></div>
+</div>
+</div>
+<div class="glass-panel rounded-2xl border border-white/10 p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<p class="text-xs text-secondary/80">Health check kampanye</p>
+<span class="text-[11px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/40">Stabil</span>
+</div>
+<div class="space-y-3 text-[11px] text-[#c7d2fe]">
+<div class="flex items-center justify-between">
+<span>Kampanye aktif</span>
+<span class="font-semibold text-white">28</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Ad set butuh optimasi</span>
+<span class="font-semibold text-primary">5</span>
+</div>
+<div class="flex items-center justify-between">
+<span>Creative fatigue</span>
+<span class="font-semibold text-secondary">3</span>
+</div>
+</div>
+<div class="mt-1 rounded-xl bg-white/5 border border-white/10 px-3 py-3 space-y-2">
+<p class="text-[11px] font-medium text-white/90">Rekomendasi cepat</p>
+<ul class="text-[11px] text-[#c7d2fe] space-y-1.5">
+<li>• Naikkan budget 15% di kampanye dengan ROAS &gt; 4x</li>
+<li>• Pause 2 ad set dengan CPC termahal di bawah target</li>
+<li>• Refresh creative untuk 3 ad set dengan frequency &gt; 5</li>
+</ul>
+</div>
+</div>
+</section>
+<section class="glass-panel accent-card rounded-2xl border border-white/10 p-4 mt-2">
+<div class="flex items-center justify-between mb-3">
+<div>
+<p class="text-xs text-secondary/80 inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-sm">auto_graph</span><span>Kampanye aktif utama</span></p>
+<p class="text-sm font-medium text-white mt-0.5">Top 5 berdasarkan pengeluaran hari ini</p>
+</div>
+<button class="text-[11px] text-primary hover:text-primary/80 font-medium">Lihat semua</button>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full text-[11px]">
+<thead class="text-secondary/80">
+<tr class="border-b border-white/5">
+<th class="text-left font-medium pb-2 pr-4">Nama kampanye</th>
+<th class="text-right font-medium pb-2 pr-4">Spend</th>
+<th class="text-right font-medium pb-2 pr-4">Revenue</th>
+<th class="text-right font-medium pb-2 pr-4">ROAS</th>
+<th class="text-right font-medium pb-2">Status</th>
+</tr>
+</thead>
+<tbody class="text-[#e5e7ff]">
+<tr class="border-b border-white/5/60">
+<td class="py-2.5 pr-4">
+<div class="flex flex-col">
+<span class="font-medium">Lead Gen Meta – Prospecting ID</span>
+<span class="text-[10px] text-secondary/70">Meta • Cold Audience • B2C</span>
+</div>
+</td>
+<td class="py-2.5 text-right pr-4">Rp 3,2 jt</td>
+<td class="py-2.5 text-right pr-4">Rp 14,1 jt</td>
+<td class="py-2.5 text-right pr-4 text-secondary font-semibold">4,4x</td>
+<td class="py-2.5 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/40">Active</span>
+</td>
+</tr>
+<tr class="border-b border-white/5/60">
+<td class="py-2.5 pr-4">
+<div class="flex flex-col">
+<span class="font-medium">Retargeting – Add to Cart 30D</span>
+<span class="text-[10px] text-secondary/70">Meta • Warm • Purchase</span>
+</div>
+</td>
+<td class="py-2.5 text-right pr-4">Rp 2,1 jt</td>
+<td class="py-2.5 text-right pr-4">Rp 11,2 jt</td>
+<td class="py-2.5 text-right pr-4 text-secondary font-semibold">5,3x</td>
+<td class="py-2.5 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/40">Active</span>
+</td>
+</tr>
+<tr>
+<td class="py-2.5 pr-4">
+<div class="flex flex-col">
+<span class="font-medium">Awareness – Video Views</span>
+<span class="text-[10px] text-secondary/70">Meta • Top Funnel</span>
+</div>
+</td>
+<td class="py-2.5 text-right pr-4">Rp 1,4 jt</td>
+<td class="py-2.5 text-right pr-4">Rp 3,9 jt</td>
+<td class="py-2.5 text-right pr-4 text-primary font-semibold">2,8x</td>
+<td class="py-2.5 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/40">Learning</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</div>
+<div id="include-footer"></div>
+</div>
+<script src="js/include.js"></script>
+</body>
+</html>

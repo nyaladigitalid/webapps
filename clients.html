@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps - Data Klien</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                primary: "#ef7225",
+                secondary: "#0d3b66",
+                "background-light": "#f5f7f8",
+                "background-dark": "#0b0e14",
+                "sidebar-dark": "#101922"
+            },
+            fontFamily: {
+                display: ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+                DEFAULT: "0.5rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                full: "9999px"
+            }
+        }
+    }
+};
+</script>
+<style>
+body {
+    font-family: "Inter", sans-serif;
+}
+.glass-surface {
+    background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+.dark .glass-panel {
+    background: rgba(6, 12, 31, 0.94);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+}
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="clients">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+<div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+<div id="include-header"></div>
+<div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+<!-- Sidebar -->
+<div id="include-sidebar"></div>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<div class="flex-1 overflow-y-auto space-y-6">
+<!-- Page Title Area -->
+<div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Data Klien</h1>
+        <p class="text-secondary/80 text-sm mt-1">Kelola data klien dan informasi kontak serta CS yang menangani.</p>
+    </div>
+    <button id="btn-add-client" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
+        <span class="material-symbols-outlined text-lg">add</span>
+        Tambah Klien
+    </button>
+</div>
+
+<!-- Filters & Stats -->
+<div class="px-4 md:px-0 flex flex-col md:flex-row gap-4 justify-between items-center">
+     <div class="relative group w-full md:w-64">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 dark:text-white/40 text-[18px]">search</span>
+        <input type="text" id="search-input" placeholder="Cari klien..." 
+               class="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full pl-9 pr-4 py-1.5 text-xs text-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-slate-400 dark:placeholder:text-white/30">
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="glass-panel rounded-2xl overflow-hidden mx-4 md:mx-0 border border-slate-200 dark:border-white/10">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Klien</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Usaha</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">WhatsApp</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">CS</th>
+</tr>
+</thead>
+<tbody id="clients-tbody" class="divide-y divide-slate-100 dark:divide-white/5">
+    <!-- Data will be populated by JS -->
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+    <div class="text-xs text-slate-500 dark:text-slate-400">
+        Menampilkan <span id="showing-start" class="font-medium text-slate-900 dark:text-white">0</span> - <span id="showing-end" class="font-medium text-slate-900 dark:text-white">0</span> dari <span id="total-records" class="font-medium text-slate-900 dark:text-white">0</span> data
+    </div>
+    <div class="flex gap-2">
+        <button id="btn-prev" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            Previous
+        </button>
+        <button id="btn-next" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            Next
+        </button>
+    </div>
+</div>
+</div>
+</div>
+<div id="include-footer"></div>
+</main>
+</div>
+
+<!-- Client Modal -->
+<div id="client-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-4">
+        <div class="glass-panel rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <h2 id="modal-title" class="text-xl font-bold mb-6 text-slate-900 dark:text-white">Tambah Klien</h2>
+            <form id="client-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label>
+                    <input type="text" id="c-name" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nama Usaha</label>
+                    <input type="text" id="c-business" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Jenis Usaha</label>
+                    <input type="text" id="c-type" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">WhatsApp</label>
+                    <input type="text" id="c-whatsapp" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Alamat</label>
+                    <textarea id="c-address" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="js/include.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById('client-modal');
+    const form = document.getElementById('client-form');
+    const btnAdd = document.getElementById('btn-add-client');
+    const searchInput = document.getElementById('search-input');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    
+    let currentPage = 1;
+    const limit = 5;
+    let totalPages = 1;
+    let debounceTimer;
+
+    window.closeModal = function() {
+        modal.classList.add('hidden');
+        form.reset();
+    }
+
+    function openModal() {
+        form.reset();
+        modal.classList.remove('hidden');
+    }
+
+    btnAdd.addEventListener('click', () => openModal());
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const name = document.getElementById('c-name').value;
+        const businessName = document.getElementById('c-business').value;
+        const businessType = document.getElementById('c-type').value;
+        const whatsapp = document.getElementById('c-whatsapp').value;
+        const address = document.getElementById('c-address').value;
+
+        const payload = { name, businessName, businessType, whatsapp, address };
+
+        try {
+            const res = await fetch('/api/clients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.id) {
+                closeModal();
+                currentPage = 1;
+                fetchClients();
+            } else {
+                alert('Gagal: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Error: ' + e);
+        }
+    });
+
+    function renderClients(clients, meta) {
+        const tbody = document.getElementById('clients-tbody');
+        tbody.innerHTML = '';
+        
+        if (!clients || clients.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500 italic">Tidak ada data klien.</td></tr>';
+            document.getElementById('showing-start').textContent = 0;
+            document.getElementById('showing-end').textContent = 0;
+            document.getElementById('total-records').textContent = 0;
+            btnPrev.disabled = true;
+            btnNext.disabled = true;
+            return;
+        }
+
+        const start = (meta.page - 1) * meta.limit + 1;
+        const end = Math.min(start + clients.length - 1, meta.total);
+        
+        document.getElementById('showing-start').textContent = start;
+        document.getElementById('showing-end').textContent = end;
+        document.getElementById('total-records').textContent = meta.total;
+        
+        btnPrev.disabled = meta.page <= 1;
+        btnNext.disabled = meta.page >= meta.totalPages;
+        totalPages = meta.totalPages;
+
+        clients.forEach((c, index) => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5 last:border-0";
+            
+            const csBadge = c.cs_names 
+                ? `<span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded text-xs font-bold uppercase">${c.cs_names}</span>`
+                : `<span class="text-slate-400 text-xs italic">Belum ada CS</span>`;
+
+            tr.innerHTML = `
+                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${start + index}</td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">${c.name || '-'}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${c.business_name || '-'}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-mono">${c.whatsapp || '-'}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                    ${csBadge}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function fetchClients() {
+        try {
+            const q = searchInput.value;
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: limit,
+                q: q
+            });
+            
+            const res = await fetch(`/api/clients?${params.toString()}`);
+            const response = await res.json();
+            
+            if (response.data) {
+                renderClients(response.data, response.meta);
+            } else {
+                // Fallback for older API format if server not restarted
+                console.warn('API returned old format, pagination might be broken until server restart');
+                renderClients(response, { page: 1, limit: 100, total: response.length, totalPages: 1 });
+            }
+        } catch (e) {
+            console.error('Failed to fetch clients', e);
+        }
+    }
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            currentPage = 1;
+            fetchClients();
+        }, 300);
+    });
+
+    btnPrev.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            fetchClients();
+        }
+    });
+
+    btnNext.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            fetchClients();
+        }
+    });
+
+    fetchClients();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps – Smart Order Standalone</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#ef7225",
+        secondary: "#0d3b66",
+        "background-light": "#f5f7f8",
+        "background-dark": "#0b0e14",
+        success: "#00c896",
+        danger: "#ef4444",
+        surface: "#1a2632"
+      },
+      fontFamily: { display: ["Inter", "sans-serif"] },
+      borderRadius: { DEFAULT: "0.5rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }
+    }
+  }
+};
+</script>
+<style>
+body { font-family: "Inter", sans-serif; }
+.glass-surface {
+  background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%),
+              radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+  background: rgba(6, 12, 31, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+.metric-card { background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92)); }
+.pill { background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(29, 155, 240, 0.22)); }
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="orders">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+  <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+  <div id="include-header"></div>
+  <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+    <div id="include-sidebar"></div>
+    <main class="flex-1 min-w-0">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-black tracking-tight">Smart Order Standalone</h2>
+          <p class="text-secondary/80 text-sm mt-1">Tempelkan teks pesanan dan klik Parsing Data.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <select id="service-type" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="ads">Ads Service</option>
+                <option value="creative">Creative Studio</option>
+                <option value="development">Software Development</option>
+                <option value="training">Training</option>
+                <option value="prodigi">Product Digital</option>
+            </select>
+            <div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full px-3 py-1.5 w-72">
+              <span class="material-symbols-outlined text-[#90aecb] text-lg">search</span>
+              <input type="text" placeholder="Cari field..." class="bg-transparent border-none focus:ring-0 text-sm text-white placeholder-[#90aecb] w-full">
+            </div>
+        </div>
+      </div>
+      <div class="space-y-6">
+        <!-- Row 1: Kiri Input, Kanan tiga card tersusun vertikal -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Kiri: Input Sumber Data -->
+          <section class="glass-panel rounded-2xl p-4 md:p-6 flex flex-col gap-4 lg:col-span-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">description</span>
+                <h3 class="font-semibold">Input Sumber Data</h3>
+              </div>
+              <button id="btn-parse" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-sm">auto_fix_high</span>
+                Parsing Data
+              </button>
+            </div>
+            <textarea id="src-text" class="min-h-[520px] w-full bg-white/5 border border-white/10 rounded-lg p-4 text-sm text-white placeholder-[#90aecb] focus:outline-none focus:ring-1 focus:ring-primary" spellcheck="false">#inputorder#
+Data Pesanan Jasa Iklan UMKM
+
+Data Pemesan
+----
+Tanggal: 14-Feb-2026
+Nama: Erik Nurdiansyah
+Nama Usaha: PT Lintang Jaya Konstruksi Desain And Building
+Jenis Usaha: Kontruksi
+No Whatsapp Bisnis: 6287791212283
+Alamat: cihaur rt003 rw005 desa bojongsari kec jampangkulon kab sukabumi , rencana buka lg kantor di jl.sukaresmi rt08 rw04 kec cisaat kab sukabumi dekat kolam renang cigunung dan  bogor utara kota bogor provinsi jawabarat
+Durasi: 5
+Deskripsi produk/jasa:
+pembangunan dan renovasi rumah,kantor,gudang,kontrakan,pemagaran ,interior,kitchenshet,kanopi dll
+*Keunggulan usaha (wajib): cepat, tepat, fleksibel dan dikerjakan oleh ahlinya
+*keunikan usaha (wajib): bisa konsep rumah tumbuh dan di PT kami ada jasa pemeliharaan yang kecil seperti pemeliharaan dak beton bocor, ganti keramik kamar mandi, ganti kabel kelistrikan, dan hal kecil lainnya
+Promo: free konsultasi, desain gratis ketika pembangunan dilaksanakan oleh PT kami (promo terbatas)
+
+Data Target Iklan
+----
+Lokasi: Jawa Barat, Banten, Jabodetabek
+Usia: 25 th ke atas
+Jenis kelamin: laki-laki dan perempuan
+
+Data Pembayaran
+----
+Total Bayar: 197000
+Cs: Isna
+Status: Baru</textarea>
+          </section>
+          <!-- Kanan: Tiga card disusun vertikal -->
+          <div class="flex flex-col gap-6">
+            <div class="glass-panel rounded-2xl p-4 md:p-6">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-[11px] font-black uppercase tracking-widest text-primary">Repeat Order!</h4>
+                <span class="material-symbols-outlined text-primary">bolt</span>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <p class="text-[11px] text-[#90aecb] mb-1">Loyalty</p>
+                  <p id="out-loyalty" class="font-semibold">Order ke-3</p>
+                </div>
+                <div>
+                  <p class="text-[11px] text-[#90aecb] mb-1">Last Order</p>
+                  <p id="out-lastorder" class="font-semibold">15 Jan 2024</p>
+                </div>
+                <div>
+                  <p class="text-[11px] text-[#90aecb] mb-1">Active Packet</p>
+                  <p id="out-activepacket" class="font-semibold">497rb /mo</p>
+                </div>
+                <div>
+                  <p class="text-[11px] text-[#90aecb] mb-1">Avg CPR</p>
+                  <p id="out-cpr" class="font-semibold text-success">Rp3.200</p>
+                </div>
+              </div>
+            </div>
+            <div class="glass-panel rounded-2xl p-4 md:p-6">
+              <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Data Pemesan</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Tanggal</p><p id="out-tanggal" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Nama</p><p id="out-nama" class="font-semibold">-</p></div>
+                <div class="sm:col-span-2"><p class="text-[11px] text-[#90aecb] mb-1">Nama Usaha</p><p id="out-usaha" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Jenis Usaha</p><p id="out-jenis" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">WhatsApp</p><p id="out-wa" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Durasi</p><p id="out-durasi" class="font-semibold">-</p></div>
+              </div>
+            </div>
+            <div id="card-ads" class="glass-panel rounded-2xl p-4 md:p-6 service-card">
+              <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Target Iklan (Ads Only)</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2"><p class="text-[11px] text-[#90aecb] mb-1">Lokasi</p><p id="out-lokasi" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Usia</p><p id="out-usia" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Jenis Kelamin</p><p id="out-gender" class="font-semibold">-</p></div>
+              </div>
+            </div>
+            
+            <div id="card-creative" class="glass-panel rounded-2xl p-4 md:p-6 service-card hidden">
+                <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Creative Brief</h4>
+                <div class="text-center py-8 text-slate-400 text-sm">
+                    <span class="material-symbols-outlined text-4xl mb-2 opacity-50">palette</span>
+                    <p>Parsing khusus Creative belum tersedia.</p>
+                </div>
+            </div>
+
+            <div id="card-development" class="glass-panel rounded-2xl p-4 md:p-6 service-card hidden">
+                <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Tech Specs</h4>
+                <div class="text-center py-8 text-slate-400 text-sm">
+                    <span class="material-symbols-outlined text-4xl mb-2 opacity-50">code</span>
+                    <p>Parsing khusus Development belum tersedia.</p>
+                </div>
+            </div>
+
+            <div id="card-training" class="glass-panel rounded-2xl p-4 md:p-6 service-card hidden">
+                <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Training Details</h4>
+                <div class="text-center py-8 text-slate-400 text-sm">
+                    <span class="material-symbols-outlined text-4xl mb-2 opacity-50">school</span>
+                    <p>Parsing khusus Training belum tersedia.</p>
+                </div>
+            </div>
+
+            <div id="card-prodigi" class="glass-panel rounded-2xl p-4 md:p-6 service-card hidden">
+                <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Digital Product</h4>
+                <div class="text-center py-8 text-slate-400 text-sm">
+                    <span class="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
+                    <p>Parsing khusus Produk Digital belum tersedia.</p>
+                </div>
+            </div>
+            <div class="glass-panel rounded-2xl p-4 md:p-6">
+              <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Pembayaran</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Total Bayar</p><p id="out-total" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">CS</p><p id="out-cs" class="font-semibold">-</p></div>
+                <div><p class="text-[11px] text-[#90aecb] mb-1">Status</p><p id="out-status" class="font-semibold">-</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Row 3: Data Tambahan -->
+        <div>
+          <div class="glass-panel rounded-2xl p-4 md:p-6">
+            <h4 class="text-[11px] font-bold uppercase tracking-widest text-[#90aecb] mb-3">Data Tambahan</h4>
+            <div class="space-y-4">
+              <div>
+                <p class="text-[11px] text-[#90aecb] mb-1">Alamat</p>
+                <p id="out-alamat" class="font-semibold leading-relaxed">-</p>
+              </div>
+              <div>
+                <p class="text-[11px] text-[#90aecb] mb-1">Deskripsi</p>
+                <p id="out-deskripsi" class="font-semibold leading-relaxed">-</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p class="text-[11px] text-[#90aecb] mb-1">Keunggulan</p>
+                  <p id="out-keunggulan" class="font-semibold leading-relaxed">-</p>
+                </div>
+                <div>
+                  <p class="text-[11px] text-[#90aecb] mb-1">Keunikan</p>
+                  <p id="out-keunikan" class="font-semibold leading-relaxed">-</p>
+                </div>
+              </div>
+              <div>
+                <p class="text-[11px] text-[#90aecb] mb-1">Promo</p>
+                <p id="out-promo" class="font-semibold leading-relaxed">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div id="include-footer"></div>
+</div>
+<script src="js/include.js"></script>
+<script>
+function parseSmartOrderText(src) {
+  var text = (src || "").replace(/\r\n/g, "\n").trim();
+  var lines = text.split("\n").map(function(l){return l.trim();});
+  var result = {
+    tanggal:"", nama:"", usaha:"", jenisUsaha:"", wa:"", alamat:"", durasi:"",
+    deskripsi:"", keunggulan:"", keunikan:"", promo:"",
+    lokasi:"", usia:"", gender:"",
+    total:"", cs:"", status:""
+  };
+  function isKeyLine(l){
+    return /^Tanggal:|^Nama:|^Nama Usaha:|^Jenis Usaha:|^No Whatsapp Bisnis:|^Alamat:|^Durasi:|^Deskripsi produk\/jasa:|^\*?Keunggulan usaha|^\*?keunikan usaha|^Promo:|^Lokasi:|^Usia:|^Jenis kelamin:|^Total Bayar:|^Cs:|^Status:/i.test(l);
+  }
+  var i=0, n=lines.length, curMulti="";
+  function captureMultiline(startIdx){
+    var buf=[], j=startIdx;
+    for(; j<n; j++){
+      var ln=lines[j];
+      if (ln==="----" || /^Data Pemesan|^Data Target Iklan|^Data Pembayaran$/i.test(ln) || (isKeyLine(ln) && j!==startIdx)) break;
+      if (ln.length>0) buf.push(ln);
+    }
+    return {value: buf.join(" ").replace(/\s+/g," ").trim(), next:j};
+  }
+  while(i<n){
+    var line=lines[i];
+    if (/^Tanggal:/i.test(line)){ result.tanggal=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Nama:/i.test(line)){ result.nama=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Nama Usaha:/i.test(line)){ result.usaha=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Jenis Usaha:/i.test(line)){ result.jenisUsaha=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^No Whatsapp Bisnis:/i.test(line)){ result.wa=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Alamat:/i.test(line)){ 
+      var rest=line.replace(/^Alamat:/i,"").trim();
+      if (rest){ result.alamat=rest; i++; continue; }
+      var cap=captureMultiline(i+1); result.alamat=cap.value; i=cap.next; continue;
+    }
+    if (/^Durasi:/i.test(line)){ result.durasi=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Deskripsi produk\/jasa:/i.test(line)){
+      var cap2=captureMultiline(i+1); result.deskripsi=cap2.value; i=cap2.next; continue;
+    }
+    if (/^\*?Keunggulan usaha/i.test(line)){
+      result.keunggulan=line.split(":").slice(1).join(":").trim(); i++; continue;
+    }
+    if (/^\*?keunikan usaha/i.test(line)){
+      result.keunikan=line.split(":").slice(1).join(":").trim(); i++; continue;
+    }
+    if (/^Promo:/i.test(line)){ result.promo=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Lokasi:/i.test(line)){ result.lokasi=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Usia:/i.test(line)){ result.usia=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Jenis kelamin:/i.test(line)){ result.gender=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Total Bayar:/i.test(line)){ result.total=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Cs:/i.test(line)){ result.cs=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    if (/^Status:/i.test(line)){ result.status=line.split(":").slice(1).join(":").trim(); i++; continue; }
+    i++;
+  }
+  return result;
+}
+function setText(id, val){ var el=document.getElementById(id); if(el) el.textContent = val && val.length? val : "-"; }
+document.addEventListener("DOMContentLoaded", function(){
+  var btn=document.getElementById("btn-parse");
+  var src=document.getElementById("src-text");
+  function render(){
+    var r=parseSmartOrderText(src.value||"");
+    setText("out-tanggal", r.tanggal);
+    setText("out-nama", r.nama);
+    setText("out-usaha", r.usaha);
+    setText("out-jenis", r.jenisUsaha);
+    setText("out-wa", r.wa);
+    setText("out-alamat", r.alamat);
+    setText("out-durasi", r.durasi);
+    setText("out-deskripsi", r.deskripsi);
+    setText("out-keunggulan", r.keunggulan);
+    setText("out-keunikan", r.keunikan);
+    setText("out-promo", r.promo);
+    setText("out-lokasi", r.lokasi);
+    setText("out-usia", r.usia);
+    setText("out-gender", r.gender);
+    setText("out-total", r.total);
+    setText("out-cs", r.cs);
+    setText("out-status", r.status);
+  }
+  if (btn) btn.addEventListener("click", render);
+
+  const serviceType = document.getElementById('service-type');
+  if(serviceType) {
+      serviceType.addEventListener('change', function() {
+          const type = this.value;
+          document.querySelectorAll('.service-card').forEach(el => el.classList.add('hidden'));
+          
+          if(type === 'ads') {
+              const el = document.getElementById('card-ads');
+              if(el) el.classList.remove('hidden');
+          } else if(type === 'creative') {
+              const el = document.getElementById('card-creative');
+              if(el) el.classList.remove('hidden');
+          } else if(type === 'development') {
+              const el = document.getElementById('card-development');
+              if(el) el.classList.remove('hidden');
+          } else if(type === 'training') {
+              const el = document.getElementById('card-training');
+              if(el) el.classList.remove('hidden');
+          } else if(type === 'prodigi') {
+              const el = document.getElementById('card-prodigi');
+              if(el) el.classList.remove('hidden');
+          }
+      });
+  }
+});
+</script>
+</body></html>

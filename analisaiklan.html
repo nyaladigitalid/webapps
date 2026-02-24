@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html class="dark" lang="id"><head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ad Performance Analysis - Nyala Digital</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ef7225",
+                        "secondary": "#0d3b66",
+                        "accent": "#ef7225",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0b0e14",
+                        "sidebar-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 10px;
+        }
+        .status-pulse {
+            position: relative;
+        }
+        .status-pulse::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased selection:bg-accent/30">
+<div class="relative z-10 min-h-screen flex flex-col">
+<div id="include-header"></div>
+<div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+<div id="include-sidebar"></div>
+<main class="flex-1 flex flex-col gap-4">
+<header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center size-10 rounded-full bg-slate-800 hover:bg-slate-700 text-white transition-colors">
+<span class="material-symbols-outlined text-xl">arrow_back</span>
+</button>
+<div>
+<h2 class="text-2xl lg:text-3xl font-black text-white tracking-tight">Analisis Iklan</h2>
+<p class="text-slate-400 text-sm mt-1">Deep dive into creative performance metrics</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-sidebar-dark border border-slate-800 rounded-lg px-3 py-2 gap-3">
+<span class="material-symbols-outlined text-slate-400">calendar_today</span>
+<span class="text-sm text-slate-300 font-medium whitespace-nowrap">1 Oct - 14 Oct 2023</span>
+<span class="material-symbols-outlined text-slate-500 text-sm">expand_more</span>
+</div>
+</div>
+</header>
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<div class="lg:col-span-1 bg-sidebar-dark border border-slate-800 rounded-xl p-5 shadow-lg">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-white font-bold text-sm">Ad Preview</h3>
+<span class="px-2 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded uppercase border border-green-500/20">Active</span>
+</div>
+<div class="aspect-[4/5] bg-slate-800 rounded-lg overflow-hidden relative group">
+<div class="absolute inset-0 flex items-center justify-center bg-slate-900 text-slate-600">
+<span class="material-symbols-outlined text-6xl">image</span>
+</div>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent">
+<p class="text-white text-xs font-medium">Sponsored</p>
+<p class="text-white text-sm font-bold mt-1">Limited Time Offer: 50% Off!</p>
+<button class="mt-2 w-full bg-blue-600 text-white text-xs font-bold py-2 rounded">Shop Now</button>
+</div>
+</div>
+<div class="mt-4 flex items-center justify-between text-xs text-slate-400">
+<span>Ad ID: 23849102</span>
+<button class="text-accent hover:underline flex items-center gap-1">
+                        View Post <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+<div class="lg:col-span-2 grid grid-cols-2 gap-4">
+<div class="bg-sidebar-dark border border-slate-800 rounded-xl p-5 flex flex-col justify-between hover:border-accent/40 transition-colors">
+<div class="flex justify-between items-start">
+<span class="text-slate-400 text-sm font-medium">CTR (Link Click)</span>
+<span class="material-symbols-outlined text-accent bg-accent/10 p-1.5 rounded-lg">ads_click</span>
+</div>
+<div>
+<h3 class="text-3xl font-bold text-white mt-2">2.45%</h3>
+<p class="text-emerald-400 text-xs font-bold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +0.5% vs avg
+                        </p>
+</div>
+</div>
+<div class="bg-sidebar-dark border border-slate-800 rounded-xl p-5 flex flex-col justify-between hover:border-accent/40 transition-colors">
+<div class="flex justify-between items-start">
+<span class="text-slate-400 text-sm font-medium">CPC (Cost per Click)</span>
+<span class="material-symbols-outlined text-blue-400 bg-blue-400/10 p-1.5 rounded-lg">payments</span>
+</div>
+<div>
+<h3 class="text-3xl font-bold text-white mt-2">Rp 1.850</h3>
+<p class="text-rose-400 text-xs font-bold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +Rp 200 vs avg
+                        </p>
+</div>
+</div>
+<div class="bg-sidebar-dark border border-slate-800 rounded-xl p-5 flex flex-col justify-between hover:border-accent/40 transition-colors">
+<div class="flex justify-between items-start">
+<span class="text-slate-400 text-sm font-medium">CPM (Cost per 1k Imp.)</span>
+<span class="material-symbols-outlined text-purple-400 bg-purple-400/10 p-1.5 rounded-lg">visibility</span>
+</div>
+<div>
+<h3 class="text-3xl font-bold text-white mt-2">Rp 12.400</h3>
+<p class="text-emerald-400 text-xs font-bold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span> -Rp 1.200 vs avg
+                        </p>
+</div>
+</div>
+<div class="bg-sidebar-dark border border-slate-800 rounded-xl p-5 flex flex-col justify-between hover:border-accent/40 transition-colors">
+<div class="flex justify-between items-start">
+<span class="text-slate-400 text-sm font-medium">Conversion Rate</span>
+<span class="material-symbols-outlined text-emerald-400 bg-emerald-400/10 p-1.5 rounded-lg">shopping_bag</span>
+</div>
+<div>
+<h3 class="text-3xl font-bold text-white mt-2">3.8%</h3>
+<p class="text-emerald-400 text-xs font-bold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +1.2% vs avg
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+<div class="xl:col-span-2 bg-sidebar-dark border border-slate-800 rounded-xl p-6">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h3 class="text-lg font-bold text-white">Impressions vs Conversions</h3>
+<p class="text-slate-500 text-xs">Daily performance trend over time</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-slate-600"></span>
+<span class="text-[11px] font-medium text-slate-400">Impressions</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-accent"></span>
+<span class="text-[11px] font-medium text-slate-400">Conversions</span>
+</div>
+</div>
+</div>
+<div class="h-72 relative w-full">
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="border-t border-slate-800/60 w-full h-px"></div>
+<div class="border-t border-slate-800/60 w-full h-px"></div>
+<div class="border-t border-slate-800/60 w-full h-px"></div>
+<div class="border-t border-slate-800/60 w-full h-px"></div>
+<div class="border-b border-slate-800/60 w-full h-px"></div>
+</div>
+<div class="absolute inset-0 flex items-end justify-between px-2 pb-6 gap-2">
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 30%;"></div> 
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 10%;"></div> 
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 1</div>
+</div>
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 45%;"></div>
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 15%;"></div>
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 3</div>
+</div>
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 40%;"></div>
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 18%;"></div>
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 5</div>
+</div>
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 60%;"></div>
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 35%;"></div>
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 7</div>
+</div>
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 55%;"></div>
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 25%;"></div>
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 9</div>
+</div>
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 75%;"></div>
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 45%;"></div>
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 11</div>
+</div>
+<div class="relative w-full h-full group flex flex-col justify-end items-center">
+<div class="w-full bg-slate-700/30 hover:bg-slate-700/50 transition-all rounded-t" style="height: 65%;"></div>
+<div class="absolute bottom-0 w-1 bg-accent h-full rounded-t shadow-[0_0_10px_rgba(239,114,37,0.5)]" style="height: 38%;"></div>
+<div class="absolute -bottom-6 text-[10px] text-slate-500">Oct 13</div>
+</div>
+</div>
+</div>
+</div>
+<div class="xl:col-span-1 bg-sidebar-dark border border-slate-800 rounded-xl p-6 flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-lg font-bold text-white">Audience Targeting</h3>
+<span class="material-symbols-outlined text-slate-500">target</span>
+</div>
+<div class="space-y-6 flex-1">
+<div>
+<p class="text-xs font-bold text-slate-500 uppercase mb-2">Location &amp; Demographics</p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded border border-slate-700">Indonesia</span>
+<span class="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded border border-slate-700">Age: 18-35</span>
+<span class="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded border border-slate-700">All Genders</span>
+</div>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-500 uppercase mb-2">Interests</p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded border border-blue-900/50">Digital Marketing</span>
+<span class="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded border border-blue-900/50">Online Shopping</span>
+<span class="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded border border-blue-900/50">Technology</span>
+<span class="bg-blue-900/30 text-blue-300 text-xs px-2 py-1 rounded border border-blue-900/50">Small Business</span>
+</div>
+</div>
+<div>
+<p class="text-xs font-bold text-slate-500 uppercase mb-2">Behaviors</p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-purple-900/30 text-purple-300 text-xs px-2 py-1 rounded border border-purple-900/50">Engaged Shoppers</span>
+<span class="bg-purple-900/30 text-purple-300 text-xs px-2 py-1 rounded border border-purple-900/50">Mobile Device Users</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-slate-800">
+<p class="text-xs font-bold text-slate-500 uppercase mb-2">Lookalike</p>
+<div class="flex items-center gap-2">
+<span class="bg-emerald-900/30 text-emerald-300 text-xs px-2 py-1 rounded border border-emerald-900/50">LAL 1% Purchasers</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="bg-sidebar-dark border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+<div class="p-6 border-b border-slate-800 flex justify-between items-center">
+<h3 class="text-lg font-bold text-white">Creative Breakdown</h3>
+<button class="text-accent text-xs font-bold hover:underline">Download CSV</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-slate-800/40 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+<th class="px-6 py-3">Creative Type</th>
+<th class="px-6 py-3 text-right">3s Video Plays</th>
+<th class="px-6 py-3 text-right">Stop Rate</th>
+<th class="px-6 py-3 text-right">Hold Rate</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-800">
+<tr class="hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-accent text-lg">play_circle</span>
+<span class="text-white text-xs font-semibold">Video_Short_V1</span>
+</div>
+</td>
+<td class="px-6 py-3 text-right text-slate-300 text-xs font-medium">12,450</td>
+<td class="px-6 py-3 text-right text-emerald-400 text-xs font-bold">28.4%</td>
+<td class="px-6 py-3 text-right text-white text-xs font-bold">12.1%</td>
+</tr>
+<tr class="hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 text-lg">image</span>
+<span class="text-white text-xs font-semibold">Static_Image_02</span>
+</div>
+</td>
+<td class="px-6 py-3 text-right text-slate-300 text-xs font-medium">N/A</td>
+<td class="px-6 py-3 text-right text-emerald-400 text-xs font-bold">31.2%</td>
+<td class="px-6 py-3 text-right text-white text-xs font-bold">--</td>
+</tr>
+<tr class="hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-accent text-lg">play_circle</span>
+<span class="text-white text-xs font-semibold">Video_UGC_Test</span>
+</div>
+</td>
+<td class="px-6 py-3 text-right text-slate-300 text-xs font-medium">8,200</td>
+<td class="px-6 py-3 text-right text-yellow-400 text-xs font-bold">22.1%</td>
+<td class="px-6 py-3 text-right text-white text-xs font-bold">18.5%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="bg-sidebar-dark border border-slate-800 rounded-xl p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-lg font-bold text-white">Demographic Insights</h3>
+<div class="flex gap-3">
+<div class="flex items-center gap-1.5">
+<span class="size-2 rounded-full bg-blue-500"></span>
+<span class="text-[10px] text-slate-400">Male</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="size-2 rounded-full bg-pink-500"></span>
+<span class="text-[10px] text-slate-400">Female</span>
+</div>
+</div>
+</div>
+<div class="space-y-5">
+<div class="grid grid-cols-12 gap-4 items-center group">
+<div class="col-span-2 text-xs text-slate-400 font-medium">18-24</div>
+<div class="col-span-10 flex h-4 rounded-full overflow-hidden bg-slate-800">
+<div class="bg-blue-500 hover:bg-blue-400 transition-colors h-full" style="width: 35%" title="Male: 35%"></div>
+<div class="bg-pink-500 hover:bg-pink-400 transition-colors h-full" style="width: 25%" title="Female: 25%"></div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 items-center group">
+<div class="col-span-2 text-xs text-slate-400 font-medium">25-34</div>
+<div class="col-span-10 flex h-4 rounded-full overflow-hidden bg-slate-800">
+<div class="bg-blue-500 hover:bg-blue-400 transition-colors h-full" style="width: 45%" title="Male: 45%"></div>
+<div class="bg-pink-500 hover:bg-pink-400 transition-colors h-full" style="width: 40%" title="Female: 40%"></div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 items-center group">
+<div class="col-span-2 text-xs text-slate-400 font-medium">35-44</div>
+<div class="col-span-10 flex h-4 rounded-full overflow-hidden bg-slate-800">
+<div class="bg-blue-500 hover:bg-blue-400 transition-colors h-full" style="width: 20%" title="Male: 20%"></div>
+<div class="bg-pink-500 hover:bg-pink-400 transition-colors h-full" style="width: 15%" title="Female: 15%"></div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 items-center group">
+<div class="col-span-2 text-xs text-slate-400 font-medium">45+</div>
+<div class="col-span-10 flex h-4 rounded-full overflow-hidden bg-slate-800">
+<div class="bg-blue-500 hover:bg-blue-400 transition-colors h-full" style="width: 10%" title="Male: 10%"></div>
+<div class="bg-pink-500 hover:bg-pink-400 transition-colors h-full" style="width: 5%" title="Female: 5%"></div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-slate-800">
+<p class="text-xs text-slate-500 italic text-center">Top performing segment: <span class="text-white font-bold not-italic">Men 25-34</span></p>
+</div>
+</div>
+</section>
+</main>
+</div>
+</div>
+<script src="js/include.js"></script>
+</body></html>

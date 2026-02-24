@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps - Manajemen Pengguna</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                primary: "#ef7225",
+                secondary: "#0d3b66",
+                "background-light": "#f5f7f8",
+                "background-dark": "#0b0e14",
+                "sidebar-dark": "#101922"
+            },
+            fontFamily: {
+                display: ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+                DEFAULT: "0.5rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                full: "9999px"
+            }
+        }
+    }
+};
+</script>
+<style>
+body {
+    font-family: "Inter", sans-serif;
+}
+.glass-surface {
+    background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+.dark .glass-panel {
+    background: rgba(6, 12, 31, 0.94);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+}
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="users">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+<div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+<div id="include-header"></div>
+<div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+<!-- Sidebar -->
+<div id="include-sidebar"></div>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<div class="flex-1 overflow-y-auto space-y-6">
+<!-- Page Title Area -->
+<div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Manajemen Pengguna</h1>
+        <p class="text-secondary/80 text-sm mt-1">Kelola data pengguna, peran, dan hak akses aplikasi.</p>
+    </div>
+    <button id="btn-add-user" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
+        <span class="material-symbols-outlined text-lg">add</span>
+        Tambah Pengguna
+    </button>
+</div>
+
+<!-- Filters & Stats -->
+<div class="px-4 md:px-0 flex flex-col md:flex-row gap-4 justify-between items-center">
+     <div class="relative group w-full md:w-64">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 dark:text-white/40 text-[18px]">search</span>
+        <input type="text" id="search-input" placeholder="Cari pengguna..." 
+               class="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full pl-9 pr-4 py-1.5 text-xs text-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-slate-400 dark:placeholder:text-white/30">
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="glass-panel rounded-2xl overflow-hidden mx-4 md:mx-0 border border-slate-200 dark:border-white/10">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Email</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Role</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-20 text-center">Aksi</th>
+</tr>
+</thead>
+<tbody id="users-tbody" class="divide-y divide-slate-100 dark:divide-white/5">
+    <!-- Data will be populated by JS -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="include-footer"></div>
+</main>
+</div>
+
+<!-- User Modal -->
+<div id="user-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-4">
+        <div class="glass-panel rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <h2 id="modal-title" class="text-xl font-bold mb-6 text-slate-900 dark:text-white">Tambah Pengguna</h2>
+            <form id="user-form" class="space-y-4">
+                <input type="hidden" id="u-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label>
+                    <input type="text" id="u-name" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Email</label>
+                    <input type="email" id="u-email" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Password</label>
+                    <input type="password" id="u-password" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    <p class="text-[10px] text-slate-400 mt-1" id="password-hint">Kosongkan jika tidak ingin mengubah password.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Role</label>
+                    <select id="u-role" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option value="CS">CS</option>
+                        <option value="Editor">Editor</option>
+                        <option value="Advertiser">Advertiser</option>
+                        <option value="Team Bengkel">Team Bengkel</option>
+                        <option value="Keuangan">Keuangan</option>
+                        <option value="CRM">CRM</option>
+                        <option value="Super Admin">Super Admin</option>
+                    </select>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="js/include.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById('user-modal');
+    const form = document.getElementById('user-form');
+    const btnAdd = document.getElementById('btn-add-user');
+    const searchInput = document.getElementById('search-input');
+    const passwordHint = document.getElementById('password-hint');
+    let allUsers = [];
+
+    window.closeModal = function() {
+        modal.classList.add('hidden');
+        form.reset();
+        document.getElementById('u-id').value = '';
+    }
+
+    function openModal(user = null) {
+        document.getElementById('modal-title').textContent = user ? 'Edit Pengguna' : 'Tambah Pengguna';
+        if (user) {
+            document.getElementById('u-id').value = user.id;
+            document.getElementById('u-name').value = user.name;
+            document.getElementById('u-email').value = user.email;
+            document.getElementById('u-role').value = user.role;
+            document.getElementById('u-password').value = '';
+            document.getElementById('u-password').required = false;
+            passwordHint.classList.remove('hidden');
+        } else {
+            form.reset();
+            document.getElementById('u-id').value = '';
+            document.getElementById('u-password').required = true;
+            passwordHint.classList.add('hidden');
+        }
+        modal.classList.remove('hidden');
+    }
+
+    btnAdd.addEventListener('click', () => openModal());
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('u-id').value;
+        const name = document.getElementById('u-name').value;
+        const email = document.getElementById('u-email').value;
+        const password = document.getElementById('u-password').value;
+        const role = document.getElementById('u-role').value;
+
+        const payload = { name, email, role };
+        if (password) payload.password = password;
+
+        const url = id ? `/api/users/${id}` : '/api/users';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeModal();
+                fetchUsers();
+            } else {
+                alert('Gagal: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Error: ' + e);
+        }
+    });
+
+    function renderUsers(users) {
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = '';
+        
+        const filter = searchInput.value.toLowerCase();
+        const filtered = users.filter(u => 
+            u.name.toLowerCase().includes(filter) || 
+            u.email.toLowerCase().includes(filter) ||
+            u.role.toLowerCase().includes(filter)
+        );
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500 italic">Tidak ada data pengguna.</td></tr>';
+            return;
+        }
+
+        filtered.forEach((u, index) => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5 last:border-0";
+            
+            tr.innerHTML = `
+                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${index + 1}</td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">${u.name}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${u.email}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                    <span class="px-2 py-1 bg-slate-100 dark:bg-white/10 rounded text-xs font-bold uppercase">${u.role}</span>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <button class="btn-edit text-blue-500 hover:text-blue-600 mr-2" data-id="${u.id}"><span class="material-symbols-outlined text-lg">edit</span></button>
+                    <button class="btn-delete text-red-500 hover:text-red-600" data-id="${u.id}"><span class="material-symbols-outlined text-lg">delete</span></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Attach event listeners
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const user = allUsers.find(u => u.id == id);
+                if (user) openModal(user);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                if(confirm('Hapus pengguna ini?')) {
+                    const id = this.getAttribute('data-id');
+                    try {
+                        const res = await fetch('/api/users/' + id, { method: 'DELETE' });
+                        if(res.ok) fetchUsers();
+                        else alert('Gagal menghapus');
+                    } catch(e) {
+                        alert('Error: ' + e);
+                    }
+                }
+            });
+        });
+    }
+
+    async function fetchUsers() {
+        try {
+            const res = await fetch('/api/users');
+            const data = await res.json();
+            allUsers = data;
+            renderUsers(allUsers);
+        } catch (e) {
+            console.error('Failed to fetch users', e);
+        }
+    }
+
+    searchInput.addEventListener('input', () => renderUsers(allUsers));
+
+    fetchUsers();
+});
+</script>
+</body>
+</html>
