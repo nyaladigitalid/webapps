@@ -10,7 +10,7 @@ async function setupTable() {
         host: process.env.MYSQL_HOST || 'localhost',
         user: process.env.MYSQL_USER || 'root',
         password: process.env.MYSQL_PASSWORD || '',
-        database: process.env.MYSQL_DATABASE || 'nyala_db',
+        database: process.env.MYSQL_DATABASE || 'nyaladigitaldb',
         port: Number(process.env.MYSQL_PORT) || 3306
     };
 

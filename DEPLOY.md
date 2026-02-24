@@ -51,9 +51,9 @@ sudo mysql
 Di dalam prompt MySQL, jalankan perintah berikut (ganti `password_anda` dengan password yang kuat):
 
 ```sql
-CREATE DATABASE nyala_db;
-CREATE USER 'nyala_user'@'localhost' IDENTIFIED BY 'password_anda';
-GRANT ALL PRIVILEGES ON nyala_db.* TO 'nyala_user'@'localhost';
+CREATE DATABASE nyaladigitaldb;
+CREATE USER 'nyaladigitaldb'@'localhost' IDENTIFIED BY 'password_anda';
+GRANT ALL PRIVILEGES ON nyaladigitaldb.* TO 'nyaladigitaldb'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -93,9 +93,9 @@ Edit bagian database sesuai yang Anda buat di langkah 3:
 
 ```env
 MYSQL_HOST=localhost
-MYSQL_USER=nyala_user
+MYSQL_USER=nyaladigitaldb
 MYSQL_PASSWORD=password_anda
-MYSQL_DATABASE=nyala_db
+MYSQL_DATABASE=nyaladigitaldb
 PORT=3000
 ```
 
