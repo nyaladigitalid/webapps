@@ -39,7 +39,7 @@ body {
     font-family: "Inter", sans-serif;
 }
 .glass-surface {
-    background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+    background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
 }
 .glass-panel {
     background: rgba(255, 255, 255, 0.7);
@@ -590,7 +590,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch from MySQL API
   var allOrders = [];
   var currentPage = 1;
-  var itemsPerPage = 5;
+  var itemsPerPage = 10;
   var currentStatus = 'all';
   var currentMonth = 'all';
   var currentYear = 'all';
@@ -603,9 +603,9 @@ document.addEventListener("DOMContentLoaded", function () {
       // Status Filter
       var s = String(r.status || '').toLowerCase();
       var statusMatch = (currentStatus === 'all') || 
-                        (currentStatus === 'active' && s === 'active') ||
+                        (currentStatus === 'active' && (s === 'active' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten')) ||
                         (currentStatus === 'pending' && (s === 'pending' || s === 'draft')) ||
-                        (currentStatus === 'completed' && (s === 'completed' || s === 'done'));
+                        (currentStatus === 'completed' && (s === 'completed' || s === 'done' || s === 'selesai'));
       
       // Search Filter
       var searchLower = currentSearch.toLowerCase();
@@ -795,16 +795,45 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  fetch('/api/orders')
+  fetch('/api/orders?limit=10000')
     .then(function(res){ return res.json(); })
-    .then(function(data){
-       allOrders = Array.isArray(data) ? data : [];
+    .then(function(json){
+       var rawData = [];
+       if (Array.isArray(json)) {
+           rawData = json;
+       } else if (json.data && Array.isArray(json.data)) {
+           rawData = json.data;
+       }
+       
+       allOrders = rawData.map(function(o) {
+           var meta = o.meta_data;
+           if (typeof meta === 'string') {
+               try { meta = JSON.parse(meta); } catch(e) {}
+           }
+           
+           return {
+               id: o.id,
+               created_at: o.created_at,
+               startDate: o.start_date || o.created_at,
+               status: o.status,
+               clientName: o.client_name,
+               businessName: o.business_name,
+               clientWhatsapp: (o.client_whatsapp || o.clientWhatsapp || o.whatsapp || ''), 
+               packageName: o.package_name,
+               duration: o.duration,
+               days_remaining: o.days_remaining,
+               progress_percent: o.progress_percent,
+               repeat_order: o.repeat_order,
+               metaData: meta || {}
+           };
+       });
+       
        applyFilters();
     })
     .catch(function(err){
        console.error("Error loading orders:", err);
        var tbody = document.getElementById("orders-tbody");
-       if(tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-400">Gagal memuat data: ' + err.message + '</td></tr>';
+       if(tbody) tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-red-400">Gagal memuat data: ' + err.message + '</td></tr>';
     });
 
   // Client Search Logic

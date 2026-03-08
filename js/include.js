@@ -74,13 +74,13 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   const ROLE_MENUS = {
-    super_admin: ["overview","orders","products","commissions","users","finance","team","audit","analytics","campaigns","crm","clients","meta_config"],
-    cs: ["overview","orders","products","crm","clients"],
+    super_admin: ["overview","orders","products","commissions","users","finance","team","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
+    cs: ["overview","orders","products","crm","clients","cpr_calculator"],
     keuangan: ["overview","finance","orders","products","commissions","clients"],
-    advertiser: ["overview","orders","analytics","campaigns","meta_config","clients"],
+    advertiser: ["overview","orders","analytics","campaigns","meta_config","clients","cpr_calculator"],
     crm: ["overview","crm","orders","clients"],
     editor: ["overview"],
-    "team bengkel": ["overview", "orders", "campaigns"]
+    "team bengkel": ["overview", "orders", "campaigns", "cpr_calculator"]
   };
 
   function applySidebarByRole(role) {

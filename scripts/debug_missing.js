@@ -1,52 +1,79 @@
 
-require('dotenv').config();
 const mysql = require('mysql2/promise');
-const XLSX = require('xlsx');
-const path = require('path');
+require('dotenv').config();
 
-// Excel Date to JS Date
-function excelDateToJSDate(serial) {
-    if (!serial || isNaN(serial)) return null;
-    const utc_days  = Math.floor(serial - 25569);
-    const utc_value = utc_days * 86400;                                        
-    const date_info = new Date(utc_value * 1000);
-    return date_info;
-}
+async function debugData() {
+    try {
+        const pool = mysql.createPool(process.env.MYSQL_URL);
+        console.log('Connected to DB');
 
-async function debugSkipped() {
-    console.log('Debugging skipped rows...');
-    
-    const filePath = path.join(__dirname, '../data', 'DataKlien.xlsx');
-    const workbook = XLSX.readFile(filePath);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-     console.log(`Total rows in Excel: ${data.length}`);
-
-     let skippedCount = 0;
-    let sampleSkipped = [];
-
-    for (let i = 1; i < data.length; i++) {
-        const row = data[i];
-        if (!row || row.length === 0) {
-            skippedCount++;
-            continue;
-        }
-
-        let isShifted = false;
-        if (row[2] && String(row[2]).startsWith('ORD-')) {
-            // Normal
-        } else if (row[1] && String(row[1]).startsWith('ORD-')) {
-            // Shifted
-        } else {
-            skippedCount++;
-            if (sampleSkipped.length < 5) {
-                sampleSkipped.push({ index: i, row: row });
+        // 1. Check Users
+        try {
+            const [users] = await pool.query('SELECT COUNT(*) as count FROM users');
+            console.log('Total Users:', users[0].count);
+            if (users[0].count > 0) {
+                const [sampleUser] = await pool.query('SELECT * FROM users LIMIT 1');
+                console.log('Sample User:', sampleUser[0]);
             }
+        } catch (e) {
+            console.error('Error checking users:', e.message);
         }
-    }
 
-    console.log(`Total Skipped Rows: ${skippedCount}`);
-    console.log('Sample Skipped Rows:', JSON.stringify(sampleSkipped, null, 2));
+        // 2. Check Orders Query (Simulate API)
+        try {
+            const query = `
+                SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp, 
+                p.name as package_name, p.price as package_price
+                FROM orders o
+                LEFT JOIN clients c ON o.client_id = c.id
+                LEFT JOIN packages p ON o.package_id = p.id
+                ORDER BY o.created_at DESC
+                LIMIT 5
+            `;
+            const [orders] = await pool.query(query);
+            console.log('Orders Query Result Count (Limit 5):', orders.length);
+            if (orders.length > 0) {
+                console.log('Sample Order Raw:', orders[0]);
+                
+                // Simulate Frontend Mapping
+                const mapped = orders.map(o => {
+                    let meta = o.meta_data;
+                    if (typeof meta === 'string') {
+                        try { meta = JSON.parse(meta); } catch(e) {}
+                    }
+                    return {
+                        id: o.id,
+                        created_at: o.created_at, // Check type
+                        startDate: o.start_date || o.created_at,
+                        status: o.status
+                    };
+                });
+                console.log('Mapped Order Sample:', mapped[0]);
+                console.log('created_at type:', typeof mapped[0].created_at);
+                console.log('created_at value:', mapped[0].created_at);
+            }
+        } catch (e) {
+            console.error('Error checking orders query:', e.message);
+        }
+
+        // 3. Check Campaigns (if exists)
+        try {
+            const [tables] = await pool.query("SHOW TABLES LIKE 'campaigns'");
+            if (tables.length > 0) {
+                const [camps] = await pool.query('SELECT COUNT(*) as count FROM campaigns');
+                console.log('Total Campaigns:', camps[0].count);
+            } else {
+                console.log('Table "campaigns" does not exist.');
+            }
+        } catch (e) {
+            console.error('Error checking campaigns:', e.message);
+        }
+
+        await pool.end();
+
+    } catch (e) {
+        console.error('General Error:', e);
+    }
 }
 
-debugSkipped();
+debugData();

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+    <script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>CPR Calculator - Nyala Digital Apps</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#ef7225",
+                        secondary: "#0d3b66",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0b0e14",
+                        "sidebar-dark": "#101922"
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        .glass-surface {
+            background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+        }
+        .dark .glass-surface {
+             background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+        }
+        .glass-panel { background: rgba(255,255,255,0.7); border: 1px solid rgba(15,23,42,0.1); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+        .dark .glass-panel { background: rgba(6, 12, 31, 0.94); border: 1px solid rgba(148, 163, 184, 0.35); }
+        
+        /* Calculator Specific Styles - Scoped */
+        #cpr-calculator {
+            --bg: transparent;
+            --surface: rgba(255, 255, 255, 0.8);
+            --surface2: rgba(0, 0, 0, 0.03);
+            --border: rgba(0, 0, 0, 0.1);
+            --accent: #ef7225;
+            --accent2: #0d3b66;
+            --accent3: #7c3aed;
+            --green: #10b981;
+            --red: #ef4444;
+            --text: #0f172a;
+            --muted: #64748b;
+        }
+        .dark #cpr-calculator {
+            --surface: rgba(15, 23, 42, 0.6);
+            --surface2: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+        }
+
+        /* Scoped Calculator CSS */
+        #cpr-calculator .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        #cpr-calculator .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        #cpr-calculator .full { grid-column: 1 / -1; }
+        @media (max-width: 768px) { #cpr-calculator .grid-2, #cpr-calculator .grid-3 { grid-template-columns: 1fr; } }
+
+        #cpr-calculator .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; position: relative; overflow: hidden; transition: border-color 0.3s; }
+        #cpr-calculator .card:hover { border-color: rgba(239, 114, 37, 0.3); }
+        #cpr-calculator .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--card-accent, var(--accent)); opacity: 0.6; }
+        #cpr-calculator .card.accent2::before { --card-accent: var(--accent2); }
+        #cpr-calculator .card.accent3::before { --card-accent: var(--accent3); }
+        #cpr-calculator .card.green::before  { --card-accent: var(--green); }
+        #cpr-calculator .card-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        #cpr-calculator .card-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        #cpr-calculator .section-title { font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; font-family: 'Space Mono', monospace; display: flex; align-items: center; gap: 12px; }
+        #cpr-calculator .section-title::before { content: ''; width: 24px; height: 2px; background: var(--accent); }
+
+        #cpr-calculator .field { margin-bottom: 14px; }
+        #cpr-calculator .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+        #cpr-calculator .input-wrap { position: relative; display: flex; align-items: center; }
+        #cpr-calculator .currency { position: absolute; left: 12px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); pointer-events: none; }
+        #cpr-calculator .suffix   { position: absolute; right: 12px; font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); pointer-events: none; }
+        
+        #cpr-calculator input[type="number"] { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 14px; padding: 10px 12px 10px 36px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -moz-appearance: textfield; }
+        #cpr-calculator input[type="number"]::-webkit-inner-spin-button { display: none; }
+        #cpr-calculator input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(239, 114, 37, 0.1); }
+        #cpr-calculator input.has-suffix { padding-right: 44px; }
+        #cpr-calculator input.no-prefix  { padding-left: 12px; }
+        #cpr-calculator input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: var(--surface2); border-radius: 2px; margin: 12px 0; outline: none; }
+        #cpr-calculator input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 10px rgba(239, 114, 37, 0.4); }
+
+        #cpr-calculator .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+        #cpr-calculator .metric-row:last-child { border-bottom: none; }
+        #cpr-calculator .metric-row .key { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 11px; }
+        #cpr-calculator .metric-row .val { font-weight: 600; font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text); }
+        #cpr-calculator .metric-row .val.green { color: var(--green); }
+        #cpr-calculator .metric-row .val.orange { color: var(--accent); } /* Use accent for orange */
+        #cpr-calculator .metric-row .val.red { color: var(--red); }
+        #cpr-calculator .metric-row .val.cyan { color: #06b6d4; }
+
+        #cpr-calculator .result-big { text-align: center; padding: 8px 0 16px; }
+        #cpr-calculator .result-big .value { font-size: clamp(34px, 5vw, 52px); font-weight: 800; letter-spacing: -2px; line-height: 1; transition: color 0.4s; color: var(--text); }
+        #cpr-calculator .result-big .unit  { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; margin-top: 6px; }
+
+        #cpr-calculator .progress-wrap { margin-top: 16px; }
+        #cpr-calculator .progress-label { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+        #cpr-calculator .progress-bar   { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+        #cpr-calculator .progress-fill  { height: 100%; border-radius: 3px; background: var(--green); transition: width 0.5s cubic-bezier(0.4,0,0.2,1), background 0.3s; max-width: 100%; }
+
+        #cpr-calculator .info-box { background: rgba(239, 114, 37, 0.05); border: 1px solid rgba(239, 114, 37, 0.2); border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); line-height: 1.7; }
+        
+        #cpr-calculator .tag { background: rgba(124,58,237,0.15); color: #a78bfa; font-family: 'Space Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(124,58,237,0.3); }
+
+        /* Paket Selector */
+        #cpr-calculator .paket-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; }
+        @media (max-width: 900px) { #cpr-calculator .paket-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 600px) { #cpr-calculator .paket-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        #cpr-calculator .paket-btn {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            padding: 14px 10px; cursor: pointer; text-align: center;
+            transition: all 0.2s; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+        }
+        #cpr-calculator .paket-btn:hover { border-color: rgba(239, 114, 37, 0.4); background: var(--surface2); }
+        #cpr-calculator .paket-btn.active {
+            border-color: var(--accent); background: rgba(239, 114, 37, 0.08);
+            box-shadow: 0 0 20px rgba(239, 114, 37, 0.12);
+        }
+        #cpr-calculator .paket-btn.active::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+        #cpr-calculator .paket-hari { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; color: var(--accent); line-height: 1; }
+        #cpr-calculator .paket-hari-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 1px; }
+        #cpr-calculator .paket-harga { font-size: 12px; font-weight: 700; color: var(--text); margin-top: 2px; }
+        #cpr-calculator .paket-badge { position: absolute; top: 6px; right: 6px; background: var(--accent3); color: white; font-family: 'Space Mono', monospace; font-size: 8px; padding: 2px 5px; border-radius: 3px; }
+
+        /* HPP Components */
+        #cpr-calculator .hpp-num { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: rgba(239, 114, 37, 0.15); color: var(--accent); font-size: 10px; font-weight: 700; margin-right: 4px; flex-shrink: 0; }
+        #cpr-calculator .hpp-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); }
+        #cpr-calculator .hpp-total-row span:last-child { color: var(--text); font-weight: 700; }
+        #cpr-calculator .hpp-auto-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+        #cpr-calculator .hpp-auto-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--muted); margin-bottom: 6px; }
+        #cpr-calculator .hpp-auto-value { font-family: 'Space Mono', monospace; font-size: 26px; font-weight: 700; color: var(--accent2); }
+        #cpr-calculator .hpp-auto-desc  { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+        #cpr-calculator .hpp-formula-box { background: rgba(0,0,0,0.1); border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; font-family: 'Space Mono', monospace; font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .dark #cpr-calculator .hpp-formula-box { background: rgba(0,0,0,0.3); }
+
+        /* Sim table */
+        #cpr-calculator .sim-table { width: 100%; border-collapse: collapse; font-family: 'Space Mono', monospace; font-size: 12px; }
+        #cpr-calculator .sim-table th { text-align: left; padding: 8px 12px; color: var(--muted); font-size: 10px; letter-spacing: 1px; border-bottom: 1px solid var(--border); font-weight: 400; }
+        #cpr-calculator .sim-table td { padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.2); color: var(--text); }
+        #cpr-calculator .sim-table tr:last-child td { border-bottom: none; }
+        #cpr-calculator .sim-table .num { text-align: right; }
+        #cpr-calculator .sim-table .highlight { color: var(--green); font-weight: 700; }
+        #cpr-calculator .sim-table .neg { color: var(--red); }
+
+        /* Break Even */
+        #cpr-calculator .be-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; position: relative; overflow: hidden; margin-bottom: 20px; }
+        #cpr-calculator .be-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent3), var(--accent2)); }
+        #cpr-calculator .be-grid { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 32px; align-items: start; }
+        @media (max-width: 900px) { #cpr-calculator .be-grid { grid-template-columns: 1fr; } }
+        #cpr-calculator .be-insight { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+        #cpr-calculator .be-insight:last-child { margin-bottom: 0; }
+        #cpr-calculator .be-insight-title { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+        #cpr-calculator .be-insight-val  { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; transition: color 0.3s; color: var(--text); }
+        #cpr-calculator .be-insight-desc { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+        
+        #cpr-calculator .gauge-wrap { position: relative; width: 180px; height: 105px; margin: 0 auto 12px; }
+        #cpr-calculator .gauge-svg  { width: 100%; height: 100%; overflow: visible; }
+        #cpr-calculator .delta-bar-wrap { margin-top: 20px; }
+        #cpr-calculator .delta-label-row { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+        #cpr-calculator .delta-track { position: relative; height: 10px; background: var(--surface2); border-radius: 5px; overflow: visible; }
+        #cpr-calculator .delta-zone-safe   { position: absolute; top: 0; left: 0; height: 100%; border-radius: 5px 0 0 5px; background: rgba(16, 185, 129, 0.15); transition: width 0.5s; }
+        #cpr-calculator .delta-zone-danger { position: absolute; top: 0; height: 100%; border-radius: 0 5px 5px 0; background: rgba(239, 68, 68, 0.1); transition: left 0.5s, width 0.5s; }
+        #cpr-calculator .delta-marker-min    { position: absolute; top: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); transform: translateX(-50%); transition: left 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); z-index: 2; }
+        #cpr-calculator .delta-marker-actual { position: absolute; top: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--green); transform: translateX(-50%); transition: left 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); z-index: 3; border: 2px solid var(--bg); }
+        #cpr-calculator .delta-legend { display: flex; gap: 16px; margin-top: 10px; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+        #cpr-calculator .delta-legend span { display: flex; align-items: center; gap: 6px; }
+        #cpr-calculator .dot-red   { width: 8px; height: 8px; border-radius: 50%; background: var(--red);   display: inline-block; }
+        #cpr-calculator .dot-green { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
+    </style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface font-display" data-active="cpr_calculator">
+    <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+        <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+    </div>
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <div id="include-header"></div>
+        <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+            <div id="include-sidebar"></div>
+            <main class="flex-1 flex flex-col gap-4">
+                <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                             <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-primary/10 text-primary uppercase font-mono">Meta Ads Tool</span>
+                        </div>
+                        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">CPR <span class="text-primary">Max</span> Calculator</h1>
+                        <p class="text-xs text-secondary/80 mt-1">// Cost Per Result · UMKM Jasa · Meta Ads</p>
+                    </div>
+                    <div class="flex items-center gap-3" id="active_paket_badge">
+                        <span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white/80 bg-white/5 border border-white/10">
+                            Pilih Paket
+                        </span>
+                    </div>
+                </section>
+
+                <div id="cpr-calculator">
+                    <!-- ══ PAKET SELECTOR ══ -->
+                    <div class="section-title">00 · Pilih Paket Produk</div>
+                    <div class="paket-grid" id="paket-grid">
+                        <button class="paket-btn active" data-hari="5"  data-harga="197000" onclick="selectPaket(this)">
+                        <span class="paket-hari">5</span>
+                        <span class="paket-hari-label">HARI</span>
+                        <span class="paket-harga">Rp 197rb</span>
+                        </button>
+                        <button class="paket-btn" data-hari="7" data-harga="297000" onclick="selectPaket(this)">
+                        <span class="paket-hari">7</span>
+                        <span class="paket-hari-label">HARI</span>
+                        <span class="paket-harga">Rp 297rb</span>
+                        </button>
+                        <button class="paket-btn" data-hari="10" data-harga="375000" onclick="selectPaket(this)">
+                        <span class="paket-hari">10</span>
+                        <span class="paket-hari-label">HARI</span>
+                        <span class="paket-harga">Rp 375rb</span>
+                        <span class="paket-badge">POPULER</span>
+                        </button>
+                        <button class="paket-btn" data-hari="14" data-harga="550000" onclick="selectPaket(this)">
+                        <span class="paket-hari">14</span>
+                        <span class="paket-hari-label">HARI</span>
+                        <span class="paket-harga">Rp 550rb</span>
+                        </button>
+                        <button class="paket-btn" data-hari="20" data-harga="700000" onclick="selectPaket(this)">
+                        <span class="paket-hari">20</span>
+                        <span class="paket-hari-label">HARI</span>
+                        <span class="paket-harga">Rp 700rb</span>
+                        </button>
+                        <button class="paket-btn" data-hari="30" data-harga="1000000" onclick="selectPaket(this)">
+                        <span class="paket-hari">30</span>
+                        <span class="paket-hari-label">HARI</span>
+                        <span class="paket-harga">Rp 1 Juta</span>
+                        <span class="paket-badge" style="background:var(--accent2)">BEST</span>
+                        </button>
+                    </div>
+
+                    <!-- ══ 01 HPP ══ -->
+                    <div class="section-title">01 · Komponen HPP (Harga Pokok Produksi)</div>
+                    <div class="grid-2">
+
+                        <!-- 1. Biaya Video -->
+                        <div class="card">
+                        <div class="card-label"><span class="hpp-num">1</span> Biaya Video</div>
+                        <div class="field">
+                            <label>Biaya produksi video</label>
+                            <div class="input-wrap"><span class="currency">Rp</span><input type="number" id="harga_video" value="15000" oninput="calculate()"></div>
+                        </div>
+                        <div class="field">
+                            <label>Qty</label>
+                            <div class="input-wrap"><input type="number" id="qty_video" value="1" class="no-prefix" oninput="calculate()"></div>
+                        </div>
+                        <div class="hpp-total-row"><span>Subtotal</span><span id="sub_video">—</span></div>
+                        </div>
+
+                        <!-- 2. Biaya Iklan / Closing (dinamis) -->
+                        <div class="card accent2">
+                        <div class="card-label"><span class="hpp-num">2</span> Biaya Iklan / Closing</div>
+                        <div class="hpp-auto-box">
+                            <div class="hpp-auto-label">OTOMATIS — CPR ÷ Closing Rate</div>
+                            <div class="hpp-auto-value" id="sub_iklan_closing">—</div>
+                            <div class="hpp-auto-desc">Makin tinggi CR → makin murah per closing</div>
+                        </div>
+                        <div class="hpp-formula-box">
+                            <span id="cpr_formula_val" style="color:var(--accent)">Rp —</span>
+                            <span style="color:var(--muted)"> ÷ </span>
+                            <span id="cr_formula_val" style="color:var(--accent2)">—%</span>
+                            <span style="color:var(--muted)"> = </span>
+                            <span id="result_formula_val" style="color:var(--green);font-weight:700">Rp —</span>
+                        </div>
+                        </div>
+
+                        <!-- 3. Biaya Meta Ads -->
+                        <div class="card accent3">
+                        <div class="card-label"><span class="hpp-num">3</span> Biaya Meta Ads (ke Meta)</div>
+                        <div class="field">
+                            <label>Biaya per hari ke Meta</label>
+                            <div class="input-wrap"><span class="currency">Rp</span><input type="number" id="meta_per_hari" value="15000" oninput="calculate()"></div>
+                        </div>
+                        <div class="field">
+                            <label>Durasi paket <span style="color:var(--accent);font-size:10px">(auto dari paket, per klien)</span></label>
+                            <div class="input-wrap"><input type="number" id="meta_hari" value="5" class="no-prefix has-suffix" oninput="calculate()"><span class="suffix">hari</span></div>
+                        </div>
+                        <div class="hpp-total-row"><span>Subtotal</span><span id="sub_meta">—</span></div>
+                        </div>
+
+                        <!-- 4. Komisi CS -->
+                        <div class="card green">
+                        <div class="card-label"><span class="hpp-num">4</span> Komisi CS</div>
+                        <div class="field">
+                            <label>Komisi per transaksi</label>
+                            <div class="input-wrap"><span class="currency">Rp</span><input type="number" id="harga_komisi" value="5000" oninput="calculate()"></div>
+                        </div>
+                        <div class="field">
+                            <label>Qty</label>
+                            <div class="input-wrap"><input type="number" id="qty_komisi" value="1" class="no-prefix" oninput="calculate()"></div>
+                        </div>
+                        <div class="hpp-total-row"><span>Subtotal</span><span id="sub_komisi">—</span></div>
+                        </div>
+
+                    </div>
+
+                    <!-- ══ 02 Harga & Margin ══ -->
+                    <div class="section-title">02 · Harga Jual &amp; Margin</div>
+                    <div class="grid-2">
+                        <div class="card">
+                        <div class="card-label">Penetapan Harga (dari pilihan paket)</div>
+                        <!-- Paket summary display -->
+                        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:16px;">
+                            <div style="text-align:center;min-width:64px;">
+                            <div id="disp_paket_hari" style="font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:var(--accent);line-height:1">5</div>
+                            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px">HARI</div>
+                            </div>
+                            <div style="flex:1">
+                            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px">HARGA JUAL PAKET</div>
+                            <div id="disp_paket_harga" style="font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--text)">Rp 197.000</div>
+                            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px">Klik paket di atas untuk mengubah</div>
+                            </div>
+                        </div>
+                        <div class="metric-row"><span class="key">TOTAL HPP</span><span class="val" style="color:var(--accent2)" id="disp_hpp">—</span></div>
+                        <div class="metric-row"><span class="key">MARGIN</span><span class="val green" id="disp_margin">—</span></div>
+                        <div class="metric-row"><span class="key">MARGIN %</span><span class="val green" id="disp_margin_pct">—</span></div>
+                        </div>
+                        <div class="card green">
+                        <div class="card-label">CPR Max — Hasil Utama</div>
+                        <div class="result-big">
+                            <div class="value neutral" id="disp_cpr_max">—</div>
+                            <div class="unit">MAX COST PER RESULT</div>
+                        </div>
+                        <div class="metric-row"><span class="key">% dari Harga Jual</span><span class="val cyan" id="disp_cpr_pct">—</span></div>
+                        <div class="metric-row"><span class="key">NETT per penjualan</span><span class="val" id="disp_nett">—</span></div>
+                        <div id="cpr_status"></div>
+                        <div class="info-box"><strong>Formula:</strong><br>CPR Max = Margin × Closing Rate<br>Jika CPR aktual &gt; CPR Max → rugi</div>
+                        </div>
+                    </div>
+
+                    <!-- ══ 03 Parameter ══ -->
+                    <div class="section-title">03 · Parameter Iklan &amp; Simulasi Closing</div>
+                    <div class="grid-2">
+                        <div class="card">
+                        <div class="card-label">Input Parameter</div>
+                        <div class="field">
+                            <label>CPR Aktual (Cost Per Result)</label>
+                            <div class="input-wrap"><span class="currency">Rp</span><input type="number" id="cpr_aktual" value="5000" oninput="calculate()"></div>
+                        </div>
+                        <div class="field">
+                            <label>ORDER MASUK (Leads dari Iklan)</label>
+                            <div class="input-wrap"><input type="number" id="order_masuk" value="100" class="no-prefix" oninput="updateSlider(); calculate()"><span class="suffix">leads</span></div>
+                            <input type="range" id="order_slider" min="10" max="500" value="100" oninput="syncSlider()">
+                        </div>
+                        <div class="field">
+                            <label>Jumlah Closing</label>
+                            <div class="input-wrap">
+                            <input type="number" id="jumlah_closing" value="5" class="no-prefix has-suffix" min="0" oninput="calculate()">
+                            <span class="suffix">closing</span>
+                            </div>
+                            <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+                            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">Closing Rate:</div>
+                            <div id="disp_cr_auto" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)">—</div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="card accent2">
+                        <div class="card-label">Hasil Simulasi Closing</div>
+                        <div class="metric-row"><span class="key">Iklan / Closing (CPR÷CR)</span><span class="val orange" id="disp_iklan_per_closing">—</span></div>
+                        <div class="metric-row"><span class="key">Jumlah Closing</span><span class="val" id="disp_closing">—</span></div>
+                        <div class="metric-row"><span class="key">Cost per Closing</span><span class="val" id="disp_cpc">—</span></div>
+                        <div class="metric-row"><span class="key">Closing per Hari</span><span class="val cyan" id="disp_closing_day">—</span></div>
+                        <div class="metric-row"><span class="key">Closing per Bulan</span><span class="val cyan" id="disp_closing_month">—</span></div>
+                        <div class="progress-wrap">
+                            <div class="progress-label"><span>Efisiensi CPR</span><span id="eff_label">—</span></div>
+                            <div class="progress-bar"><div class="progress-fill" id="eff_bar" style="width:0%"></div></div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ 03.5 BREAK EVEN ══ -->
+                    <div class="section-title">03.5 · Closing Rate Minimum (Break-Even Point)</div>
+                    <div class="be-card">
+                        <div class="be-grid">
+                        <!-- Gauge -->
+                        <div style="text-align:center">
+                            <div class="card-label" style="justify-content:center;margin-bottom:14px;border:none">CR MINIMUM</div>
+                            <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 180 110">
+                                <path id="gauge_bg" fill="none" stroke="#1a1a25" stroke-width="14" stroke-linecap="round" d="M 20,95 A 70,70 0 1,1 160,95"/>
+                                <path id="gauge_fill" fill="none" stroke-width="14" stroke-linecap="round" stroke="var(--red)"
+                                d="M 20,95 A 70,70 0 1,1 160,95" stroke-dasharray="220" stroke-dashoffset="220"
+                                style="transition: stroke-dashoffset 0.6s cubic-bezier(0.4,0,0.2,1), stroke 0.4s"/>
+                                <text id="gauge_text" x="90" y="88" text-anchor="middle" dominant-baseline="middle"
+                                font-family="Space Mono, monospace" font-size="24" font-weight="700" fill="var(--text)">—</text>
+                                <text x="90" y="108" text-anchor="middle"
+                                font-family="Space Mono, monospace" font-size="8" fill="var(--muted)" letter-spacing="1">MIN CR BEP</text>
+                            </svg>
+                            </div>
+                            <div id="be_badge" style="margin-top:4px"></div>
+                        </div>
+                        <!-- Col 2 -->
+                        <div>
+                            <div class="be-insight">
+                            <div class="be-insight-title">CR Aktual Kamu</div>
+                            <div class="be-insight-val" id="be_cr_aktual" style="color:var(--accent)">—</div>
+                            <div class="be-insight-desc">Dari input closing rate di atas</div>
+                            </div>
+                            <div class="be-insight">
+                            <div class="be-insight-title">CR Minimum (Break-Even)</div>
+                            <div class="be-insight-val" id="be_cr_min">—</div>
+                            <div class="be-insight-desc">Titik dimana Laba Kotor = 0</div>
+                            </div>
+                            <div class="be-insight">
+                            <div class="be-insight-title">Gap / Selisih</div>
+                            <div class="be-insight-val" id="be_gap">—</div>
+                            <div class="be-insight-desc" id="be_gap_desc">—</div>
+                            </div>
+                        </div>
+                        <!-- Col 3 -->
+                        <div>
+                            <div class="be-insight">
+                            <div class="be-insight-title">Nett per Closing (setelah semua potongan)</div>
+                            <div class="be-insight-val" id="be_nett_closing" style="color:var(--accent2)">—</div>
+                            <div class="be-insight-desc">Harga Jual − Total HPP (semua 4 komponen)</div>
+                            </div>
+                            <div class="be-insight">
+                            <div class="be-insight-title">Min. Closing / Bulan</div>
+                            <div class="be-insight-val" id="be_min_closing_month">—</div>
+                            <div class="be-insight-desc">Penjualan minimal agar tidak rugi</div>
+                            </div>
+                            <div class="be-insight">
+                            <div class="be-insight-title">Min. Closing / Hari</div>
+                            <div class="be-insight-val" id="be_min_closing_day">—</div>
+                            <div class="be-insight-desc">Target harian agar BEP terpenuhi</div>
+                            </div>
+                            <!-- Delta bar -->
+                            <div class="delta-bar-wrap">
+                            <div class="delta-label-row"><span>0%</span><span>Zona Closing Rate</span><span>30%</span></div>
+                            <div class="delta-track">
+                                <div class="delta-zone-safe"   id="dz_safe"   style="width:0%"></div>
+                                <div class="delta-zone-danger" id="dz_danger" style="left:0%;width:0%"></div>
+                                <div class="delta-marker-min"    id="dm_min"    style="left:0%"></div>
+                                <div class="delta-marker-actual" id="dm_actual" style="left:0%"></div>
+                            </div>
+                            <div class="delta-legend">
+                                <span><span class="dot-red"></span>CR Min (BEP)</span>
+                                <span><span class="dot-green"></span>CR Aktual</span>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ 04 P&L ══ -->
+                    <div class="section-title">04 · Simulasi P&amp;L Bulanan</div>
+                    <div class="grid-2">
+                        <div class="card full">
+                        <div class="card-label">Proyeksi Per Bulan</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:24px;">
+                            <div>
+                            <table class="sim-table">
+                                <thead>
+                                <tr><th>Komponen</th><th class="num">Per Pcs</th><th class="num">Vol/Bln</th><th class="num">Total</th></tr>
+                                </thead>
+                                <tbody id="sim_table_body"></tbody>
+                            </table>
+                            </div>
+                            <div>
+                            <div class="metric-row"><span class="key">OMSET BULANAN</span><span class="val green" id="disp_omset">—</span></div>
+                            <div class="metric-row"><span class="key">HPP per Closing</span><span class="val" style="color:var(--accent2)" id="disp_hpp_per_closing">—</span></div>
+                            <div class="metric-row"><span class="key">TOTAL HPP BULANAN</span><span class="val red" id="disp_total_hpp">—</span></div>
+                            <hr style="border-color:var(--border);margin:12px 0">
+                            <div class="metric-row">
+                                <span class="key" style="font-size:13px;font-weight:700;color:var(--text)">LABA KOTOR</span>
+                                <span class="val" style="font-size:16px" id="disp_laba">—</span>
+                            </div>
+                            <div id="laba_status" style="margin-top:12px"></div>
+                            <div style="margin-top:20px">
+                                <div class="card-label" style="margin-bottom:12px">Operasional Tambahan</div>
+                                <div class="field">
+                                <label>Listrik + WiFi / bulan</label>
+                                <div class="input-wrap"><span class="currency">Rp</span><input type="number" id="op_listrik" value="0" oninput="calculate()"></div>
+                                </div>
+                                <div class="field">
+                                <label>ATK &amp; Consumable / bulan</label>
+                                <div class="input-wrap"><span class="currency">Rp</span><input type="number" id="op_atk" value="0" oninput="calculate()"></div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/include.js"></script>
+    <script>
+    // Logic from original file
+    const PAKETS = {
+        5:  197000,
+        7:  297000,
+        10: 375000,
+        14: 550000,
+        20: 700000,
+        30: 1000000
+    };
+
+    let activeHari  = 5;
+    let activeHarga = 197000;
+
+    function selectPaket(btn) {
+        document.querySelectorAll('.paket-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeHari  = parseInt(btn.dataset.hari);
+        activeHarga = parseInt(btn.dataset.harga);
+        // sync meta_hari dengan durasi paket
+        document.getElementById('meta_hari').value = activeHari;
+        // update display
+        document.getElementById('disp_paket_hari').textContent  = activeHari;
+        document.getElementById('disp_paket_harga').textContent = 'Rp ' + activeHarga.toLocaleString('id-ID');
+        
+        // Update badge in header
+        const badgeContainer = document.getElementById('active_paket_badge');
+        if(badgeContainer) {
+            badgeContainer.innerHTML = '<span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white bg-primary/20 border border-primary/30">Paket ' + activeHari + ' Hari</span>';
+        }
+        
+        calculate();
+    }
+
+    function fmt(n) {
+        if (isNaN(n) || n === null) return '—';
+        return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+    }
+    function fmtPct(n) {
+        if (isNaN(n) || !isFinite(n)) return '—';
+        return (n * 100).toFixed(2) + '%';
+    }
+    function updateSlider() {
+        const v = parseInt(document.getElementById('order_masuk').value) || 0;
+        document.getElementById('order_slider').value = Math.min(Math.max(v, 10), 500);
+        // cap jumlah_closing to max order_masuk
+        const jc = parseInt(document.getElementById('jumlah_closing').value) || 0;
+        if (jc > v) document.getElementById('jumlah_closing').value = v;
+    }
+    function syncSlider() {
+        document.getElementById('order_masuk').value = document.getElementById('order_slider').value;
+        // cap jumlah_closing
+        const om = parseInt(document.getElementById('order_masuk').value) || 0;
+        const jc = parseInt(document.getElementById('jumlah_closing').value) || 0;
+        if (jc > om) document.getElementById('jumlah_closing').value = om;
+        calculate();
+    }
+
+    function calculate() {
+        // Params
+        const orderMasuk      = parseFloat(document.getElementById('order_masuk').value) || 0;
+        const jumlahClosing   = parseFloat(document.getElementById('jumlah_closing').value) || 0;
+        const closingRate     = orderMasuk > 0 ? jumlahClosing / orderMasuk : 0;
+        const closingRatePct  = closingRate * 100;
+        const cprAktual       = parseFloat(document.getElementById('cpr_aktual').value) || 0;
+        const opListrik      = parseFloat(document.getElementById('op_listrik').value) || 0;
+        const opAtk          = parseFloat(document.getElementById('op_atk').value) || 0;
+
+        // ── HPP 4 Komponen — semua dihitung PER CLOSING ──
+        // Setiap closing = 1 klien = 1 paket penuh → semua biaya dikali jumlah closing
+
+        // ① Biaya Video per closing
+        const hppVideo = (parseFloat(document.getElementById('harga_video').value)||0)
+                    * (parseFloat(document.getElementById('qty_video').value)||0);
+
+        // ② Biaya Iklan per closing = CPR ÷ Closing Rate
+        const iklanPerClosing = closingRate > 0 ? cprAktual / closingRate : 0;
+
+        // ③ Biaya Meta Ads per closing (tiap klien dapat 1 paket campaign penuh)
+        const metaPerHari = parseFloat(document.getElementById('meta_per_hari').value) || 0;
+        const metaHari    = parseFloat(document.getElementById('meta_hari').value) || 0;
+        const biayaMeta   = metaPerHari * metaHari;
+
+        // ④ Komisi CS per closing
+        const hppKomisi = (parseFloat(document.getElementById('harga_komisi').value)||0)
+                        * (parseFloat(document.getElementById('qty_komisi').value)||0);
+
+        // Total HPP per closing
+        const hpp = hppVideo + iklanPerClosing + biayaMeta + hppKomisi;
+
+        // Harga jual dari paket aktif
+        const hj = activeHarga;
+        const margin    = hj - hpp;
+        const marginPct = hj > 0 ? margin / hj : 0;
+
+        // CPR Max
+        const cprMax = margin * closingRate;
+        const cprPct = hj > 0 ? cprMax / hj : 0;
+        const nett   = hj - cprMax;
+
+        // Closing simulation
+        const closing         = jumlahClosing;
+        const costPerClosing  = closing > 0 ? (cprAktual * orderMasuk) / closing : 0;
+        const closingPerMonth = closing * 30;
+
+        // Efficiency
+        const effPct = cprMax > 0 ? Math.min(Math.max((1 - cprAktual / cprMax) * 100, 0), 100) : 0;
+
+        // P&L — totalHPP sudah mencakup semua 4 komponen × closingPerMonth
+        const omset       = hj * closingPerMonth;
+        const totalHPPBln = hpp * closingPerMonth;      // semua 4 komponen × jumlah closing
+        const labaKotor   = omset - totalHPPBln - opListrik - opAtk;
+
+        // Break Even — nett = harga jual - total HPP per closing
+        const nettPerClosing  = hj - hpp;
+        const closingMinMonth = nettPerClosing > 0 ? (opListrik + opAtk) / nettPerClosing : Infinity;
+        const closingMinDay   = closingMinMonth / 30;
+        const crMin           = orderMasuk * 30 > 0 ? closingMinMonth / (orderMasuk * 30) : 0;
+        const crMinPct        = crMin * 100;
+        const gap             = closingRatePct - crMinPct;
+
+        // ── Update HPP subtotals ──
+        // Show auto-computed closing rate
+        document.getElementById('disp_cr_auto').textContent = closingRatePct.toFixed(1) + '%';
+
+        document.getElementById('sub_video').textContent        = fmt(hppVideo);
+        document.getElementById('sub_iklan_closing').textContent = fmt(iklanPerClosing);
+        document.getElementById('sub_meta').textContent         = fmt(biayaMeta);
+        document.getElementById('sub_komisi').textContent       = fmt(hppKomisi);
+        document.getElementById('cpr_formula_val').textContent  = fmt(cprAktual);
+        document.getElementById('cr_formula_val').textContent   = closingRatePct.toFixed(1) + '%';
+        document.getElementById('result_formula_val').textContent = fmt(iklanPerClosing);
+
+        // ── Margin section ──
+        document.getElementById('disp_hpp').textContent        = fmt(hpp);
+        document.getElementById('disp_margin').textContent     = fmt(margin);
+        document.getElementById('disp_margin_pct').textContent = fmtPct(marginPct);
+        
+        // ── Result Big ──
+        const elCprMax = document.getElementById('disp_cpr_max');
+        elCprMax.textContent = fmt(cprMax);
+        // Color coding for CPR Max
+        if (cprMax < 0) elCprMax.style.color = 'var(--red)';
+        else elCprMax.style.color = 'var(--text)'; // Default
+
+        document.getElementById('disp_cpr_pct').textContent = fmtPct(cprPct);
+        document.getElementById('disp_nett').textContent    = fmt(nett);
+
+        // Status badge
+        const elStatus = document.getElementById('cpr_status');
+        if (cprAktual > cprMax) {
+            elStatus.innerHTML = '<div class="status-badge danger"><div class="dot"></div>OVER BUDGET (RUGI)</div>';
+        } else {
+            elStatus.innerHTML = '<div class="status-badge safe"><div class="dot"></div>PROFITABLE (AMAN)</div>';
+        }
+
+        // ── Simulation section ──
+        document.getElementById('disp_iklan_per_closing').textContent = fmt(iklanPerClosing);
+        document.getElementById('disp_closing').textContent = closing;
+        document.getElementById('disp_cpc').textContent     = fmt(costPerClosing);
+        document.getElementById('disp_closing_day').textContent   = closing.toFixed(1);
+        document.getElementById('disp_closing_month').textContent = closingPerMonth.toLocaleString('id-ID');
+        
+        // Efficiency bar
+        document.getElementById('eff_label').textContent = Math.round(effPct) + '%';
+        const effBar = document.getElementById('eff_bar');
+        effBar.style.width = effPct + '%';
+        effBar.style.background = effPct > 80 ? 'var(--green)' : (effPct > 50 ? 'var(--accent)' : 'var(--red)');
+
+        // ── P&L Table ──
+        const tbody = document.getElementById('sim_table_body');
+        let html = '';
+        
+        // 1. Omset
+        html += `<tr><td>Penjualan Paket</td><td class="num">${fmt(hj)}</td><td class="num">${closingPerMonth.toLocaleString('id-ID')}</td><td class="num highlight">${fmt(omset)}</td></tr>`;
+        
+        // 2. HPP Components
+        html += `<tr><td>(-) Biaya Video</td><td class="num">${fmt(hppVideo)}</td><td class="num">${closingPerMonth.toLocaleString('id-ID')}</td><td class="num">${fmt(hppVideo*closingPerMonth)}</td></tr>`;
+        html += `<tr><td>(-) Iklan (CPR/CR)</td><td class="num">${fmt(iklanPerClosing)}</td><td class="num">${closingPerMonth.toLocaleString('id-ID')}</td><td class="num">${fmt(iklanPerClosing*closingPerMonth)}</td></tr>`;
+        html += `<tr><td>(-) Meta Ads</td><td class="num">${fmt(biayaMeta)}</td><td class="num">${closingPerMonth.toLocaleString('id-ID')}</td><td class="num">${fmt(biayaMeta*closingPerMonth)}</td></tr>`;
+        html += `<tr><td>(-) Komisi CS</td><td class="num">${fmt(hppKomisi)}</td><td class="num">${closingPerMonth.toLocaleString('id-ID')}</td><td class="num">${fmt(hppKomisi*closingPerMonth)}</td></tr>`;
+        
+        tbody.innerHTML = html;
+
+        document.getElementById('disp_omset').textContent = fmt(omset);
+        document.getElementById('disp_hpp_per_closing').textContent = fmt(hpp);
+        document.getElementById('disp_total_hpp').textContent = fmt(totalHPPBln);
+        
+        // Laba
+        const elLaba = document.getElementById('disp_laba');
+        elLaba.textContent = fmt(labaKotor);
+        elLaba.style.color = labaKotor >= 0 ? 'var(--green)' : 'var(--red)';
+        
+        const elLabaStatus = document.getElementById('laba_status');
+        if (labaKotor > 0) {
+            elLabaStatus.innerHTML = '<span class="tag" style="color:var(--green);border-color:var(--green)">PROFITABLE</span>';
+        } else {
+            elLabaStatus.innerHTML = '<span class="tag" style="color:var(--red);border-color:var(--red)">LOSS / RUGI</span>';
+        }
+
+        // ── BEP Logic ──
+        // Badge text
+        const beBadge = document.getElementById('be_badge');
+        const gaugeText = document.getElementById('gauge_text');
+        const gaugeFill = document.getElementById('gauge_fill');
+
+        document.getElementById('be_cr_aktual').textContent = closingRatePct.toFixed(2) + '%';
+        
+        if (!isFinite(crMin)) {
+            // Cannot cover fixed costs
+            document.getElementById('be_cr_min').textContent = '∞';
+            document.getElementById('be_gap').textContent = '—';
+            gaugeText.textContent = '∞';
+            beBadge.innerHTML = '<span class="status-badge danger">TIDAK MUNGKIN BEP</span>';
+        } else {
+            document.getElementById('be_cr_min').textContent = crMinPct.toFixed(2) + '%';
+            document.getElementById('be_gap').textContent = (gap > 0 ? '+' : '') + gap.toFixed(2) + '%';
+            document.getElementById('be_gap').textContent = (gap > 0 ? '+' : '') + gap.toFixed(2) + '%';
+            
+            const gapDesc = document.getElementById('be_gap_desc');
+            if (gap >= 0) {
+                gapDesc.textContent = 'Aman (Di atas BEP)';
+                gapDesc.style.color = 'var(--green)';
+                beBadge.innerHTML = '<span class="status-badge safe">AMAN</span>';
+            } else {
+                gapDesc.textContent = 'Bahaya (Di bawah BEP)';
+                gapDesc.style.color = 'var(--red)';
+                beBadge.innerHTML = '<span class="status-badge danger">BAHAYA</span>';
+            }
+
+            // Update Gauge
+            // Max gauge = 20% or 2x CR Min for visualization
+            const maxGauge = Math.max(20, crMinPct * 2); 
+            const valGauge = Math.min(Math.max(crMinPct, 0), maxGauge);
+            const dashArray = 220; // from css
+            // 0% -> offset 220, 100% of max -> offset 0
+            const offset = dashArray - (valGauge / maxGauge) * dashArray;
+            gaugeFill.style.strokeDashoffset = offset;
+            gaugeText.textContent = crMinPct.toFixed(1) + '%';
+            
+            // Delta Bar Logic
+            // Scale 0 to 30% CR
+            const maxScale = 30;
+            const safeWidth = Math.min(Math.max(gap, 0), maxScale); // gap positive
+            // logic:
+            // CR Min position
+            const posMin = Math.min((crMinPct / maxScale) * 100, 100);
+            const posAct = Math.min((closingRatePct / maxScale) * 100, 100);
+            
+            document.getElementById('dm_min').style.left = posMin + '%';
+            document.getElementById('dm_actual').style.left = posAct + '%';
+            
+            // Zones
+            // Safe zone starts from min, goes right
+            const safeW = Math.max(0, 100 - posMin);
+            document.getElementById('dz_safe').style.left = posMin + '%';
+            document.getElementById('dz_safe').style.width = safeW + '%';
+            
+            // Danger zone starts 0, ends at min
+            document.getElementById('dz_danger').style.width = posMin + '%';
+        }
+        
+        document.getElementById('be_nett_closing').textContent = fmt(nettPerClosing);
+        document.getElementById('be_min_closing_month').textContent = Math.ceil(closingMinMonth);
+        document.getElementById('be_min_closing_day').textContent = closingMinDay.toFixed(1);
+
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+        calculate();
+    });
+    </script>
+</body>
+</html>

@@ -183,19 +183,103 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Dashboard Stats Endpoint (Placeholder)
+// Dashboard Stats Endpoint
 app.get('/api/dashboard/stats', async (req, res) => {
     try {
-        // Mock data or simple counts
-        const [orders] = await pool.query('SELECT COUNT(*) as count FROM orders');
-        const [clients] = await pool.query('SELECT COUNT(*) as count FROM clients');
-        
-        res.json({
-            active_orders: orders[0].count,
-            revenue: 0, // Calculate real revenue if needed
-            clients: clients[0].count,
-            active_campaigns: 0
-        });
+        const { role, user_id } = req.query;
+        const userId = parseInt(user_id);
+
+        let stats = {
+            activeOrders: 0,
+            revenueThisMonth: 0,
+            newClientsThisMonth: 0,
+            activeCampaigns: 0,
+            // Role specific
+            assignedOrders: 0,
+            commission: 0,
+            expiryCount: 0,
+            pendingTasks: 0,
+            completedTasks: 0
+        };
+
+        // Global Stats (for Admin)
+        if (!role || role === 'super_admin' || role === 'Super Admin') {
+            const [ordersCount] = await pool.query("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'");
+            const [clientsCount] = await pool.query("SELECT COUNT(*) as count FROM clients WHERE MONTH(created_at) = MONTH(CURRENT_DATE())");
+            // Mock revenue
+            const [rev] = await pool.query("SELECT SUM(p.price) as total FROM orders o LEFT JOIN packages p ON o.package_id = p.id WHERE o.payment_status = 'paid' AND MONTH(o.created_at) = MONTH(CURRENT_DATE())");
+            
+            stats.activeOrders = ordersCount[0].count;
+            stats.newClientsThisMonth = clientsCount[0].count;
+            stats.revenueThisMonth = rev[0].total || 0;
+            stats.activeCampaigns = 0; // Need campaigns table for this
+        }
+
+        if (role === 'CS' && userId) {
+            // Active Orders for this CS
+            const [myOrders] = await pool.query(`
+                SELECT COUNT(DISTINCT o.id) as count 
+                FROM orders o 
+                JOIN order_assignments oa ON o.id = oa.order_id 
+                WHERE oa.user_id = ? AND oa.role = 'CS' AND o.status IN ('active', 'in_progress', 'pending')
+            `, [userId]);
+            stats.activeOrders = myOrders[0].count; // Reusing field name but means "My Active Orders"
+            
+            // Commission (Mock calculation)
+            // Assuming commission rules are simple for now
+            const [comm] = await pool.query(`
+                SELECT COUNT(DISTINCT o.id) * 50000 as total 
+                FROM orders o 
+                JOIN order_assignments oa ON o.id = oa.order_id 
+                WHERE oa.user_id = ? AND oa.role = 'CS' AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+            `, [userId]);
+            stats.commission = comm[0].total || 0;
+            
+            // Expiry (H-2) - Mock logic (orders created 28 days ago assuming 30 day cycle)
+            stats.expiryCount = 0; 
+        } 
+        else if ((role === 'Editor' || role === 'Editor Video' || role === 'Editor Image') && userId) {
+             // Pending Tasks
+             const [tasks] = await pool.query(`
+                SELECT COUNT(DISTINCT o.id) as count
+                FROM orders o
+                JOIN order_assignments oa ON o.id = oa.order_id
+                WHERE oa.user_id = ? AND (oa.role LIKE '%Editor%') 
+                AND o.status NOT IN ('completed', 'cancelled')
+             `, [userId]);
+             stats.pendingTasks = tasks[0].count;
+             
+             // Completed this month
+             const [completed] = await pool.query(`
+                SELECT COUNT(DISTINCT o.id) as count
+                FROM orders o
+                JOIN order_assignments oa ON o.id = oa.order_id
+                WHERE oa.user_id = ? AND (oa.role LIKE '%Editor%') 
+                AND o.status = 'completed' AND MONTH(o.updated_at) = MONTH(CURRENT_DATE())
+             `, [userId]);
+             stats.completedTasks = completed[0].count;
+        }
+        else if (role === 'Advertiser' && userId) {
+            const [myAds] = await pool.query(`
+                SELECT COUNT(DISTINCT o.id) as count 
+                FROM orders o 
+                JOIN order_assignments oa ON o.id = oa.order_id 
+                WHERE oa.user_id = ? AND oa.role = 'Advertiser' AND o.status = 'active'
+            `, [userId]);
+            stats.activeCampaigns = myAds[0].count;
+        }
+        else if ((role === 'Team Bengkel' || role === 'Bengkel') && userId) {
+             const [tasks] = await pool.query(`
+                SELECT COUNT(DISTINCT o.id) as count
+                FROM orders o
+                JOIN order_assignments oa ON o.id = oa.order_id
+                WHERE oa.user_id = ? AND oa.role = 'Team Bengkel'
+                AND o.status NOT IN ('completed', 'cancelled')
+             `, [userId]);
+             stats.pendingTasks = tasks[0].count;
+        }
+
+        res.json(stats);
     } catch (e) {
         console.error('Dashboard stats error:', e);
         res.status(500).json({ error: 'Internal server error' });
@@ -213,23 +297,300 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
-// Orders Endpoint (Basic)
+// Clients Endpoint
+app.get('/api/clients', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const q = req.query.q || '';
+
+        let query = `
+                    SELECT c.*, 
+                    (
+                        SELECT u.name 
+                        FROM orders o 
+                        JOIN order_assignments oa ON o.id = oa.order_id 
+                        JOIN users u ON oa.user_id = u.id 
+                        WHERE o.client_id = c.id 
+                        ORDER BY o.created_at DESC 
+                        LIMIT 1
+                    ) as cs_names
+                    FROM clients c
+                `;
+                
+                const params = [];
+
+                if (q) {
+                    query += ' WHERE c.name LIKE ? OR c.business_name LIKE ?';
+                    params.push(`%${q}%`, `%${q}%`);
+                }
+
+                query += ' ORDER BY c.created_at DESC LIMIT ? OFFSET ?';
+                params.push(limit, offset);
+
+                const [clients] = await pool.query(query, params);
+        
+        // Get total count
+        let countQuery = 'SELECT COUNT(DISTINCT c.id) as total FROM clients c';
+        const countParams = [];
+        
+        if (q) {
+            countQuery += ' WHERE c.name LIKE ? OR c.business_name LIKE ?';
+            countParams.push(`%${q}%`, `%${q}%`);
+        }
+        
+        const [countResult] = await pool.query(countQuery, countParams);
+        const total = countResult[0].total;
+
+        res.json({
+            data: clients,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
+    } catch (e) {
+        console.error('Clients fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/clients', async (req, res) => {
+    try {
+        const { name, businessName, businessType, whatsapp, address } = req.body;
+        
+        if (!name || !businessName) {
+            return res.status(400).json({ error: 'Name and Business Name are required' });
+        }
+
+        const [result] = await pool.query(
+            'INSERT INTO clients (name, business_name, business_type, whatsapp, address) VALUES (?, ?, ?, ?, ?)',
+            [name, businessName, businessType, whatsapp, address]
+        );
+
+        res.json({ id: result.insertId, message: 'Client added successfully' });
+    } catch (e) {
+        console.error('Add client error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Packages Endpoint
+app.get('/api/packages', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM packages ORDER BY name ASC');
+        res.json(rows);
+    } catch (e) {
+        console.error('Packages fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Campaigns Endpoints
+app.get('/api/campaigns', async (req, res) => {
+    try {
+        const status = req.query.status || '';
+        const order_id = req.query.order_id || '';
+        const page = parseInt(req.query.page || '0');
+        const limit = parseInt(req.query.limit || '0');
+        const offset = page > 0 && limit > 0 ? (page - 1) * limit : 0;
+
+        let baseQuery = `
+            SELECT c.*,
+                   CASE WHEN c.results > 0 THEN (c.spend / c.results) ELSE 0 END AS cpr
+            FROM campaigns c
+        `;
+
+        let params = [];
+        let whereClauses = [];
+        if (status) {
+            whereClauses.push(`c.status = ?`);
+            params.push(status);
+        }
+        if (order_id) {
+            whereClauses.push(`c.order_id = ?`);
+            params.push(order_id);
+        }
+        if (whereClauses.length > 0) {
+            baseQuery += ` WHERE ` + whereClauses.join(' AND ');
+        }
+        baseQuery += ` ORDER BY cpr DESC, c.created_at DESC`;
+
+        if (page > 0 && limit > 0) {
+            const pagedQuery = baseQuery + ` LIMIT ? OFFSET ?`;
+            const dataParams = params.concat([limit, offset]);
+            const [rows] = await pool.query(pagedQuery, dataParams);
+
+            let countQuery = `SELECT COUNT(*) as total FROM campaigns c`;
+            if (whereClauses.length > 0) {
+                countQuery += ` WHERE ` + whereClauses.join(' AND ');
+            }
+            const [countRows] = await pool.query(countQuery, params);
+            const total = countRows[0].total || 0;
+
+            return res.json({
+                data: rows,
+                meta: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            });
+        } else {
+            const [rows] = await pool.query(baseQuery, params);
+            return res.json(rows);
+        }
+    } catch (e) {
+        console.error('Campaigns fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/campaigns/:id/sync', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('UPDATE campaigns SET updated_at = NOW() WHERE id = ?', [id]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Campaign sync error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Campaign Creation (basic stub)
+app.post('/api/campaigns/create', async (req, res) => {
+    try {
+        const {
+            name,
+            ad_account_id,
+            page_id,
+            duration,
+            business_name,
+            client_id,
+            order_id
+        } = req.body || {};
+
+        if (!name || !ad_account_id) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const campaignId = `LOCAL-${Date.now()}`;
+        await pool.query(
+            `INSERT INTO campaigns (order_id, client_id, campaign_id, campaign_name, ad_account_id, status, impressions, clicks, ctr, spend, results, created_at, updated_at, result_type)
+             VALUES (?, ?, ?, ?, ?, 'ACTIVE', 0, 0, 0, 0, 0, NOW(), NOW(), 'Results')`,
+            [order_id || null, client_id || null, campaignId, name, ad_account_id]
+        );
+
+        res.json({ success: true, campaign_id: campaignId });
+    } catch (e) {
+        console.error('Campaign create error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Campaigns by Order
+app.get('/api/orders/:id/campaigns', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await pool.query(
+            'SELECT * FROM campaigns WHERE order_id = ? ORDER BY created_at DESC',
+            [id]
+        );
+        res.json(rows);
+    } catch (e) {
+        console.error('Order campaigns error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Meta Ads basic config (stub for UI dropdowns)
+app.get('/api/meta-config', async (_req, res) => {
+    try {
+        const [accounts] = await pool.query('SELECT account_id as id, name FROM ad_accounts ORDER BY name ASC');
+        const [fanspages] = await pool.query('SELECT fanspage_id as id, name FROM fanspages ORDER BY name ASC');
+        
+        res.json({
+            accounts,
+            fanspages
+        });
+    } catch (e) {
+        console.error('Meta config fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Orders Endpoint (Enhanced)
 app.get('/api/orders', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 5;
+        const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
+        const { assigned_to, role, status } = req.query;
 
-        const [orders] = await pool.query(`
-            SELECT o.*, c.name as client_name, p.name as package_name 
+        let query = `
+            SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp, 
+            p.name as package_name, p.price as package_price
             FROM orders o
             LEFT JOIN clients c ON o.client_id = c.id
             LEFT JOIN packages p ON o.package_id = p.id
-            ORDER BY o.created_at DESC
-            LIMIT ? OFFSET ?
-        `, [limit, offset]);
+        `;
         
-        const [count] = await pool.query('SELECT COUNT(*) as total FROM orders');
+        const params = [];
+        let whereClauses = [];
+
+        if (assigned_to && role) {
+            query += ` JOIN order_assignments oa ON o.id = oa.order_id `;
+            whereClauses.push(`oa.user_id = ?`);
+            params.push(assigned_to);
+            if (role === 'CS') whereClauses.push(`oa.role = 'CS'`);
+            else if (role === 'Advertiser') whereClauses.push(`oa.role = 'Advertiser'`);
+            else if (role.includes('Editor')) whereClauses.push(`oa.role LIKE '%Editor%'`);
+            else if (role === 'Team Bengkel' || role === 'Bengkel') whereClauses.push(`oa.role = 'Team Bengkel'`);
+        }
+
+        if (status) {
+            whereClauses.push(`o.status = ?`);
+            params.push(status);
+        }
+
+        if (whereClauses.length > 0) {
+            query += ` WHERE ` + whereClauses.join(' AND ');
+        }
+
+        query += ` ORDER BY o.created_at DESC LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const [orders] = await pool.query(query, params);
+        
+        // Count Query
+        let countQuery = 'SELECT COUNT(DISTINCT o.id) as total FROM orders o';
+        const countParams = [];
+        let countWhere = [];
+
+        if (assigned_to && role) {
+            countQuery += ` JOIN order_assignments oa ON o.id = oa.order_id `;
+            countWhere.push(`oa.user_id = ?`);
+            countParams.push(assigned_to);
+             if (role === 'CS') countWhere.push(`oa.role = 'CS'`);
+            else if (role === 'Advertiser') countWhere.push(`oa.role = 'Advertiser'`);
+            else if (role.includes('Editor')) countWhere.push(`oa.role LIKE '%Editor%'`);
+            else if (role === 'Team Bengkel' || role === 'Bengkel') countWhere.push(`oa.role = 'Team Bengkel'`);
+        }
+
+        if (status) {
+            countWhere.push(`o.status = ?`);
+            countParams.push(status);
+        }
+
+        if (countWhere.length > 0) {
+            countQuery += ` WHERE ` + countWhere.join(' AND ');
+        }
+
+        const [count] = await pool.query(countQuery, countParams);
 
         res.json({
             data: orders,
@@ -242,6 +603,293 @@ app.get('/api/orders', async (req, res) => {
         });
     } catch (e) {
         console.error('Orders fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Finance Orders Endpoint
+app.get('/api/finance/orders', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let query = `
+            SELECT o.*, c.name as client_name, p.name as package_name, p.price as package_price,
+            (SELECT COALESCE(SUM(commission_amount), 0) FROM order_assignments WHERE order_id = o.id) as total_commission,
+            (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE order_id = o.id AND type = 'expense') as total_spend
+            FROM orders o
+            LEFT JOIN clients c ON o.client_id = c.id
+            LEFT JOIN packages p ON o.package_id = p.id
+            WHERE o.payment_status = 'paid'
+        `;
+        
+        const params = [];
+        if (startDate && endDate) {
+            query += ` AND DATE(o.created_at) BETWEEN ? AND ?`;
+            params.push(startDate, endDate);
+        }
+
+        query += ` ORDER BY o.created_at DESC`;
+        
+        const [orders] = await pool.query(query, params);
+        res.json(orders);
+    } catch (e) {
+        console.error('Finance orders error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Commission Rules Endpoint
+app.get('/api/orders/:id/commissions', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await pool.query(`
+            SELECT oa.role, oa.commission_amount as amount, oa.content_type, u.name as user_name
+            FROM order_assignments oa
+            JOIN users u ON oa.user_id = u.id
+            WHERE oa.order_id = ?
+        `, [id]);
+        res.json(rows);
+    } catch (e) {
+        console.error('Order commissions error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Commission Rules Endpoint (Original)
+app.get('/api/commissions', async (req, res) => {
+    try {
+        const { package_id } = req.query;
+        if (!package_id) return res.json([]);
+
+        const [rules] = await pool.query(
+            'SELECT * FROM commission_rules WHERE package_id = ?',
+            [package_id]
+        );
+        res.json(rules);
+    } catch (e) {
+        console.error('Commission rules error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Commission Report Endpoint
+app.get('/api/reports/commissions', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        if (!startDate || !endDate) {
+            return res.status(400).json({ error: 'Start date and end date required' });
+        }
+
+        const query = `
+            SELECT 
+                u.name as user_name, 
+                u.email as user_email, 
+                oa.role as user_role,
+                COUNT(DISTINCT oa.order_id) as order_count,
+                SUM(oa.commission_amount) as total_commission
+            FROM order_assignments oa
+            JOIN users u ON oa.user_id = u.id
+            JOIN orders o ON oa.order_id = o.id
+            WHERE DATE(o.created_at) BETWEEN ? AND ?
+            GROUP BY u.id, oa.role
+            ORDER BY total_commission DESC
+        `;
+
+        const [report] = await pool.query(query, [startDate, endDate]);
+        res.json(report);
+    } catch (e) {
+        console.error('Commission report error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Order Assignments Endpoints
+app.get('/api/orders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Get Order
+        const [orders] = await pool.query(`
+            SELECT o.*, p.name as package_name, p.price as package_price
+            FROM orders o
+            LEFT JOIN packages p ON o.package_id = p.id
+            WHERE o.id = ?
+        `, [id]);
+
+        if (orders.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const order = orders[0];
+
+        // 2. Get Client
+        let client = {};
+        if (order.client_id) {
+            const [clients] = await pool.query('SELECT * FROM clients WHERE id = ?', [order.client_id]);
+            if (clients.length > 0) client = clients[0];
+        }
+
+        // 3. Get Details
+        let details = {};
+        const [d] = await pool.query('SELECT * FROM order_details WHERE order_id = ?', [id]);
+        if (d.length > 0) details = d[0];
+
+        // 4. Get Targets
+        let targets = {};
+        const [t] = await pool.query('SELECT * FROM order_targets WHERE order_id = ?', [id]);
+        if (t.length > 0) targets = t[0];
+
+        res.json({
+            order,
+            client,
+            details,
+            targets
+        });
+
+    } catch (e) {
+        console.error('Order detail fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/orders/:id/assignments', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [assignments] = await pool.query(
+            `SELECT oa.*, u.name as user_name 
+             FROM order_assignments oa 
+             JOIN users u ON oa.user_id = u.id 
+             WHERE oa.order_id = ?`,
+            [id]
+        );
+        res.json(assignments);
+    } catch (e) {
+        console.error('Get assignments error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/assignments', async (req, res) => {
+    try {
+        const { id } = req.params; // orderId
+        // Handle both camelCase and snake_case
+        const { userId, role, contentType, user_id, content_type } = req.body;
+        
+        const finalUserId = userId || user_id;
+        const finalContentType = contentType || content_type || 'general';
+
+        if (!finalUserId || !role) {
+            return res.status(400).json({ error: 'User ID and Role are required' });
+        }
+
+        // 1. Get Package ID to calculate commission
+        const [orders] = await pool.query('SELECT package_id FROM orders WHERE id = ?', [id]);
+        if (orders.length === 0) return res.status(404).json({ error: 'Order not found' });
+        const packageId = orders[0].package_id;
+
+        // 2. Get Commission Rule
+        let amount = 0;
+        if (packageId) {
+            const [rules] = await pool.query(
+                'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                [packageId, role, finalContentType]
+            );
+            if (rules.length > 0) {
+                amount = rules[0].amount;
+            }
+        }
+
+        // 3. Upsert Assignment
+        // Check if exists
+        const [existing] = await pool.query(
+            'SELECT id FROM order_assignments WHERE order_id = ? AND role = ? AND content_type = ?',
+            [id, role, finalContentType]
+        );
+
+        if (existing.length > 0) {
+            await pool.query(
+                'UPDATE order_assignments SET user_id = ?, commission_amount = ? WHERE id = ?',
+                [finalUserId, amount, existing[0].id]
+            );
+        } else {
+            await pool.query(
+                'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, ?, ?, ?)',
+                [id, finalUserId, role, finalContentType, amount]
+            );
+        }
+
+        res.json({ success: true, message: 'Assignment updated' });
+    } catch (e) {
+        console.error('Update assignment error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Order Content Endpoints
+app.get('/api/orders/:id/content', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Get Status
+        const [contents] = await pool.query('SELECT status FROM order_contents WHERE order_id = ?', [id]);
+        const status = contents.length > 0 ? contents[0].status : 'Baru';
+
+        // Get Links
+        const [links] = await pool.query('SELECT * FROM order_content_links WHERE order_id = ?', [id]);
+
+        res.json({ status, links });
+    } catch (e) {
+        console.error('Get content error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/content/start', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Upsert status
+        const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
+        
+        if (existing.length > 0) {
+            await pool.query('UPDATE order_contents SET status = "Proses Konten" WHERE order_id = ?', [id]);
+        } else {
+            await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Konten")', [id]);
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Start content error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/content/submit', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { links } = req.body; // Array of { url, description, type }
+
+        // 1. Update Status
+        const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
+        if (existing.length > 0) {
+            await pool.query('UPDATE order_contents SET status = "Siap Iklan" WHERE order_id = ?', [id]);
+        } else {
+            await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Siap Iklan")', [id]);
+        }
+
+        // 2. Save Links (Replace all)
+        await pool.query('DELETE FROM order_content_links WHERE order_id = ?', [id]);
+        
+        if (links && links.length > 0) {
+            const values = links.map(l => [id, l.url, l.type || 'image', l.description || '']);
+            await pool.query(
+                'INSERT INTO order_content_links (order_id, url, type, description) VALUES ?',
+                [values]
+            );
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Submit content error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

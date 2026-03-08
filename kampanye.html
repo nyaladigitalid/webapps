@@ -53,7 +53,7 @@
         }
         .glass-surface {
             background:
-                radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%),
+                radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%),
                 radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
         }
         .glass-panel {
@@ -108,8 +108,8 @@
                 <section class="glass-panel rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-end">
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
-                        <select id="filter-status" class="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2 w-40 focus:ring-primary focus:border-primary">
-                            <option value="">Semua Status</option>
+                        <select id="filter-status" class="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm px-3 py-2 w-40 focus:ring-primary focus:border-primary text-slate-900 dark:text-white">
+                        <option value="">Semua Status</option>
                             <option value="ACTIVE" selected>Aktif</option>
                             <option value="INACTIVE">Tidak Aktif</option>
                         </select>
@@ -192,7 +192,7 @@
     <script src="js/include.js"></script>
     <script>
         let currentPage = 1;
-        const LIMIT = 5;
+        const LIMIT = 10;
 
         document.addEventListener('DOMContentLoaded', async () => {
             // Set default dates (Current Month)

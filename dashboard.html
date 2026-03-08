@@ -38,7 +38,7 @@
             font-family: "Inter", sans-serif;
         }
         .glass-surface {
-            background: radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+            background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
         }
         .glass-panel { background: rgba(255,255,255,0.7); border: 1px solid rgba(15,23,42,0.1); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
         .metric-card { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92)); border: 1px solid rgba(15,23,42,0.08); }
@@ -682,6 +682,166 @@
                 await loadAdminData();
             }
         });
+
+        async function loadCSData(userId) {
+            try {
+                // Stats
+                const statsRes = await fetch(`/api/dashboard/stats?role=CS&user_id=${userId}`);
+                const stats = await statsRes.json();
+                document.getElementById('cs-active-orders-count').textContent = stats.activeOrders || 0;
+                document.getElementById('cs-commission-total').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.commission || 0);
+                document.getElementById('cs-expiry-count').textContent = stats.expiryCount || 0;
+
+                // Recent Orders (My Orders)
+                const ordersRes = await fetch(`/api/orders?assigned_to=${userId}&role=CS&limit=5`);
+                const ordersData = await ordersRes.json();
+                const orders = ordersData.data;
+
+                const tbody = document.getElementById('cs-recent-orders-body');
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan aktif</td></tr>';
+                } else {
+                    let html = '';
+                    orders.forEach(o => {
+                        let statusColor = 'text-slate-400';
+                        if(o.status === 'active') statusColor = 'text-emerald-500';
+                        else if(o.status === 'pending') statusColor = 'text-amber-500';
+
+                        html += `
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-white">${o.package_name || '-'}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">
+                                    <div>${o.client_name || '-'}</div>
+                                    <div class="text-[10px] text-slate-500">${o.business_name || ''}</div>
+                                </td>
+                                <td class="px-6 py-4 text-xs font-bold ${statusColor} uppercase">${o.status}</td>
+                                <td class="px-6 py-4 text-sm text-right text-slate-400">${new Date(o.created_at).toLocaleDateString('id-ID')}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                }
+            } catch (e) {
+                console.error('Error loading CS data', e);
+            }
+        }
+
+        async function loadEditorData(userId) {
+            try {
+                // Stats
+                const statsRes = await fetch(`/api/dashboard/stats?role=Editor&user_id=${userId}`);
+                const stats = await statsRes.json();
+                document.getElementById('editor-queue-count').textContent = stats.pendingTasks || 0;
+                document.getElementById('editor-completed-count').textContent = stats.completedTasks || 0;
+
+                // Tasks (Orders assigned to editor)
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Editor&limit=10`);
+                const tasksData = await tasksRes.json();
+                const tasks = tasksData.data;
+
+                const tbody = document.getElementById('editor-tasks-body');
+                if (tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada antrian konten</td></tr>';
+                } else {
+                    let html = '';
+                    tasks.forEach(t => {
+                        html += `
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-white">#${t.id}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">
+                                    <div>${t.client_name || '-'}</div>
+                                    <div class="text-[10px] text-slate-500">${t.package_name || ''}</div>
+                                </td>
+                                <td class="px-6 py-4 text-xs font-bold text-amber-500 uppercase">Pending</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="orderdetail.html?id=${t.id}" class="text-xs bg-primary hover:bg-primary/80 text-white px-3 py-1.5 rounded transition-colors">Proses</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                }
+            } catch (e) {
+                console.error('Error loading Editor data', e);
+            }
+        }
+
+        async function loadAdvertiserData(userId) {
+             try {
+                // Stats
+                const statsRes = await fetch(`/api/dashboard/stats?role=Advertiser&user_id=${userId}`);
+                const stats = await statsRes.json();
+                document.getElementById('advertiser-active-campaigns').textContent = stats.activeCampaigns || 0;
+                
+                // Active Campaigns List (using orders for now, ideally campaigns table)
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Advertiser&limit=5`);
+                const tasksData = await tasksRes.json();
+                const tasks = tasksData.data;
+
+                const tbody = document.getElementById('advertiser-campaigns-body');
+                 if (tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada kampanye aktif</td></tr>';
+                } else {
+                    let html = '';
+                    tasks.forEach(t => {
+                        html += `
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-white">${t.client_name || '-'}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">${t.package_name || '-'}</td>
+                                <td class="px-6 py-4 text-xs font-bold text-emerald-500 uppercase">${t.status}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="kampanye.html" class="text-xs border border-white/20 hover:bg-white/5 text-white px-3 py-1.5 rounded transition-colors">Lihat CPR</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                }
+
+             } catch(e) {
+                 console.error('Error loading Advertiser data', e);
+             }
+        }
+
+        async function loadBengkelData(userId) {
+             try {
+                // Stats
+                const statsRes = await fetch(`/api/dashboard/stats?role=Bengkel&user_id=${userId}`);
+                const stats = await statsRes.json();
+                document.getElementById('bengkel-queue-count').textContent = stats.pendingTasks || 0;
+                
+                // Tasks
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Team Bengkel&limit=10`);
+                const tasksData = await tasksRes.json();
+                const tasks = tasksData.data;
+
+                const tbody = document.getElementById('bengkel-tasks-body');
+                 if (tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada tugas teknis</td></tr>';
+                } else {
+                    let html = '';
+                    tasks.forEach(t => {
+                        html += `
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-white">#${t.id}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">
+                                    <div>${t.client_name || '-'}</div>
+                                    <div class="text-[10px] text-slate-500">${t.package_name || ''}</div>
+                                </td>
+                                <td class="px-6 py-4 text-xs font-bold text-amber-500 uppercase">Pending</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="orderdetail.html?id=${t.id}" class="text-xs bg-secondary hover:bg-secondary/80 text-white px-3 py-1.5 rounded transition-colors">Detail</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                }
+
+             } catch(e) {
+                 console.error('Error loading Bengkel data', e);
+             }
+        }
 
         async function loadAdminData() {
             try {
