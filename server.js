@@ -297,6 +297,56 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+app.post('/api/users', async (req, res) => {
+    try {
+        const { name, email, role, password } = req.body || {};
+        if (!name || !email || !role) {
+            return res.status(400).json({ error: 'Name, email, and role are required' });
+        }
+        const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(409).json({ error: 'Email already exists' });
+        }
+        const [result] = await pool.query(
+            'INSERT INTO users (name, email, role, password_hash) VALUES (?, ?, ?, ?)',
+            [name, email, role, password || '']
+        );
+        res.json({ success: true, id: result.insertId });
+    } catch (e) {
+        console.error('User create error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, role, password } = req.body || {};
+        if (!name || !email || !role) {
+            return res.status(400).json({ error: 'Name, email, and role are required' });
+        }
+        await pool.query(
+            'UPDATE users SET name = ?, email = ?, role = ?, password_hash = COALESCE(?, password_hash) WHERE id = ?',
+            [name, email, role, password || null, id]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        console.error('User update error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM users WHERE id = ?', [id]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('User delete error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Clients Endpoint
 app.get('/api/clients', async (req, res) => {
     try {
@@ -385,6 +435,52 @@ app.get('/api/packages', async (req, res) => {
         res.json(rows);
     } catch (e) {
         console.error('Packages fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/packages', async (req, res) => {
+    try {
+        const { category, code, name, duration, price, description, active } = req.body || {};
+        if (!code || !name) {
+            return res.status(400).json({ error: 'Code and name required' });
+        }
+        const [result] = await pool.query(
+            'INSERT INTO packages (code, name, duration, price, description, active, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [code, name, duration || null, price || null, description || null, active ? 1 : 0, category || null]
+        );
+        res.json({ success: true, id: result.insertId });
+    } catch (e) {
+        console.error('Package create error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/packages/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { category, code, name, duration, price, description, active } = req.body || {};
+        if (!code || !name) {
+            return res.status(400).json({ error: 'Code and name required' });
+        }
+        await pool.query(
+            'UPDATE packages SET code = ?, name = ?, duration = ?, price = ?, description = ?, active = ?, category = ? WHERE id = ?',
+            [code, name, duration || null, price || null, description || null, active ? 1 : 0, category || null, id]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Package update error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/packages/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM packages WHERE id = ?', [id]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Package delete error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
