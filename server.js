@@ -658,15 +658,58 @@ app.get('/api/orders/:id/commissions', async (req, res) => {
 app.get('/api/commissions', async (req, res) => {
     try {
         const { package_id } = req.query;
-        if (!package_id) return res.json([]);
+        let query = `
+            SELECT cr.*, p.name as package_name, p.category as package_category 
+            FROM commission_rules cr
+            LEFT JOIN packages p ON cr.package_id = p.id
+        `;
+        let params = [];
 
-        const [rules] = await pool.query(
-            'SELECT * FROM commission_rules WHERE package_id = ?',
-            [package_id]
-        );
+        if (package_id) {
+            query += ' WHERE cr.package_id = ?';
+            params.push(package_id);
+        }
+
+        query += ' ORDER BY p.name ASC, cr.role ASC';
+
+        const [rules] = await pool.query(query, params);
         res.json(rules);
     } catch (e) {
         console.error('Commission rules error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/commissions', async (req, res) => {
+    try {
+        const { package_id, role, content_type, amount } = req.body;
+        if (!package_id || !role || !amount) {
+            return res.status(400).json({ error: 'Package, Role, and Amount are required' });
+        }
+
+        const type = content_type || 'general';
+
+        // Upsert rule
+        await pool.query(`
+            INSERT INTO commission_rules (package_id, role, content_type, amount)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE amount = VALUES(amount)
+        `, [package_id, role, type, amount]);
+
+        res.json({ success: true, message: 'Commission rule saved' });
+    } catch (e) {
+        console.error('Save commission rule error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/commissions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM commission_rules WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Commission rule deleted' });
+    } catch (e) {
+        console.error('Delete commission rule error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -895,7 +938,10 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+    const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
+    console.log(`Server running on http://${displayHost}:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

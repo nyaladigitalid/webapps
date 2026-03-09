@@ -37,6 +37,25 @@ tailwind.config = {
 body {
     font-family: "Inter", sans-serif;
 }
+/* Fix for select options in dark mode */
+.dark select option {
+    background-color: #1e293b;
+    color: white;
+}
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+}
 .glass-surface {
     background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%), radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
 }
@@ -124,14 +143,14 @@ body {
                 <input type="hidden" id="c-id">
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Paket Layanan</label>
-                    <select id="c-package" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    <select id="c-package" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
                         <option value="">Pilih Paket...</option>
                         <!-- Populated by JS -->
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Role Penerima Komisi</label>
-                    <select id="c-role" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    <select id="c-role" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
                         <option value="CS">CS</option>
                         <option value="Editor">Editor</option>
                         <option value="Advertiser">Advertiser</option>
@@ -143,7 +162,7 @@ body {
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Tipe Konten</label>
-                    <select id="c-type" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                    <select id="c-type" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
                         <option value="general">Umum / Semua</option>
                         <option value="image">Image</option>
                         <option value="video">Video</option>
