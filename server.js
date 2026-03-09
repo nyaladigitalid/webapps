@@ -607,6 +607,119 @@ app.get('/api/orders', async (req, res) => {
     }
 });
 
+app.post('/api/orders', async (req, res) => {
+    ensureEnv();
+
+    const connection = await pool.getConnection();
+    try {
+        const body = req.body || {};
+        const clientPayload = body.client || {};
+        const detailsPayload = body.details || {};
+        const targetsPayload = body.targets || {};
+        const orderPayload = body.order || {};
+
+        const userRole = (body.userRole || body.user_role || '').toString().toLowerCase();
+
+        const packageId = orderPayload.packageId || orderPayload.package_id || body.packageId || body.package_id;
+        if (!packageId) {
+            return res.status(400).json({ error: 'packageId is required' });
+        }
+
+        let clientId = body.clientId || body.client_id || clientPayload.id || clientPayload.client_id;
+        if (!clientId) {
+            const name = clientPayload.name || '';
+            const businessName = clientPayload.businessName || clientPayload.business_name || null;
+            const businessType = clientPayload.businessType || clientPayload.business_type || null;
+            const whatsapp = clientPayload.whatsapp || clientPayload.wa || null;
+            const address = clientPayload.address || null;
+
+            if (!name) {
+                return res.status(400).json({ error: 'client.name is required' });
+            }
+
+            const [clientResult] = await connection.query(
+                'INSERT INTO clients (name, business_name, business_type, whatsapp, address) VALUES (?, ?, ?, ?, ?)',
+                [name, businessName, businessType, whatsapp, address]
+            );
+            clientId = clientResult.insertId;
+        }
+
+        const status = orderPayload.status || 'pending';
+        const repeatOrderRaw = orderPayload.repeatOrder ?? orderPayload.repeat_order ?? 0;
+        const repeatOrder = repeatOrderRaw === true || repeatOrderRaw === 1 || repeatOrderRaw === '1' || repeatOrderRaw === 'true' ? 1 : 0;
+
+        const serviceType = orderPayload.serviceType || orderPayload.service_type || null;
+        const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? null;
+        const metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+
+        const startDate = orderPayload.startDate || orderPayload.start_date || (metaDataRaw && metaDataRaw.startDate) || null;
+        const endDate = orderPayload.endDate || orderPayload.end_date || (metaDataRaw && metaDataRaw.endDate) || null;
+
+        await connection.beginTransaction();
+
+        const [orderResult] = await connection.query(
+            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [clientId, packageId, status, repeatOrder, startDate, endDate, serviceType, metaData]
+        );
+
+        const orderId = orderResult.insertId;
+
+        const description = detailsPayload.description ?? null;
+        const advantages = detailsPayload.advantages ?? null;
+        const uniqueness = detailsPayload.uniqueness ?? null;
+        const promo = detailsPayload.promo ?? null;
+
+        if (description || advantages || uniqueness || promo) {
+            await connection.query(
+                'INSERT INTO order_details (order_id, description, advantages, uniqueness, promo) VALUES (?, ?, ?, ?, ?)',
+                [orderId, description, advantages, uniqueness, promo]
+            );
+        }
+
+        const locations = targetsPayload.locations ?? null;
+        const ageRange = targetsPayload.ageRange ?? targetsPayload.age_range ?? null;
+        const gender = targetsPayload.gender ?? null;
+
+        if (locations || ageRange || gender) {
+            await connection.query(
+                'INSERT INTO order_targets (order_id, locations, age_range, gender) VALUES (?, ?, ?, ?)',
+                [orderId, locations, ageRange, gender]
+            );
+        }
+
+        const csId = orderPayload.csId || orderPayload.cs_id || null;
+        if (userRole === 'super_admin' && csId) {
+            let amount = 0;
+            const [rules] = await connection.query(
+                'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                [packageId, 'CS', 'general']
+            );
+            if (rules.length > 0 && rules[0].amount != null) {
+                amount = rules[0].amount;
+            }
+
+            await connection.query(
+                `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
+                 VALUES (?, ?, 'CS', 'general', ?)
+                 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
+                [orderId, csId, amount]
+            );
+        }
+
+        await connection.commit();
+        res.json({ success: true, orderId });
+    } catch (e) {
+        try {
+            await connection.rollback();
+        } catch (_) {}
+        console.error('Create order error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
 // Finance Orders Endpoint
 app.get('/api/finance/orders', async (req, res) => {
     try {
