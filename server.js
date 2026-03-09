@@ -512,13 +512,75 @@ app.get('/api/meta-config', async (_req, res) => {
     try {
         const [accounts] = await pool.query('SELECT account_id as id, name FROM ad_accounts ORDER BY name ASC');
         const [fanspages] = await pool.query('SELECT fanspage_id as id, name FROM fanspages ORDER BY name ASC');
-        
+        let pixel_id = '';
+        const [cfg] = await pool.query('SELECT pixel_id FROM meta_ads_configs LIMIT 1');
+        if (cfg.length > 0 && cfg[0].pixel_id) {
+            pixel_id = cfg[0].pixel_id;
+        }
+
         res.json({
             accounts,
-            fanspages
+            fanspages,
+            pixel_id
         });
     } catch (e) {
         console.error('Meta config fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/meta-config', async (req, res) => {
+    try {
+        const { accounts, pixel_id } = req.body;
+        
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            if (pixel_id !== undefined) {
+                let configId = 1;
+                const [configs] = await connection.query('SELECT id FROM meta_ads_configs LIMIT 1');
+                if (configs.length > 0) {
+                    configId = configs[0].id;
+                } else {
+                    const [resCreate] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
+                    configId = resCreate.insertId;
+                }
+                await connection.query('UPDATE meta_ads_configs SET pixel_id = ? WHERE id = ?', [pixel_id, configId]);
+            }
+
+            if (Array.isArray(accounts)) {
+                 let configId = 1;
+                 const [configs] = await connection.query("SELECT id FROM meta_ads_configs LIMIT 1");
+                 if (configs.length > 0) {
+                     configId = configs[0].id;
+                 } else {
+                     const [res] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
+                     configId = res.insertId;
+                 }
+
+                 for (const acc of accounts) {
+                     if (acc.deleted) {
+                         await connection.query("DELETE FROM ad_accounts WHERE account_id = ?", [acc.id]);
+                     } else {
+                         await connection.query(
+                             "INSERT INTO ad_accounts (config_id, account_id, name) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)",
+                             [configId, acc.id, acc.name]
+                         );
+                     }
+                 }
+            }
+
+            await connection.commit();
+            res.json({ success: true });
+        } catch (e) {
+            await connection.rollback();
+            throw e;
+        } finally {
+            connection.release();
+        }
+    } catch (e) {
+        console.error('Meta config save error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
