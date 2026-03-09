@@ -1791,10 +1791,32 @@ async function processCampaignCreation(btn) {
             order_id: orderId
         };
         
-        const response = await fetch('/api/campaigns/create', {
+        // Determine addAccountName from selected option text (e.g., "R10 (1749...)")
+        const accSelectEl = document.getElementById('select-ad-account');
+        let addAccountName = '';
+        if (accSelectEl) {
+            const opt = accSelectEl.options[accSelectEl.selectedIndex];
+            if (opt && opt.textContent) {
+                addAccountName = (opt.textContent.split('(')[0] || '').trim();
+            }
+        }
+
+        // Use duplicate flow to match Apps Script logic
+        const dupPayload = {
+            addAccountName: addAccountName,
+            namaUsaha: businessName,
+            addAccountId: adAccountId,
+            pageId: fanspageId,
+            campaignName: campaignName,
+            durasi: duration,
+            client_id: clientId,
+            order_id: orderId
+        };
+
+        const response = await fetch('/api/campaigns/duplicate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(dupPayload)
         });
         
         const result = await response.json();

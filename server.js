@@ -461,7 +461,6 @@ app.post('/api/campaigns/:id/sync', async (req, res) => {
     }
 });
 
-// Campaign Creation (basic stub)
 app.post('/api/campaigns/create', async (req, res) => {
     try {
         const {
@@ -478,20 +477,202 @@ app.post('/api/campaigns/create', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const campaignId = `LOCAL-${Date.now()}`;
+        const [cfg] = await pool.query("SELECT access_token FROM meta_ads_configs WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+        const token = cfg.length > 0 ? cfg[0].access_token : null;
+        if (!token) {
+            return res.status(400).json({ error: 'Access token is not configured' });
+        }
+
+        const acct = ad_account_id.startsWith('act_') ? ad_account_id : `act_${ad_account_id}`;
+        const requestedObjective = (req.body && req.body.objective || '').toUpperCase();
+        const allowedObjectives = new Set([
+            'APP_INSTALLS','BRAND_AWARENESS','EVENT_RESPONSES','LEAD_GENERATION','LINK_CLICKS','LOCAL_AWARENESS','MESSAGES',
+            'OFFER_CLAIMS','PAGE_LIKES','POST_ENGAGEMENT','PRODUCT_CATALOG_SALES','REACH','STORE_VISITS','VIDEO_VIEWS',
+            'OUTCOME_AWARENESS','OUTCOME_ENGAGEMENT','OUTCOME_LEADS','OUTCOME_SALES','OUTCOME_TRAFFIC','OUTCOME_APP_PROMOTION','CONVERSIONS'
+        ]);
+        const finalObjective = allowedObjectives.has(requestedObjective) ? requestedObjective : 'MESSAGES';
+
+        const params = new URLSearchParams({
+            name,
+            objective: finalObjective,
+            status: 'PAUSED',
+            access_token: token
+        });
+        const url = `https://graph.facebook.com/v19.0/${acct}/campaigns`;
+        const resp = await fetch(url, { method: 'POST', body: params });
+        const data = await resp.json();
+        if (!resp.ok || !data || !data.id) {
+            return res.status(502).json({ error: data?.error?.message || 'Failed to create campaign on Meta' });
+        }
+
+        const campaignId = data.id;
         await pool.query(
             `INSERT INTO campaigns (order_id, client_id, campaign_id, campaign_name, ad_account_id, status, impressions, clicks, ctr, spend, results, created_at, updated_at, result_type)
              VALUES (?, ?, ?, ?, ?, 'ACTIVE', 0, 0, 0, 0, 0, NOW(), NOW(), 'Results')`,
             [order_id || null, client_id || null, campaignId, name, ad_account_id]
         );
 
-        res.json({ success: true, campaign_id: campaignId });
+        res.json({ success: true, campaign_id: campaignId, created_on_meta: true });
     } catch (e) {
         console.error('Campaign create error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
+// Duplicate campaign flow aligned with Apps Script duplicateCampaignFullManual
+app.post('/api/campaigns/duplicate', async (req, res) => {
+    try {
+        const {
+            addAccountName,
+            namaUsaha,
+            addAccountId,
+            pageId,
+            campaignName,
+            durasi,
+            client_id,
+            order_id
+        } = req.body || {};
+
+        if (!addAccountName || !addAccountId || !pageId || !campaignName || !durasi) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const [cfg] = await pool.query("SELECT access_token FROM meta_ads_configs WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+        const token = cfg.length > 0 ? cfg[0].access_token : null;
+        if (!token) {
+            return res.status(400).json({ error: 'Access token is not configured' });
+        }
+
+        const MASTER_CAMPAIGNS = {
+            R10: "120225943524550694",
+            R11: "120227433380380200",
+            R06: "120226449010810235",
+            R04: "120227436872890554"
+        };
+
+        const baseCampaignId = MASTER_CAMPAIGNS[addAccountName];
+        if (!baseCampaignId) {
+            return res.status(400).json({ error: 'Unknown addAccountName mapping' });
+        }
+
+        // 1) Copy campaign
+        const copyUrl = `https://graph.facebook.com/v21.0/${baseCampaignId}/copies`;
+        const copyParams = new URLSearchParams({
+            access_token: token,
+            status: 'ACTIVE',
+            deep_copy: 'false'
+        });
+        const copyResp = await fetch(copyUrl, { method: 'POST', body: copyParams });
+        const copyData = await copyResp.json();
+        const newCampaignId = copyData && copyData.copied_campaign_id;
+        if (!copyResp.ok || !newCampaignId) {
+            return res.status(502).json({ error: copyData?.error?.message || 'Failed to copy campaign', details: copyData?.error || copyData });
+        }
+
+        // 2) Rename campaign
+        const renameUrl = `https://graph.facebook.com/v21.0/${newCampaignId}`;
+        const renameParams = new URLSearchParams({
+            access_token: token,
+            name: campaignName
+        });
+        const renameResp = await fetch(renameUrl, { method: 'POST', body: renameParams });
+        const renameData = await renameResp.json();
+        if (!renameResp.ok || !(renameData && renameData.success)) {
+            return res.status(502).json({ error: renameData?.error?.message || 'Failed to rename campaign', details: renameData?.error || renameData });
+        }
+
+        // 3) Get adsets of master campaign
+        const adsetsUrl = `https://graph.facebook.com/v21.0/${baseCampaignId}/adsets?fields=id&access_token=${encodeURIComponent(token)}`;
+        const adsetsResp = await fetch(adsetsUrl);
+        const adsetsData = await adsetsResp.json();
+        if (!adsetsResp.ok || !adsetsData || !Array.isArray(adsetsData.data)) {
+            return res.status(502).json({ error: adsetsData?.error?.message || 'Failed to fetch adsets from master campaign', details: adsetsData?.error || adsetsData });
+        }
+        const adsetIds = adsetsData.data.map(d => d.id);
+
+        // Helper: Facebook time format +0000
+        function toFacebookDateFormat(date) {
+            const pad = n => (n < 10 ? '0' + n : '' + n);
+            const year = date.getUTCFullYear();
+            const month = pad(date.getUTCMonth() + 1);
+            const day = pad(date.getUTCDate());
+            const hours = pad(date.getUTCHours());
+            const minutes = pad(date.getUTCMinutes());
+            const seconds = pad(date.getUTCSeconds());
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
+        }
+
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + Number(durasi || 5));
+
+        const createdAdsets = [];
+        const acct = addAccountId.startsWith('act_') ? addAccountId : `act_${addAccountId}`;
+
+        // 4) For each adset, fetch its details, then create new adset under target account
+        for (const adSetId of adsetIds) {
+            const detailUrl = `https://graph.facebook.com/v21.0/${adSetId}?fields=billing_event,optimization_goal,targeting,daily_budget&access_token=${encodeURIComponent(token)}`;
+            const detailResp = await fetch(detailUrl);
+            const oldAdSet = await detailResp.json();
+            if (!detailResp.ok || oldAdSet?.error) {
+                return res.status(502).json({ error: oldAdSet?.error?.message || 'Failed to fetch adset details', details: oldAdSet?.error || oldAdSet });
+            }
+
+            function sanitizeTargeting(src) {
+                // Force minimal valid geo targeting: country ID only
+                const t = {};
+                t.geo_locations = { countries: ['ID'], location_types: ['home','recent'] };
+                // Optionally keep basic age/gender if present and valid
+                if (src && typeof src === 'object') {
+                    if (typeof src.age_min === 'number') t.age_min = src.age_min;
+                    if (typeof src.age_max === 'number') t.age_max = src.age_max;
+                    if (Array.isArray(src.genders)) t.genders = src.genders;
+                }
+                return t;
+            }
+
+            const createUrl = `https://graph.facebook.com/v21.0/${acct}/adsets`;
+            const payload = {
+                access_token: token,
+                name: `ON-${namaUsaha}`,
+                campaign_id: newCampaignId,
+                billing_event: oldAdSet.billing_event,
+                optimization_goal: oldAdSet.optimization_goal,
+                targeting: sanitizeTargeting(oldAdSet.targeting),
+                daily_budget: String(oldAdSet.daily_budget || ''),
+                start_time: toFacebookDateFormat(startDate),
+                end_time: toFacebookDateFormat(endDate),
+                status: 'PAUSED',
+                destination_type: 'WHATSAPP',
+                promoted_object: { page_id: pageId }
+            };
+
+            const resp = await fetch(createUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await resp.json();
+            if (!resp.ok || result?.error) {
+                console.error('Adset create payload failed:', { payload, resp_status: resp.status, result });
+                return res.status(502).json({ error: result?.error?.message || 'Failed to create adset', details: result?.error || result });
+            }
+            createdAdsets.push(result.id);
+        }
+
+        // Optionally, reflect into local DB only on success
+        await pool.query(
+            `INSERT INTO campaigns (order_id, client_id, campaign_id, campaign_name, ad_account_id, status, impressions, clicks, ctr, spend, results, created_at, updated_at, result_type)
+             VALUES (?, ?, ?, ?, ?, 'ACTIVE', 0, 0, 0, 0, 0, NOW(), NOW(), 'Results')`,
+            [order_id || null, client_id || null, newCampaignId, campaignName, addAccountId]
+        );
+
+        res.json({ success: true, campaign_id: newCampaignId, adsets: createdAdsets });
+    } catch (e) {
+        console.error('Duplicate campaign error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 // Campaigns by Order
 app.get('/api/orders/:id/campaigns', async (req, res) => {
     try {

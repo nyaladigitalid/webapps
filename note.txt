@@ -1,0 +1,333 @@
+//const ACCESS_TOKENFB = 
+//'EAALBHHIV2HABOylCJeN8ogyUQw9n5yu0xrxMxZC2OPdVihOEKJrRT2Shuw2ikR9hBAm9ZA4Sqo8Q6a04c5k86N6I6GTOX9DvVQNZAx8y9xo5dpvx5XffhZBBcMmZByuTlh6ck70jzlJatrtRm5WF4sWvGd6QsWpD9XlKA6BPnWqJdBOav71kfigdD';
+
+//const AD_ACCOUNT_IDFB = 'act_759724529202804'; // format 'act_123456789'
+//const PAGE_IDFB = '672574572602431';
+
+//const addAccountId = '174904221976312'
+//const pageId = '532820886584415';
+//const campaignName = 'ON-Loundry W&M-30052025+5-088242107169';
+
+function testDuplicateCampaign()
+{
+  duplicateCampaignFullManual("R04", "TestUsaha", "206726568613432", "569094022964012", "Promo UMKM Bersama", 5)
+}
+
+
+function duplicateCampaignFullManual(addAccountName, namaUsaha, addAccountId, pageId, campaignName, durasi) {
+  const accessToken = ACCESS_TOKEN;
+  var campaignId = '';
+  const addAccount = 'act_' + addAccountId;
+
+  if(addAccountName == "R10")
+  {
+    campaignId = "120225943524550694";
+  }
+
+  if(addAccountName == "R11")
+  {
+    campaignId = "120227433380380200";
+  }
+
+  if(addAccountName == "R06")
+  {
+    campaignId = "120226449010810235";
+  }
+
+   if(addAccountName == "R04")
+  {
+    campaignId = "120227436872890554";
+  }
+
+
+
+  //Copy Campaign Only
+  const newCampaignId = copyCampaignAndRename(campaignId, accessToken, campaignName);
+  
+  //Get Adset Dari Campaign Master
+  const adSets = getAdSetsFromCampaign(campaignId, accessToken);
+  adSets.forEach(adSet => {
+    const newAdSetId = createNewAdSetFromOld(namaUsaha, adSet.id, newCampaignId, accessToken, addAccount, pageId, durasi);
+     //Duplikat ads di dalam ad set
+    //if (newAdSetId) 
+      //const ads = getAdsFromAdSet(adSet.id, accessToken);
+      //ads.forEach(ad => {
+        //createNewAdToWhatsApp(PAGE_IDFB, newAdSetId, ACCESS_TOKENFB);
+        //copyAd(ad.id, newAdSetId, accessToken);
+      //});
+    //}
+  });
+  return newCampaignId;
+}
+
+
+function copyCampaignAndRename(campaignId, accessToken, campaignName) {
+  const copyUrl = `https://graph.facebook.com/v21.0/${campaignId}/copies`;
+
+  // Payload untuk copy campaign (nama tidak berpengaruh)
+  const copyPayload = {
+    access_token: accessToken,
+    status: 'ACTIVE',
+    deep_copy: false
+  };
+
+  const copyOptions = { method: 'post', payload: copyPayload };
+  const copyRes = UrlFetchApp.fetch(copyUrl, copyOptions);
+  const copyJson = JSON.parse(copyRes.getContentText());
+
+  const newCampaignId = copyJson.copied_campaign_id;
+  if (!newCampaignId) {
+    throw new Error('Gagal menyalin campaign');
+  }
+
+  // Nama baru yang diinginkan
+  const newName = campaignName;
+
+  // URL untuk update campaign baru
+  const updateUrl = `https://graph.facebook.com/v21.0/${newCampaignId}`;
+
+  // Payload untuk update nama campaign
+  const updatePayload = {
+    access_token: accessToken,
+    name: newName
+  };
+
+  const updateOptions = { method: 'post', payload: updatePayload };
+  const updateRes = UrlFetchApp.fetch(updateUrl, updateOptions);
+  const updateJson = JSON.parse(updateRes.getContentText());
+
+  if (updateJson.success) {
+
+    return newCampaignId;
+  } else {
+    throw new Error('Gagal mengubah nama campaign');
+  }
+}
+
+
+
+function copyCampaignOnly(campaignId, accessToken) {
+  const url = `https://graph.facebook.com/v21.0/${campaignId}/copies`;
+
+  const payload = {
+    access_token: accessToken,
+    name: 'Copy Only Campaign - ' + new Date().toISOString(),
+    status: 'ACTIVE',
+    deep_copy: false // Penting! Hanya copy campaign saja
+  };
+
+  const options = { method: 'post', payload: payload };
+  const res = UrlFetchApp.fetch(url, options);
+  const json = JSON.parse(res.getContentText());
+  return json.copied_campaign_id || null;
+}
+
+
+function createNewAdSetFromOld(namaUsaha, adSetId, newCampaignId, accessToken, addAccount, pageId, durasi) {
+  try {
+    const oldAdSet = getAdSetData(adSetId, accessToken);
+    const url = `https://graph.facebook.com/v21.0/${addAccount}/adsets`;
+
+    
+    // Membuat tanggal start_time sekarang
+    const startDate = new Date();
+
+    // Membuat tanggal end_time = sekarang + 5 hari
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + durasi);
+
+    // Fungsi untuk mengubah Date ke format ISO 8601 tanpa milidetik dan dengan timezone +0000
+    function toFacebookDateFormat(date) {
+      // Contoh output: 2025-06-02T10:00:00+0000
+      const pad = (n) => (n < 10 ? '0' + n : n);
+      const year = date.getUTCFullYear();
+      const month = pad(date.getUTCMonth() + 1);
+      const day = pad(date.getUTCDate());
+      const hours = pad(date.getUTCHours());
+      const minutes = pad(date.getUTCMinutes());
+      const seconds = pad(date.getUTCSeconds());
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+0000`;
+    }
+
+
+    const payload = {
+      access_token: accessToken,
+      name: 'ON-' + namaUsaha,
+      campaign_id: newCampaignId,
+      billing_event: oldAdSet.billing_event,
+      optimization_goal: oldAdSet.optimization_goal,
+      targeting: oldAdSet.targeting,//JSON.stringify(oldAdSet.targeting),
+      daily_budget: oldAdSet.daily_budget,
+      start_time: toFacebookDateFormat(startDate),
+      end_time: toFacebookDateFormat(endDate),
+      status: 'ACTIVE',
+      destination_type: 'WHATSAPP',
+      promoted_object: {
+       page_id: pageId 
+      }// JSON.stringify({  page_id: pageId }),
+    };
+
+    //const options = {
+      //method: 'post',
+      //payload: payload,
+      //muteHttpExceptions: true
+    //};
+
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const resultText = response.getContentText();
+    Logger.log('Response: ' + resultText);
+
+    const result = JSON.parse(resultText);
+
+    if (result.error) {
+      throw new Error('Facebook API error: ' + JSON.stringify(result.error));
+    }
+
+    Logger.log('Ad set baru ID: ' + result.id);
+    return result.id;
+
+  } catch (e) {
+    Logger.log('ERROR createNewAdSetFromOld: ' + e.message);
+    return null;
+  }
+}
+
+function getAdSetsFromCampaign(campaignId, accessToken) {
+  const url = `https://graph.facebook.com/v21.0/${campaignId}/adsets?access_token=${accessToken}`;
+  
+  try {
+    const res = UrlFetchApp.fetch(url);
+    const content = res.getContentText();
+    const json = JSON.parse(content);
+    return json.data || [];
+  } catch (e) {
+    Logger.log("Error saat fetch adsets: " + e.message);
+    return [];
+  }
+}
+
+
+function getAdSetData(adSetId, accessToken) {
+  const fields = 'name,campaign_id,bid_amount,billing_event,optimization_goal,targeting,daily_budget,start_time,end_time,status';
+  const url = `https://graph.facebook.com/v21.0/${adSetId}?fields=${fields}&access_token=${accessToken}`;
+  const response = UrlFetchApp.fetch(url);
+  const json = JSON.parse(response.getContentText());
+  return json;
+}
+
+
+function copyAdSet(adSetId, newCampaignId, accessToken) {
+  const url = `https://graph.facebook.com/v21.0/${adSetId}/copies`;
+
+  const payload = {
+    access_token: accessToken,
+    campaign_id: newCampaignId,
+    status: 'PAUSED'
+  };
+
+  const options = { method: 'post', payload: payload };
+  const res = UrlFetchApp.fetch(url, options);
+  const json = JSON.parse(res.getContentText());
+
+  return json.id || null;
+}
+
+function getAdsFromAdSet(adSetId, accessToken) {
+  const url = `https://graph.facebook.com/v21.0/${adSetId}/ads?access_token=${accessToken}`;
+  const res = UrlFetchApp.fetch(url);
+  const json = JSON.parse(res.getContentText());
+  return json.data || [];
+}
+
+function copyAd(adId, newAdSetId, accessToken) {
+  const url = `https://graph.facebook.com/v21.0/${adId}/copies`;
+
+  const payload = {
+    access_token: accessToken,
+    adset_id: newAdSetId,
+    status: 'PAUSED'
+  };
+
+  const options = { method: 'post', payload: payload };
+  const res = UrlFetchApp.fetch(url, options);
+  const json = JSON.parse(res.getContentText());
+
+  Logger.log('Ad copied: ' + (json.id || 'GAGAL'));
+  return json.id || null;
+}
+
+function createNewAdToWhatsApp(pageId, adSetId) {
+  const adAccountId = AD_ACCOUNT_IDFB;
+  const accessToken = ACCESS_TOKEN;
+  const waNumber = "6281234567890"; // ← ganti nomor WA bisnis kamu
+  const waLink = `https://wa.me/${waNumber}`;
+  const messageText = "Klik tombol WhatsApp di bawah untuk chat langsung dengan kami!";
+
+  const creativeUrl = `https://graph.facebook.com/v21.0/${adAccountId}/adcreatives`;
+
+  const creativePayload = {
+    name: "WhatsApp Creative",
+    object_story_spec: JSON.stringify({
+      page_id: pageId,
+      link_data: {
+        message: messageText,
+        link: waLink,
+        call_to_action: {
+          type: "WHATSAPP_MESSAGE",
+          value: {
+            link: waLink
+          }
+        }
+      }
+    }),
+    contextual_multi_ads: JSON.stringify({
+      enroll_status: "OPT_IN"
+    }),
+    access_token: accessToken
+  };
+
+  const creativeOptions = {
+    method: 'post',
+    payload: creativePayload,
+    muteHttpExceptions: true
+  };
+
+  const creativeResponse = UrlFetchApp.fetch(creativeUrl, creativeOptions);
+  const creativeResult = JSON.parse(creativeResponse.getContentText());
+  Logger.log('Creative Response: ' + JSON.stringify(creativeResult));
+
+  const creativeId = creativeResult.id;
+  if (!creativeId) {
+    Logger.log('❌ Gagal membuat creative: ' + creativeResponse.getContentText());
+    return;
+  }
+
+  // Buat Ad
+  const adUrl = `https://graph.facebook.com/v21.0/act_${adAccountId}/ads`;
+  const adPayload = {
+    name: "WhatsApp Ad",
+    adset_id: adSetId,
+    creative: JSON.stringify({
+      creative_id: creativeId
+    }),
+    status: "PAUSED",
+    access_token: accessToken
+  };
+
+  const adOptions = {
+    method: 'post',
+    payload: adPayload,
+    muteHttpExceptions: true
+  };
+
+  const adResponse = UrlFetchApp.fetch(adUrl, adOptions);
+  const adResult = JSON.parse(adResponse.getContentText());
+  Logger.log("Ad Response: " + JSON.stringify(adResult));
+}
