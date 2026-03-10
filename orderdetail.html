@@ -452,6 +452,51 @@ async function updateAssignment(role, type, userId) {
     }
 }
 </script>
+<script>
+document.addEventListener('click', function(e){
+  if (e.target && e.target.id === 'btn-edit-client') {
+    openClientEditModal();
+  }
+});
+</script>
+<!-- Client Edit Modal -->
+<div id="client-edit-modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeClientEditModal()"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-4">
+    <div class="glass-panel rounded-2xl p-6 shadow-2xl relative">
+      <button onclick="closeClientEditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <h2 class="text-xl font-bold mb-6 text-slate-900 dark:text-white">Edit Data Klien</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label>
+          <input id="edit-client-name" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nama Usaha</label>
+          <input id="edit-client-business" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Jenis Usaha</label>
+          <input id="edit-client-type" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">WhatsApp</label>
+          <input id="edit-client-wa" type="text" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Alamat Operasional</label>
+          <textarea id="edit-client-address" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white"></textarea>
+        </div>
+        <div class="pt-4 flex justify-end gap-3">
+          <button type="button" onclick="closeClientEditModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">Batal</button>
+          <button type="button" onclick="submitClientEdit(this)" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Nyala Digital Apps – Detail Pesanan</title>
@@ -556,7 +601,7 @@ tailwind.config = {
                   <span class="material-symbols-outlined text-primary">person</span>
                   Informasi Dasar
                 </h3>
-                <button class="text-primary text-xs font-bold hover:underline">Edit</button>
+                <button id="btn-edit-client" class="text-primary text-xs font-bold hover:underline">Edit</button>
               </div>
               <div class="space-y-5">
                 <div>
@@ -876,7 +921,7 @@ tailwind.config = {
 
         <!-- Team Panel -->
         <div id="panel-team" class="tab-content hidden">
-            <div class="glass-panel p-6 rounded-2xl max-w-3xl mx-auto">
+            <div class="glass-panel p-6 rounded-2xl w-full mx-auto">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">group</span>
@@ -1100,17 +1145,19 @@ document.addEventListener("DOMContentLoaded", function(){
   }
   function applyTabsByRole(role){
     var tabs = document.querySelectorAll('.mt-2 .border-b button');
+    var roleKey = String(role || '').toLowerCase().replace(/\s+/g,'_');
+    var allLabels = Array.from(tabs).map(function(btn){ return (btn.textContent || '').trim(); });
     var show = {
-      super_admin: ['Data Klien','Konten','Campaign','Tim','Performa','Keuangan','Log'],
+      super_admin: allLabels,
       cs: ['Data Klien','Konten','Campaign','Tim'],
       keuangan: ['Data Klien','Konten','Campaign','Keuangan','Log'],
-      editor: ['Data Klien','Konten','Campaign','Log'],
+      editor: ['Data Klien','Konten'],
       advertiser: ['Data Klien','Konten','Campaign','Performa','Log'],
       crm: ['Data Klien','Konten','Campaign','Performa','Log']
-    }[role] || ['Data Klien','Konten','Campaign'];
+    }[roleKey] || ['Data Klien','Konten','Campaign'];
     tabs.forEach(function(btn){
       var label = (btn.textContent || '').trim();
-      if (show.indexOf(label) === -1) btn.style.display = 'none';
+      btn.style.display = show.indexOf(label) === -1 ? 'none' : '';
     });
   }
   function fmtUpdated(dt){
@@ -1138,25 +1185,31 @@ document.addEventListener("DOMContentLoaded", function(){
         if (c.business_name) sub.push(`<span class="font-bold text-slate-700 dark:text-slate-200">${c.business_name}</span>`);
         if (o.id) sub.push("#" + o.id);
         if (o.package_name) sub.push(o.package_name);
-        
-        var statusBadge = '';
-        var s = (o.status || '').toLowerCase();
-        
-        if (s === 'baru' || s === 'new') {
-            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30 ml-2"><span class="size-1.5 rounded-full bg-blue-500 dark:bg-blue-400"></span>Baru</span>';
-        } else if (s === 'proses konten') {
-            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30 ml-2"><span class="size-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse"></span>Proses Konten</span>';
-        } else if (s === 'siap iklan') {
-            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30 ml-2"><span class="size-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400"></span>Siap Iklan</span>';
-        } else if (s === 'perpanjang' || s === 'extend' || s === 'repeat') {
-            statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-purple-500/10 text-purple-600 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30 ml-2"><span class="size-1.5 rounded-full bg-purple-500 dark:bg-purple-400"></span>Perpanjang</span>';
-        } else {
-             // Default or other status
-             if (s) statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-500/10 text-slate-600 border border-slate-500/20 dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/30 ml-2">' + s + '</span>';
-        }
-        
-        q("od-subtitle").innerHTML = sub.join(" • ") + statusBadge;
+        q("od-subtitle").innerHTML = sub.join(" • ");
         q("od-subtitle").className = "text-secondary/80 text-sm mt-1 flex items-center flex-wrap gap-y-1";
+        fetch(`/api/orders/${o.id}/combined-status`).then(r=>r.json()).then(function(st){
+          var type = (st.type || '').toLowerCase();
+          var proc = (st.process || '').toLowerCase();
+          var ad = (st.ad || '').toLowerCase();
+          function badge(label, color){
+            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight ${color} ml-2"><span class="size-1.5 rounded-full"></span>${label}</span>`;
+          }
+          var typeBadge = type.includes('perpanjang')
+            ? badge('Perpanjang','bg-purple-500/10 text-purple-600 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30')
+            : badge('Baru','bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30');
+          var procMap = {
+            'menunggu':'bg-slate-500/10 text-slate-600 border border-slate-500/20 dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/30',
+            'mulai konten':'bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30',
+            'proses konten':'bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30',
+            'siap iklan':'bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
+            'proses iklan':'bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+            'aktif':'bg-green-500/10 text-green-600 border border-green-500/20 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
+            'tidak aktif':'bg-red-500/10 text-red-600 border border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30'
+          };
+          var procBadge = badge((st.process || 'Menunggu'), procMap[proc] || procMap['menunggu']);
+          var adBadge = badge((st.ad || 'Tidak Aktif'), procMap[ad] || procMap['tidak aktif']);
+          q("od-subtitle").innerHTML = sub.join(" • ") + typeBadge + procBadge + adBadge;
+        }).catch(function(){});
       }
 
       // Campaign Logic based on Status
@@ -1199,6 +1252,19 @@ document.addEventListener("DOMContentLoaded", function(){
       if (q("client-wa")) q("client-wa").textContent = c.whatsapp || "";
       if (q("business-name")) q("business-name").textContent = c.business_name || "";
       if (q("client-address")) q("client-address").textContent = c.address || "";
+      window.currentClient = { 
+        id: c.id, 
+        name: c.name, 
+        business_name: c.business_name, 
+        whatsapp: c.whatsapp, 
+        address: c.address, 
+        business_type: c.business_type 
+      };
+      var roleSafe = (getRole() || '').toLowerCase();
+      if (roleSafe === 'editor') {
+        var editBtn = document.getElementById('btn-edit-client');
+        if (editBtn) editBtn.style.display = 'none';
+      }
       if (q("brief-objectives")) q("brief-objectives").textContent = d && d.description ? d.description : "";
       if (q("brief-notes")) q("brief-notes").textContent = o && o.notes ? o.notes : (d && d.promo ? d.promo : "");
       if (q("brief-updated")) q("brief-updated").textContent = fmtUpdated(o && o.updated_at ? o.updated_at : o && o.created_at ? o.created_at : null);
@@ -1211,11 +1277,11 @@ document.addEventListener("DOMContentLoaded", function(){
       var clientId = o.client_id || (c.id || '');
       if (q("input-client-id")) q("input-client-id").value = clientId;
 
-      // Load Campaigns List
-      if (o.id) {
-          loadCampaigns(o.id);
-          // Load Content Status
-          loadContentStatus(o.id);
+      // Load Campaigns List per Client based on status
+      if (clientId) {
+          loadClientCampaigns(clientId, s);
+          // Load Content Status (still by order id)
+          if (o.id) loadContentStatus(o.id);
       }
       // -----------------------------
 
@@ -1283,7 +1349,7 @@ document.addEventListener("DOMContentLoaded", function(){
           }
       }
       
-      if (panel && content && Object.keys(meta).length > 0) {
+      if (panel && content) {
         panel.classList.remove('hidden');
         
         var badgeClass = "text-slate-600 border-slate-200 bg-slate-100 dark:text-slate-300 dark:border-white/20 dark:bg-white/10";
@@ -1296,32 +1362,126 @@ document.addEventListener("DOMContentLoaded", function(){
             badge.textContent = stype.replace(/_/g, ' ');
         }
 
-        var html = '';
-        for (var key in meta) {
-           if (meta.hasOwnProperty(key)) {
-             var val = meta[key];
-             if(!val) continue;
-             
-             var label = key.replace(stype + '_', '').replace(/_/g, ' ');
-             label = label.charAt(0).toUpperCase() + label.slice(1);
-             
-             if (key.includes('budget') || key.includes('price')) {
-                try { val = 'Rp ' + Number(val).toLocaleString('id-ID'); } catch(_) {}
-             }
-             
-             html += `
-               <div>
-                 <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-0.5">${label}</p>
-                 <p class="text-sm text-slate-900 dark:text-white font-semibold leading-snug break-words">${val}</p>
-               </div>
-             `;
-           }
+        // Helper to build meta HTML (skip duration/start)
+        function buildMetaHtml(baseHtml) {
+          var html = baseHtml || '';
+          if (meta && Object.keys(meta).length > 0) {
+            for (var key in meta) {
+               if (meta.hasOwnProperty(key)) {
+                 var val = meta[key];
+                 if(!val) continue;
+                 var lowerKey = key.toLowerCase();
+                 if (lowerKey.includes('duration') || lowerKey.includes('start_date') || lowerKey.includes('startdate')) continue;
+                 
+                 var label = key.replace(stype + '_', '').replace(/_/g, ' ');
+                 label = label.charAt(0).toUpperCase() + label.slice(1);
+                 
+                 if (key.includes('budget') || key.includes('price')) {
+                    try { val = 'Rp ' + Number(val).toLocaleString('id-ID'); } catch(_) {}
+                 }
+                 
+                 html += `
+                   <div>
+                     <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-0.5">${label}</p>
+                     <p class="text-sm text-slate-900 dark:text-white font-semibold leading-snug break-words">${val}</p>
+                   </div>
+                 `;
+               }
+            }
+          }
+          return html;
         }
-        content.innerHTML = html;
+
+        // Build Status Iklan & Status Proses then meta, without using await
+        if (o.id) {
+          fetch('/api/orders/' + encodeURIComponent(o.id) + '/combined-status')
+            .then(function(resp){ return resp.json(); })
+            .then(function(st){
+              var baseHtml = '';
+              baseHtml += `
+                <div>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-0.5">Status Iklan</p>
+                  <p class="text-sm text-slate-900 dark:text-white font-semibold leading-snug break-words">${(st.type || '').toString()}</p>
+                </div>
+                <div>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mb-0.5">Status Proses</p>
+                  <p class="text-sm text-slate-900 dark:text-white font-semibold leading-snug break-words">${(st.process || '').toString()}</p>
+                </div>
+              `;
+              content.innerHTML = buildMetaHtml(baseHtml);
+            })
+            .catch(function(){
+              content.innerHTML = buildMetaHtml('');
+            });
+        } else {
+          content.innerHTML = buildMetaHtml('');
+        }
       }
     })
     .catch(function(){});
 });
+
+// Client Edit Modal
+function openClientEditModal() {
+  var c = window.currentClient || {};
+  var modal = document.getElementById('client-edit-modal');
+  if (!modal) return;
+  document.getElementById('edit-client-name').value = c.name || '';
+  document.getElementById('edit-client-business').value = c.business_name || '';
+  document.getElementById('edit-client-wa').value = c.whatsapp || '';
+  document.getElementById('edit-client-address').value = c.address || '';
+  document.getElementById('edit-client-type').value = c.business_type || '';
+  modal.classList.remove('hidden');
+}
+function closeClientEditModal(){
+  var modal = document.getElementById('client-edit-modal');
+  if (modal) modal.classList.add('hidden');
+}
+async function submitClientEdit(btn){
+  var c = window.currentClient || {};
+  if (!c.id) { alert('ID klien tidak tersedia'); return; }
+  var payload = {
+    name: document.getElementById('edit-client-name').value.trim(),
+    businessName: document.getElementById('edit-client-business').value.trim(),
+    businessType: document.getElementById('edit-client-type').value.trim(),
+    whatsapp: document.getElementById('edit-client-wa').value.trim(),
+    address: document.getElementById('edit-client-address').value.trim()
+  };
+  if (!payload.name || !payload.businessName) {
+    alert('Nama dan Nama Usaha wajib diisi');
+    return;
+  }
+  btn.disabled = true;
+  var original = btn.innerHTML;
+  btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">progress_activity</span> Menyimpan...';
+  try {
+    var res = await fetch('/api/clients/' + encodeURIComponent(c.id), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error || 'Gagal update');
+    // Update view
+    document.getElementById('client-name').textContent = payload.name;
+    document.getElementById('business-name').textContent = payload.businessName;
+    document.getElementById('client-wa').textContent = payload.whatsapp;
+    document.getElementById('client-address').textContent = payload.address;
+    window.currentClient = Object.assign({}, c, {
+      name: payload.name,
+      business_name: payload.businessName,
+      whatsapp: payload.whatsapp,
+      address: payload.address,
+      business_type: payload.businessType
+    });
+    closeClientEditModal();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
 
 // Campaign Modal Logic
 function openCampaignModal(client, order) {
@@ -1688,6 +1848,93 @@ async function loadCampaigns(orderId) {
     }
 }
 
+// Load Campaigns by Client with status logic
+async function loadClientCampaigns(clientId, orderStatus) {
+    if (!clientId) return;
+    const tbody = document.getElementById('campaign-list-body');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Memuat data kampanye...</td></tr>';
+    try {
+        const response = await fetch(`/api/clients/${clientId}/campaigns`);
+        const campaigns = await response.json();
+        let filtered = [];
+        const s = String(orderStatus || '').toLowerCase();
+        if (s === 'baru' || s === 'new') {
+            filtered = campaigns.filter(c => String(c.order_status || '').toLowerCase() === 'baru' || String(c.order_status || '').toLowerCase() === 'new');
+        } else if (s === 'perpanjang' || s === 'extend' || s === 'repeat') {
+            filtered = campaigns.filter(c => {
+                const os = String(c.order_status || '').toLowerCase();
+                return os === 'baru' || os === 'new' || os === 'perpanjang' || os === 'extend' || os === 'repeat';
+            });
+            // Ensure Baru first
+            filtered.sort((a,b) => {
+                const rank = (x) => {
+                    const os = String(x.order_status || '').toLowerCase();
+                    if (os === 'baru' || os === 'new') return 0;
+                    return 1;
+                };
+                return rank(a) - rank(b) || new Date(a.created_at) - new Date(b.created_at);
+            });
+        } else {
+            filtered = campaigns;
+        }
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Belum ada kampanye untuk klien ini.</td></tr>';
+            return;
+        }
+        let totalImpressions = 0;
+        let totalClicks = 0;
+        let totalSpend = 0;
+        let totalResults = 0;
+        let html = '';
+        filtered.forEach(camp => {
+            totalImpressions += Number(camp.impressions || 0);
+            totalClicks += Number(camp.clicks || 0);
+            totalSpend += Number(camp.spend || 0);
+            totalResults += Number(camp.results || 0);
+            const statusClass = camp.status === 'ACTIVE' ? 'bg-success/10 text-success border-success/20' : 'bg-slate/10 text-slate-500 border-slate/20';
+            const targetingHtml = `
+                <div class="text-sm text-slate-700 dark:text-slate-300">${camp.targeting || '-'}</div>
+            `;
+            const actId = camp.ad_account_id || '';
+            const encodedValue = encodeURIComponent(camp.campaign_name || '');
+            const filterSet = `SEARCH_BY_CAMPAIGN_GROUP_NAME-STRING%1ECONTAINS_ALL%1E${encodedValue}`;
+            const fbLink = actId ? `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${actId}&filter_set=${filterSet}&nav_source=no_referrer` : '#';
+            html += `
+                <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                        <div>${camp.campaign_name}</div>
+                        ${actId ? `<a href="${fbLink}" target="_blank" class="text-[10px] text-primary hover:underline font-mono mt-0.5 flex items-center gap-1 w-fit" title="Buka di Ads Manager">
+                            ${camp.campaign_id || ''}<span class="material-symbols-outlined text-[10px]">open_in_new</span></a>` : ''}
+                        <div class="text-[10px] text-slate-400 mt-0.5">Order: ${camp.order_id || '-'} • Status Order: ${camp.order_status || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-slate-700 dark:text-slate-300">${camp.ad_account_name || '-'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${camp.ad_account_id || ''}</div>
+                    </td>
+                    <td class="px-6 py-4">${targetingHtml}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 text-[10px] rounded-full ${statusClass}">${camp.status || '-'}</span></td>
+                    <td class="px-6 py-4">${Number(camp.impressions||0).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4">${Number(camp.clicks||0).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4">${camp.ctr != null ? camp.ctr + '%' : '-'}</td>
+                    <td class="px-6 py-4">Rp ${Number(camp.spend||0).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4">${Number(camp.results||0).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4"><button class="text-xs text-primary hover:underline">Detail</button></td>
+                </tr>
+            `;
+        });
+        document.getElementById('metric-impressions').textContent = Number(totalImpressions).toLocaleString('id-ID');
+        document.getElementById('metric-clicks').textContent = Number(totalClicks).toLocaleString('id-ID');
+        document.getElementById('metric-spend').textContent = 'Rp ' + Number(totalSpend).toLocaleString('id-ID');
+        const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0';
+        document.getElementById('metric-ctr').textContent = ctr + '%';
+        document.getElementById('metric-results').textContent = Number(totalResults).toLocaleString('id-ID');
+        tbody.innerHTML = html;
+    } catch(e) {
+        console.error('Error loading client campaigns:', e);
+        tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-red-400">Gagal memuat kampanye klien</td></tr>';
+    }
+}
 // Sync Campaign Metrics
 async function syncCampaign(campaignId) {
     if (!campaignId) return;

@@ -122,8 +122,8 @@
             <main class="flex-1 flex flex-col gap-4">
                 <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
-                        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Ringkasan operasional hari ini</h1>
-                        <p class="text-xs text-secondary/80 mt-1">Status keuangan, pesanan, dan deadline produksi.</p>
+                        <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Dashboard</h1>
+                        <p class="text-xs text-secondary/80 mt-1">Ringkasan operasional hari ini.</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <button class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-secondary/80 bg-white/5 hover:bg-white/10 transition-colors">
@@ -136,46 +136,179 @@
                         </button>
                     </div>
                 </section>
+                <!-- Editor Top Row -->
+                <section id="editor-metrics-row" class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-1 hidden">
+                    <!-- Editor: Waiting Clients -->
+                    <div id="card-ed-waiting" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-400">hourglass_top</span>
+                                <span>Klien Menunggu</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-ed-waiting">-</p>
+                            <p class="text-[10px] text-white/60">Status Menunggu</p>
+                        </div>
+                    </div>
+                    <!-- Editor: Processing Clients -->
+                    <div id="card-ed-processing" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-indigo-400">pending_actions</span>
+                                <span>Klien Proses Konten</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-ed-processing">-</p>
+                            <p class="text-[10px] text-white/60">Status Proses Konten</p>
+                        </div>
+                    </div>
+                    <!-- Editor: Content Created This Month -->
+                    <div id="card-ed-content" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-pink-400">post_add</span>
+                                <span>Konten Dibuat Bulan Ini</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-ed-content">-</p>
+                            <p class="text-[10px] text-white/60">Bulan ini</p>
+                        </div>
+                    </div>
+                    <!-- Editor: Commission Total (last) -->
+                    <div id="card-ed-commission" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-400">payments</span>
+                                <span>Komisi Saya</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-ed-commission">-</p>
+                            <p class="text-[10px] text-white/60">Akumulasi</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- Advertiser Top Row -->
+                <section id="advertiser-metrics-row" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1 hidden">
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-cyan-400">campaign</span>
+                                <span>Klien Siap Iklan</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-adv-ready">-</p>
+                            <p class="text-[10px] text-white/60">Status Proses: Siap Iklan</p>
+                        </div>
+                    </div>
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-indigo-400">rocket_launch</span>
+                                <span>Jumlah Iklan Bulan Ini</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-adv-monthly-ads">-</p>
+                            <p class="text-[10px] text-white/60">Bulan ini</p>
+                        </div>
+                    </div>
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-400">payments</span>
+                                <span>Komisi Advertiser</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="stat-adv-commission">-</p>
+                            <p class="text-[10px] text-white/60">Akumulasi</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- General/Admin Metrics (second row for editor) -->
                 <div id="admin-dashboard-content">
                     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-1">
                         <!-- Active Orders -->
                         <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
-                            <div class="flex items-center justify-between text-[11px] text-secondary/80">
-                                <span>Order Aktif</span>
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-cyan-400">assignment_turned_in</span>
+                                    <span>Order Aktif</span>
+                                </span>
                             </div>
                             <div class="flex items-end justify-between">
                                 <p class="text-lg font-semibold" id="stat-active-orders">-</p>
-                                <p class="text-[10px] text-secondary/60">Total berjalan</p>
+                                <p class="text-[10px] text-white/60">Total berjalan</p>
                             </div>
                         </div>
                         <!-- Revenue This Month -->
-                        <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
-                            <div class="flex items-center justify-between text-[11px] text-secondary/80">
-                                <span>Pemasukan Bulan Ini</span>
+                        <div id="card-revenue" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-emerald-400">trending_up</span>
+                                    <span>Pemasukan Bulan Ini</span>
+                                </span>
                             </div>
                             <div class="flex items-end justify-between">
                                 <p class="text-lg font-semibold" id="stat-revenue">-</p>
-                                <p class="text-[10px] text-secondary/60">Bulan ini</p>
+                                <p class="text-[10px] text-white/60">Bulan ini</p>
                             </div>
                         </div>
                         <!-- New Clients -->
                         <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
-                            <div class="flex items-center justify-between text-[11px] text-secondary/80">
-                                <span>Klien Baru</span>
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-blue-400">group_add</span>
+                                    <span>Klien Baru</span>
+                                </span>
                             </div>
                             <div class="flex items-end justify-between">
                                 <p class="text-lg font-semibold" id="stat-new-clients">-</p>
-                                <p class="text-[10px] text-secondary/60">Bulan ini</p>
+                                <p class="text-[10px] text-white/60">Bulan ini</p>
                             </div>
                         </div>
-                        <!-- Active Campaigns -->
-                        <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
-                            <div class="flex items-center justify-between text-[11px] text-secondary/80">
-                                <span>Kampanye Aktif</span>
+                        <!-- Extend Orders (Perpanjang) -->
+                        <div id="card-extend" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-purple-400">sync</span>
+                                    <span>Perpanjang Bulan Ini</span>
+                                </span>
                             </div>
                             <div class="flex items-end justify-between">
-                                <p class="text-lg font-semibold" id="stat-active-campaigns">-</p>
-                                <p class="text-[10px] text-secondary/60">Status ACTIVE</p>
+                                <p class="text-lg font-semibold" id="stat-extend-orders">-</p>
+                                <p class="text-[10px] text-white/60">Bulan ini</p>
+                            </div>
+                        </div>
+                        <!-- Commission Payable -->
+                        <div id="card-commissions" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-400">payments</span>
+                                    <span>Komisi Dibayar Bulan Ini</span>
+                                </span>
+                            </div>
+                            <div class="flex items-end justify-between">
+                                <p class="text-lg font-semibold" id="stat-commissions">-</p>
+                                <p class="text-[10px] text-white/60">Bulan ini</p>
+                            </div>
+                        </div>
+                        <!-- Ads Spend -->
+                        <div id="card-ads-spend" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-pink-400">show_chart</span>
+                                    <span>Total Spen Iklan Klien</span>
+                                </span>
+                            </div>
+                            <div class="flex items-end justify-between">
+                                <p class="text-lg font-semibold" id="stat-ads-spend">-</p>
+                                <p class="text-[10px] text-white/60">Bulan ini</p>
                             </div>
                         </div>
                     </section>
@@ -184,20 +317,50 @@
                         <div class="glass-panel rounded-2xl overflow-hidden">
                             <div class="p-6 border-b border-white/5 flex justify-between items-center">
                                 <h4 class="text-lg font-bold text-white">Pesanan Terbaru</h4>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <select id="dash-status-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                        <option value="all">Semua Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="baru">Baru</option>
+                                        <option value="perpanjang">Perpanjang</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="proses konten">Proses Konten</option>
+                                        <option value="siap iklan">Siap Iklan</option>
+                                    </select>
+                                    <select id="dash-month-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                        <option value="all">Semua Bulan</option>
+                                        <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option>
+                                    </select>
+                                    <select id="dash-year-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                        <option value="all">Semua Tahun</option>
+                                    </select>
+                                    <input type="date" id="dash-date-start" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
+                                    <span class="text-white/40 text-[11px]">-</span>
+                                    <input type="date" id="dash-date-end" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
+                                    <div class="relative group w-40">
+                                        <span class="absolute left-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-white/40 text-[16px]">search</span>
+                                        <input type="text" id="dash-search-input" placeholder="Cari..."
+                                               class="w-full bg-white/5 border border-white/10 rounded-full pl-7 pr-3 py-1.5 text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/40">
+                                    </div>
+                                </div>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left">
                                     <thead class="bg-white/5">
                                         <tr>
-                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">ID</th>
-                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Klien</th>
-                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Paket</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Progress</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-10"></th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-white/5" id="orders-table-body">
-                                        <tr><td colspan="5" class="text-center py-4 text-slate-500">Memuat...</td></tr>
+                                        <tr><td colspan="9" class="text-center py-4 text-slate-500">Memuat...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -620,37 +783,54 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const role = localStorage.getItem('role') || 'super_admin';
-            const userId = localStorage.getItem('user_id');
+            const userId = localStorage.getItem('user_id') || localStorage.getItem('userId');
+            const isAdmin = (role || '').toLowerCase() === 'super_admin';
+            ['card-revenue','card-commissions','card-ads-spend'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = isAdmin ? '' : 'none';
+            });
 
             if (role === 'CS') {
-                // Toggle Views
-                document.getElementById('admin-dashboard-content').classList.add('hidden');
+                // CS View + show shared Orders table
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('cs-dashboard-content').classList.remove('hidden');
                 
                 // Load CS Data
                 await loadCSData(userId);
+                await loadAdminOrders(1);
             } else if (role.toLowerCase() === 'editor') {
-                // Editor View
-                document.getElementById('admin-dashboard-content').classList.add('hidden');
+                // Editor: show only the editor metrics row (hide admin metrics row)
+                const edRow = document.getElementById('editor-metrics-row');
+                if (edRow) edRow.classList.remove('hidden');
+                const adminGrid = document.querySelector('#admin-dashboard-content > section');
+                if (adminGrid) adminGrid.style.display = 'none';
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('advertiser-dashboard-content').classList.add('hidden');
-                document.getElementById('editor-dashboard-content').classList.remove('hidden');
+                document.getElementById('editor-dashboard-content').classList.add('hidden');
+                document.getElementById('bengkel-dashboard-content').classList.add('hidden');
+                document.getElementById('keuangan-dashboard-content').classList.add('hidden');
 
-                // Load Editor Data
-                await loadEditorData(userId);
+                // Load Editor Stats and Orders table (keep the orders table visible)
+                await loadEditorStats(userId);
+                await loadAdminOrders(1);
+                await loadEditorStats(userId);
             } else if (role.toLowerCase() === 'advertiser') {
-                // Advertiser View
-                document.getElementById('admin-dashboard-content').classList.add('hidden');
+                const advRow = document.getElementById('advertiser-metrics-row');
+                if (advRow) advRow.classList.remove('hidden');
+                const adminGrid2 = document.querySelector('#admin-dashboard-content > section');
+                if (adminGrid2) adminGrid2.style.display = 'none';
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
-                document.getElementById('advertiser-dashboard-content').classList.remove('hidden');
-
-                // Load Advertiser Data
-                await loadAdvertiserData(userId);
+                document.getElementById('advertiser-dashboard-content').classList.add('hidden');
+                document.getElementById('bengkel-dashboard-content').classList.add('hidden');
+                document.getElementById('keuangan-dashboard-content').classList.add('hidden');
+                
+                await loadAdminOrders(1);
+                await loadAdvertiserStats(userId);
             } else if (role === 'Team Bengkel' || role.toLowerCase() === 'team bengkel') {
                 // Bengkel View
-                document.getElementById('admin-dashboard-content').classList.add('hidden');
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('advertiser-dashboard-content').classList.add('hidden');
@@ -658,9 +838,10 @@
 
                 // Load Bengkel Data
                 await loadBengkelData(userId);
+                await loadAdminOrders(1);
             } else if (role.toLowerCase() === 'keuangan') {
                 // Keuangan View
-                document.getElementById('admin-dashboard-content').classList.add('hidden');
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('advertiser-dashboard-content').classList.add('hidden');
@@ -669,6 +850,7 @@
 
                 // Load Keuangan Data
                 await loadKeuanganData();
+                await loadAdminOrders(1);
             } else {
                 // Ensure Admin View is shown (default, but good to be explicit)
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
@@ -680,6 +862,7 @@
 
                 // Load Admin Data
                 await loadAdminData();
+                await loadAdminOrders(1);
             }
         });
 
@@ -851,74 +1034,234 @@
                 document.getElementById('stat-active-orders').textContent = stats.activeOrders || 0;
                 document.getElementById('stat-revenue').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.revenueThisMonth || 0);
                 document.getElementById('stat-new-clients').textContent = stats.newClientsThisMonth || 0;
-                document.getElementById('stat-active-campaigns').textContent = stats.activeCampaigns || 0;
+                document.getElementById('stat-extend-orders').textContent = stats.extendOrdersThisMonth || 0;
+                document.getElementById('stat-commissions').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.commissionsThisMonth || 0);
+                document.getElementById('stat-ads-spend').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.adsSpendThisMonth || 0);
 
                 await loadAdminOrders(1);
             } catch (e) {
                 console.error('Failed to load admin data', e);
             }
         }
+        
+        async function loadEditorStats(userId) {
+            try {
+                const res = await fetch(`/api/dashboard/editor-stats?user_id=${encodeURIComponent(userId || '')}`);
+                const s = await res.json();
+                const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+                const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
+                setText('stat-ed-waiting', s.waitingClients || 0);
+                setText('stat-ed-processing', s.processingClients || 0);
+                setText('stat-ed-commission', fmtCurrency.format(s.editorCommissionTotal || 0));
+                setText('stat-ed-content', s.contentCreatedThisMonth || 0);
+            } catch (e) {
+                console.error('Failed to load editor stats', e);
+            }
+        }
+
+        // Init filter listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const yearSel = document.getElementById('dash-year-filter');
+            if (yearSel) {
+                const nowY = new Date().getFullYear();
+                for (let y = nowY; y >= nowY - 3; y--) {
+                    const opt = document.createElement('option');
+                    opt.value = String(y);
+                    opt.textContent = String(y);
+                    yearSel.appendChild(opt);
+                }
+            }
+            const map = {
+                'dash-status-filter': v => { dashStatus = v; applyDashboardFilters(1); },
+                'dash-month-filter': v => { dashMonth = v; applyDashboardFilters(1); },
+                'dash-year-filter': v => { dashYear = v; applyDashboardFilters(1); },
+                'dash-search-input': v => { dashSearch = v; applyDashboardFilters(1); },
+            };
+            Object.keys(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const handler = (e) => map[id](e.target.value);
+                el.addEventListener(id === 'dash-search-input' ? 'input' : 'change', handler);
+            });
+            const ds = document.getElementById('dash-date-start');
+            const de = document.getElementById('dash-date-end');
+            if (ds) ds.addEventListener('change', e => { dashDateStart = e.target.value; applyDashboardFilters(1); });
+            if (de) de.addEventListener('change', e => { dashDateEnd = e.target.value; applyDashboardFilters(1); });
+        });
 
         async function loadAdminOrders(page) {
             try {
-                const limit = 5;
-                const res = await fetch(`/api/orders?page=${page}&limit=${limit}`);
+                const limit = 10000;
+                const res = await fetch(`/api/orders?limit=${limit}`);
                 const json = await res.json();
-                const { data, meta } = json;
+                const data = Array.isArray(json) ? json : (json.data || []);
                 
                 const tbody = document.getElementById('orders-table-body');
                 if (!tbody) return;
-                tbody.innerHTML = '';
                 
-                if (data.length === 0) {
-                     tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>';
+                // Save for filters
+                window.dashAllOrders = data;
+                applyDashboardFilters(1);
+
+            } catch (e) {
+                console.error('Failed to load orders', e);
+            }
+        }
+
+        // Dashboard Filters State
+        let dashCurrentPage = 1;
+        let dashItemsPerPage = 10;
+        let dashStatus = 'all';
+        let dashMonth = 'all';
+        let dashYear = 'all';
+        let dashSearch = '';
+        let dashDateStart = '';
+        let dashDateEnd = '';
+
+        function applyDashboardFilters(page) {
+            dashCurrentPage = page || dashCurrentPage;
+            const raw = window.dashAllOrders || [];
+            const filtered = raw.filter(o => {
+                const s = String(o.status || '').toLowerCase();
+                const statusMatch = (dashStatus === 'all') ||
+                    (dashStatus === 'active' && (s === 'active' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten')) ||
+                    (dashStatus === 'pending' && (s === 'pending' || s === 'draft')) ||
+                    (dashStatus === 'baru' && (s === 'baru' || s === 'new')) ||
+                    (dashStatus === 'perpanjang' && (s === 'perpanjang' || s === 'extend' || s === 'repeat')) ||
+                    (dashStatus === 'proses konten' && s === 'proses konten') ||
+                    (dashStatus === 'siap iklan' && s === 'siap iklan');
+                const searchLower = dashSearch.toLowerCase();
+                const searchMatch = !dashSearch ||
+                    String(o.id).toLowerCase().includes(searchLower) ||
+                    String(o.client_name || '').toLowerCase().includes(searchLower) ||
+                    String(o.package_name || '').toLowerCase().includes(searchLower);
+                const dateObj = o.created_at ? new Date(o.created_at) : null;
+                let monthMatch = true, yearMatch = true, rangeMatch = true;
+                if (dateObj) {
+                    if (dashMonth !== 'all') monthMatch = (dateObj.getMonth() + 1) == parseInt(dashMonth);
+                    if (dashYear !== 'all') yearMatch = dateObj.getFullYear() == parseInt(dashYear);
+                    if (dashDateStart) rangeMatch = rangeMatch && (dateObj >= new Date(dashDateStart));
+                    if (dashDateEnd) { const dEnd = new Date(dashDateEnd); dEnd.setHours(23,59,59,999); rangeMatch = rangeMatch && (dateObj <= dEnd); }
+                } else if (dashDateStart || dashDateEnd) {
+                    rangeMatch = false;
+                }
+                return statusMatch && searchMatch && monthMatch && yearMatch && rangeMatch;
+            }).sort((a,b)=>{
+                const da = a.created_at ? new Date(a.created_at) : new Date(0);
+                const db = b.created_at ? new Date(b.created_at) : new Date(0);
+                return db - da || (b.id - a.id);
+            });
+
+            const totalItems = filtered.length;
+            const totalPages = Math.ceil(totalItems / dashItemsPerPage) || 1;
+            if (dashCurrentPage > totalPages) dashCurrentPage = totalPages;
+            if (dashCurrentPage < 1) dashCurrentPage = 1;
+            const start = (dashCurrentPage - 1) * dashItemsPerPage;
+            const end = start + dashItemsPerPage;
+            const pageItems = filtered.slice(start, end);
+
+            const tbody = document.getElementById('orders-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (pageItems.length === 0) {
+                     tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>';
                 } else {
-                    data.forEach(order => {
+                    pageItems.forEach(order => {
                         const tr = document.createElement('tr');
-                        tr.className = 'hover:bg-white/5 transition-colors';
-                        let statusClass = 'text-slate-400 bg-slate-400/10';
-                        if (order.status === 'completed') statusClass = 'text-emerald-500 bg-emerald-500/10';
-                        else if (order.status === 'pending') statusClass = 'text-amber-500 bg-amber-500/10';
-                        else if (order.status === 'in_progress') statusClass = 'text-blue-500 bg-blue-500/10';
+                        tr.className = 'hover:bg-white/5 transition-colors group cursor-pointer';
+                        const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
+                        const pkg = order.package_name || '-';
+                        const clientWa = order.client_whatsapp || '-';
+                        const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
 
                         tr.innerHTML = `
-                            <td class="px-6 py-4 text-sm font-medium text-slate-400">#${order.id}</td>
-                            <td class="px-6 py-4 text-sm font-semibold text-white">
-                                ${order.businessName || order.clientName || '-'}
-                                <div class="text-[10px] text-slate-500 font-normal">${order.clientWhatsapp || ''}</div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-slate-400">${order.packageName || '-'}</td>
+                            <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
+                            <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-[10px] rounded-full ${statusClass}">${order.status}</span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-slate-400">
-                                <div class="w-full bg-slate-700 rounded-full h-1.5 mb-1">
-                                    <div class="bg-primary h-1.5 rounded-full" style="width: ${order.progress_percent || 0}%"></div>
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-semibold text-white">${order.client_name || order.business_name || '-'}</span>
+                                        <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-1">${order.business_name || ''}</div>
                                 </div>
-                                <div class="text-[10px] text-right">${order.progress_percent || 0}%</div>
                             </td>
+                            <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
+                            <td class="px-6 py-4"><span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
+                            <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
+                            <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
+                            <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
+                            <td class="px-6 py-4 text-right"><a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a></td>
                         `;
                         tbody.appendChild(tr);
+                        // Row click navigates to order detail
+                        tr.addEventListener('click', function(e){
+                          const t = e.target;
+                          if (t && t.closest && (t.closest('a') || t.closest('button'))) return;
+                          window.location.href = 'orderdetail.html?id=' + encodeURIComponent(order.id);
+                        });
+                        // Fill badges from combined-status
+                        try {
+                            fetch('/api/orders/' + encodeURIComponent(order.id) + '/combined-status')
+                              .then(resp => resp.json())
+                              .then(st => {
+                                const typeEl = document.getElementById('type-' + order.id);
+                                const statusEl = document.getElementById('status-' + order.id);
+                                // Role-based filter: Editor only sees Menunggu or Proses Konten
+                                try {
+                                  const role = (localStorage.getItem('role') || '').toLowerCase();
+                                  const procVal = String(st.process || '').toLowerCase();
+                                   if (role === 'editor' && !(procVal.includes('menunggu') || procVal.includes('proses konten'))) {
+                                    tr.style.display = 'none';
+                                    return;
+                                  }
+                                   if (role === 'advertiser') {
+                                      const adVal = String(st.ad || '').toLowerCase();
+                                      const show = procVal.includes('siap iklan') || adVal.includes('aktif') || adVal.includes('tidak aktif');
+                                      if (!show) {
+                                        tr.style.display = 'none';
+                                        return;
+                                      }
+                                   }
+                                } catch (_) {}
+                                if (typeEl) {
+                                  const t = String(st.type || '').toLowerCase();
+                                  let cls = 'bg-blue-500/10 text-blue-600 border border-blue-500/20';
+                                  let txt = 'Baru';
+                                  if (t.includes('perpanjang')) { cls = 'bg-purple-500/10 text-purple-600 border border-purple-500/20'; txt = 'Perpanjang'; }
+                                  typeEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + cls;
+                                  typeEl.textContent = txt;
+                                }
+                                if (statusEl) {
+                                  const p = String(st.process || '').toLowerCase();
+                                  let cls = 'bg-slate-500/10 text-slate-300 border border-slate-500/20';
+                                  let txt = st.process || 'Menunggu';
+                                  if (p.includes('mulai konten') || p.includes('proses konten')) cls = 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20';
+                                  else if (p.includes('siap iklan')) cls = 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20';
+                                  else if (p.includes('proses iklan')) cls = 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
+                                  else if (p.includes('aktif')) cls = 'bg-green-500/10 text-green-300 border border-green-500/20';
+                                  else if (p.includes('tidak aktif')) cls = 'bg-red-500/10 text-red-300 border border-red-500/20';
+                                  statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + cls;
+                                  statusEl.textContent = txt;
+                                }
+                              })
+                              .catch(()=>{});
+                        } catch(_) {}
                     });
                 }
 
                 const pageInfo = document.getElementById('page-info');
                 const prevBtn = document.getElementById('prev-page');
                 const nextBtn = document.getElementById('next-page');
-
-                if (pageInfo) pageInfo.textContent = `Page ${meta.page} of ${meta.totalPages}`;
+                if (pageInfo) pageInfo.textContent = `Page ${dashCurrentPage} of ${Math.max(totalPages,1)}`;
                 if (prevBtn) {
-                    prevBtn.disabled = meta.page <= 1;
-                    prevBtn.onclick = () => loadAdminOrders(meta.page - 1);
+                    prevBtn.disabled = dashCurrentPage <= 1;
+                    prevBtn.onclick = () => applyDashboardFilters(dashCurrentPage - 1);
                 }
                 if (nextBtn) {
-                    nextBtn.disabled = meta.page >= meta.totalPages;
-                    nextBtn.onclick = () => loadAdminOrders(meta.page + 1);
+                    nextBtn.disabled = dashCurrentPage >= totalPages;
+                    nextBtn.onclick = () => applyDashboardFilters(dashCurrentPage + 1);
                 }
-
-            } catch (e) {
-                console.error('Failed to load orders', e);
-            }
         }
 
         async function loadKeuanganData() {

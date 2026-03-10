@@ -2,11 +2,12 @@
 (function() {
     const isLoginPage = window.location.pathname.endsWith('login.html');
     const userId = localStorage.getItem('user_id');
+    const role = (localStorage.getItem('role') || '').toLowerCase();
     
     if (!userId && !isLoginPage) {
         window.location.href = 'login.html';
     } else if (userId && isLoginPage) {
-        window.location.href = 'index.html';
+        window.location.href = 'dashboard.html';
     }
 })();
 
@@ -28,6 +29,43 @@ document.addEventListener("DOMContentLoaded", async function () {
     loadInto("include-sidebar", "partials/sidebar.html"),
     loadInto("include-footer", "partials/footer.html"),
   ]);
+  
+  function injectTopNav() {
+    try {
+      const container = document.getElementById("top-nav-list");
+      if (!container) return;
+      container.innerHTML = "";
+      // Read only visible sidebar menus (match current sidebar view)
+      const allLinks = Array.from(document.querySelectorAll(".layout-sidebar nav a[data-menu]"));
+      const links = allLinks.filter(a => {
+        const cs = window.getComputedStyle(a);
+        const notHiddenClass = !a.classList.contains("hidden");
+        const notStyleHidden = a.style.display !== "none";
+        const notComputedHidden = cs.display !== "none" && cs.visibility !== "hidden";
+        return notHiddenClass && notStyleHidden && notComputedHidden;
+      });
+      links.forEach(a => {
+        const href = a.getAttribute("href") || "#";
+        const labelEl = a.querySelector("span:last-child");
+        const label = labelEl ? labelEl.textContent : (a.getAttribute("data-menu") || href);
+        const menuKey = a.getAttribute("data-menu") || "";
+        const item = document.createElement("a");
+        item.href = href;
+        item.dataset.menu = menuKey;
+        item.className = "px-2.5 py-1 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors";
+        item.textContent = label;
+        container.appendChild(item);
+      });
+      // Highlight active
+      const active = document.body.dataset.active;
+      if (active) {
+        const current = container.querySelector(`a[data-menu="${active}"]`);
+        if (current) current.className = "px-2.5 py-1 rounded-full bg-primary/15 text-white border border-primary/30";
+      }
+    } catch (e) {
+      console.error("injectTopNav error:", e);
+    }
+  }
 
   function getTheme() {
     try {
@@ -77,9 +115,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     super_admin: ["overview","orders","products","commissions","users","finance","team","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
     cs: ["overview","orders","products","crm","clients","cpr_calculator"],
     keuangan: ["overview","finance","orders","products","commissions","clients"],
-    advertiser: ["overview","orders","analytics","campaigns","meta_config","clients","cpr_calculator"],
+    advertiser: ["overview","orders","analytics","campaigns"],
     crm: ["overview","crm","orders","clients"],
-    editor: ["overview"],
+    editor: ["overview","orders"],
     "team bengkel": ["overview", "orders", "campaigns", "cpr_calculator"]
   };
 
@@ -209,8 +247,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     style.textContent = `
       html:not(.dark) body.bg-background-light{background-color:#ffffff !important}
       html:not(.dark) .glass-surface{background:none !important}
-      .glass-panel{background:#ffffff;border:1px solid #f2dfd6;box-shadow:0 8px 22px rgba(239,114,37,0.07),0 1px 2px rgba(13,59,102,0.05),inset 0 0 0 1px #f9e9e1}
-      .metric-card{background:#ffffff;border:1px solid #f2dfd6;box-shadow:0 8px 22px rgba(239,114,37,0.07),0 1px 2px rgba(13,59,102,0.05),inset 0 0 0 1px #f9e9e1}
+      .glass-panel{background:#ffffff;border:1px solid rgba(242,223,214,0.55);box-shadow:0 8px 22px rgba(239,114,37,0.07),0 1px 2px rgba(13,59,102,0.05),inset 0 0 0 1px rgba(249,233,225,0.5)}
+      .metric-card{background:#ffffff;border:1px solid rgba(242,223,214,0.55);box-shadow:0 8px 22px rgba(239,114,37,0.07),0 1px 2px rgba(13,59,102,0.05),inset 0 0 0 1px rgba(249,233,225,0.5)}
       html:not(.dark) .metric-card .bg-gradient-to-r{background-image:linear-gradient(90deg,#ffd8c2 0%,#ffb48d 30%,#ef7225 100%) !important;border-radius:9999px !important}
       html:not(.dark) .metric-card .from-primary\\/25,
       html:not(.dark) .metric-card .via-secondary\\/10,
@@ -218,8 +256,8 @@ document.addEventListener("DOMContentLoaded", async function () {
       .pill{background:rgba(239,114,37,0.09);border:1px solid rgba(239,114,37,0.22)}
       .bg-sidebar-dark{background-color:#ffffff}
       .border-slate-800{border-color:rgba(15,23,42,0.12)}
-      .dark .glass-panel{background:rgba(6,12,31,0.94);border:1px solid rgba(148,163,184,0.35)}
-      .dark .metric-card{background:linear-gradient(135deg,rgba(15,23,42,0.98),rgba(15,23,42,0.92));border:1px solid rgba(255,255,255,0.1)}
+      .dark .glass-panel{background:rgba(6,12,31,0.94);border:1px solid rgba(148,163,184,0.18)}
+      .dark .metric-card{background:linear-gradient(135deg,rgba(15,23,42,0.98),rgba(15,23,42,0.92));border:1px solid rgba(255,255,255,0.06)}
       .dark .pill{background:linear-gradient(135deg,rgba(239,114,37,0.18),rgba(13,59,102,0.22));border:1px solid rgba(148,163,184,0.25)}
       .dark .bg-sidebar-dark{background-color:#101922}
       .dark .border-slate-800{border-color:#1f2937}
@@ -235,7 +273,10 @@ document.addEventListener("DOMContentLoaded", async function () {
       .dark .glass-panel table tbody td{color:#e5e7eb}
       header .text-secondary\\/80{color:#475569}
       .dark header .text-secondary\\/80{color:#cbd5e1}
-      html:not(.dark) .border-white\\/10{border-color:#f2dfd6}
+      html:not(.dark) .border-white\\/10{border-color:rgba(242,223,214,0.45)}
+      html:not(.dark) .border-white\\/5{border-color:rgba(242,223,214,0.35)}
+      .dark .border-white\\/10{border-color:rgba(255,255,255,0.08)}
+      .dark .border-white\\/5{border-color:rgba(255,255,255,0.05)}
       html:not(.dark) .bg-white\\/5{background-color:rgba(239,114,37,0.03)}
       html:not(.dark) .hover\\:bg-white\\/10:hover{background-color:rgba(239,114,37,0.06)}
       html:not(.dark) header{background:#ffffff !important;border-bottom:1px solid #f2dfd6 !important}
@@ -255,6 +296,27 @@ document.addEventListener("DOMContentLoaded", async function () {
       html:not(.dark) header .shadow-black\\/40{box-shadow:0 10px 15px -3px rgba(239,114,37,0.1),0 4px 6px -2px rgba(239,114,37,0.05) !important}
       html:not(.dark) header .bg-white{background-color:#ffffff !important;border:1px solid #f2dfd6}
       html:not(.dark) .header-profile-icon{background:linear-gradient(135deg,#ef7225 0%,#f97316 100%) !important;color:#ffffff !important;box-shadow:0 2px 4px rgba(239,114,37,0.25)}
+      
+      html:not(.dark) select{
+        background-color:#ffffff !important;border:1px solid #e2e8f0 !important;color:#0f172a !important;
+        -webkit-appearance:none !important;-moz-appearance:none !important;appearance:none !important;
+        padding-right:1.75rem !important;
+        background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position:right 0.4rem center !important;background-repeat:no-repeat !important;background-size:1.25em 1.25em !important;
+      }
+      html:not(.dark) select:focus{outline:2px solid transparent !important;outline-offset:2px !important;box-shadow:0 0 0 1px rgba(239,114,37,0.5) !important;border-color:rgba(239,114,37,0.5) !important}
+      html:not(.dark) option{background-color:#ffffff;color:#0f172a}
+      .dark select{
+        background-color:rgba(255,255,255,0.06) !important;border:1px solid rgba(255,255,255,0.12) !important;color:#e5e7eb !important;
+        -webkit-appearance:none !important;-moz-appearance:none !important;appearance:none !important;
+        padding-right:1.75rem !important;
+        background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position:right 0.4rem center !important;background-repeat:no-repeat !important;background-size:1.25em 1.25em !important;
+      }
+      .dark select:hover{background-color:rgba(255,255,255,0.09) !important}
+      .dark select:focus{outline:2px solid transparent !important;outline-offset:2px !important;box-shadow:0 0 0 1px rgba(239,114,37,0.5) !important;border-color:rgba(239,114,37,0.5) !important}
+      .dark option{background-color:#101922;color:#e5e7eb}
+      select::-ms-expand{display:none}
     `;
     document.head.appendChild(style);
   }
@@ -322,6 +384,9 @@ document.addEventListener("DOMContentLoaded", async function () {
   ensureSidebarHideCSS();
   ensureSurfaceThemeCSS();
   setActiveSidebar();
+  injectTopNav();
   initToggle();
   applyPagePermissions(role);
+  // Default hide sidebar
+  document.body.classList.add("sidebar-hidden");
 }); 

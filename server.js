@@ -204,15 +204,62 @@ app.get('/api/dashboard/stats', async (req, res) => {
 
         // Global Stats (for Admin)
         if (!role || role === 'super_admin' || role === 'Super Admin') {
-            const [ordersCount] = await pool.query("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'");
-            const [clientsCount] = await pool.query("SELECT COUNT(*) as count FROM clients WHERE MONTH(created_at) = MONTH(CURRENT_DATE())");
-            // Mock revenue
-            const [rev] = await pool.query("SELECT SUM(p.price) as total FROM orders o LEFT JOIN packages p ON o.package_id = p.id WHERE o.payment_status = 'paid' AND MONTH(o.created_at) = MONTH(CURRENT_DATE())");
-            
+            const [ordersCount] = await pool.query(`
+                SELECT COUNT(*) as count 
+                FROM orders 
+                WHERE status NOT IN ('cancelled','completed')
+                  AND MONTH(created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(created_at) = YEAR(CURRENT_DATE())
+            `);
+            // New clients: distinct clients that have orders with status 'Baru' this month
+            const [newClients] = await pool.query(`
+                SELECT COUNT(DISTINCT o.client_id) as count
+                FROM orders o
+                WHERE o.status = 'Baru'
+                  AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            `);
+            // Extend orders count: status 'Perpanjang' this month
+            const [extendOrders] = await pool.query(`
+                SELECT COUNT(*) as count
+                FROM orders o
+                WHERE o.status = 'Perpanjang'
+                  AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            `);
+            // Revenue (Omset): sum package price for ACTIVE orders created this month
+            const [rev] = await pool.query(`
+                SELECT SUM(COALESCE(p.price, 0)) as total
+                FROM orders o
+                LEFT JOIN packages p ON o.package_id = p.id
+                WHERE o.status NOT IN ('cancelled','completed')
+                  AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            `);
+            // Commission payable: sum assignments commission_amount for orders created this month
+            const [commissions] = await pool.query(`
+                SELECT SUM(oa.commission_amount) as total
+                FROM order_assignments oa
+                JOIN orders o ON oa.order_id = o.id
+                WHERE MONTH(o.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            `);
+            // Ads spending this month: transactions type 'expense' in current month
+            const [spend] = await pool.query(`
+                SELECT SUM(t.amount) as total
+                FROM transactions t
+                WHERE t.type = 'expense'
+                  AND MONTH(t.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(t.created_at) = YEAR(CURRENT_DATE())
+            `);
+
             stats.activeOrders = ordersCount[0].count;
-            stats.newClientsThisMonth = clientsCount[0].count;
+            stats.newClientsThisMonth = newClients[0].count || 0;
+            stats.extendOrdersThisMonth = extendOrders[0].count || 0;
             stats.revenueThisMonth = rev[0].total || 0;
-            stats.activeCampaigns = 0; // Need campaigns table for this
+            stats.commissionsThisMonth = commissions[0].total || 0;
+            stats.adsSpendThisMonth = spend[0].total || 0;
+            stats.activeCampaigns = 0; // TODO: compute from campaigns table if available
         }
 
         if (role === 'CS' && userId) {
@@ -424,6 +471,24 @@ app.post('/api/clients', async (req, res) => {
         res.json({ id: result.insertId, message: 'Client added successfully' });
     } catch (e) {
         console.error('Add client error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/clients/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, businessName, businessType, whatsapp, address } = req.body || {};
+        if (!name || !businessName) {
+            return res.status(400).json({ error: 'Name and Business Name are required' });
+        }
+        await pool.query(
+            'UPDATE clients SET name = ?, business_name = ?, business_type = ?, whatsapp = ?, address = ? WHERE id = ?',
+            [name, businessName || null, businessType || null, whatsapp || null, address || null, id]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Update client error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -784,6 +849,139 @@ app.get('/api/orders/:id/campaigns', async (req, res) => {
     }
 });
 
+// Campaigns by Client (with order status)
+app.get('/api/clients/:id/campaigns', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await pool.query(
+            `SELECT c.*, o.status as order_status, o.id as order_id
+             FROM campaigns c
+             LEFT JOIN orders o ON c.order_id = o.id
+             WHERE c.client_id = ? OR o.client_id = ?
+             ORDER BY o.created_at ASC, c.created_at ASC`,
+            [id, id]
+        );
+        res.json(rows);
+    } catch (e) {
+        console.error('Client campaigns error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Combined status for an order: type (Baru/Perpanjang), process (workflow), ad (Aktif/Tidak Aktif/Proses Iklan/Siap Iklan)
+app.get('/api/orders/:id/combined-status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Base order
+        const [orders] = await pool.query('SELECT status, client_id FROM orders WHERE id = ?', [id]);
+        if (orders.length === 0) return res.status(404).json({ error: 'Order not found' });
+        const order = orders[0];
+        const typeRaw = (order.status || '').toLowerCase();
+        const type = (typeRaw === 'perpanjang' || typeRaw === 'extend' || typeRaw === 'repeat') ? 'Perpanjang' : 'Baru';
+        // Content process
+        const [contents] = await pool.query('SELECT status FROM order_contents WHERE order_id = ? LIMIT 1', [id]);
+        let process = 'Menunggu';
+        if (contents.length > 0 && contents[0].status) {
+            const cs = (contents[0].status || '').toLowerCase();
+            if (cs.includes('mulai konten')) process = 'Mulai Konten';
+            else if (cs.includes('proses konten')) process = 'Proses Konten';
+            else if (cs.includes('siap iklan')) process = 'Siap Iklan';
+            else process = contents[0].status;
+        }
+        // Ad status from campaigns
+        const [campaigns] = await pool.query('SELECT status FROM campaigns WHERE order_id = ?', [id]);
+        let ad = 'Tidak Aktif';
+        if (campaigns.length > 0) {
+            const statuses = campaigns.map(c => (c.status || '').toUpperCase());
+            if (statuses.some(s => s === 'ACTIVE')) ad = 'Aktif';
+            else if (statuses.some(s => s === 'PAUSED' || s === 'ARCHIVED' || s === 'INACTIVE')) ad = 'Tidak Aktif';
+            else ad = 'Proses Iklan';
+        } else if (process === 'Siap Iklan') {
+            ad = 'Siap Iklan';
+        }
+        res.json({ type, process, ad });
+    } catch (e) {
+        console.error('Combined status error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Editor Dashboard Stats
+app.get('/api/dashboard/editor-stats', async (req, res) => {
+    try {
+        const userId = req.query.user_id;
+        if (!userId) return res.status(400).json({ error: 'user_id required' });
+        const [waiting] = await pool.query(`
+            SELECT COUNT(DISTINCT o.id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Editor' AND oa.user_id = ?
+            JOIN order_contents oc ON oc.order_id = o.id
+            WHERE LOWER(oc.status) = 'menunggu'
+        `, [userId]);
+        const [processing] = await pool.query(`
+            SELECT COUNT(DISTINCT o.id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Editor' AND oa.user_id = ?
+            JOIN order_contents oc ON oc.order_id = o.id
+            WHERE LOWER(oc.status) = 'proses konten'
+        `, [userId]);
+        const [commission] = await pool.query(`
+            SELECT COALESCE(SUM(commission_amount), 0) as total
+            FROM order_assignments
+            WHERE role = 'Editor' AND user_id = ?
+        `, [userId]);
+        const [contentMonth] = await pool.query(`
+            SELECT COUNT(DISTINCT oc.id) as count
+            FROM order_contents oc
+            JOIN order_assignments oa ON oa.order_id = oc.order_id AND oa.role = 'Editor' AND oa.user_id = ?
+            WHERE MONTH(oc.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(oc.created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        res.json({
+            waitingClients: waiting[0].count || 0,
+            processingClients: processing[0].count || 0,
+            editorCommissionTotal: commission[0].total || 0,
+            contentCreatedThisMonth: contentMonth[0].count || 0
+        });
+    } catch (e) {
+        console.error('Editor stats error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/dashboard/advertiser-stats', async (req, res) => {
+  try {
+    const userId = req.query.user_id;
+    if (!userId) return res.status(400).json({ error: 'user_id required' });
+    const [ready] = await pool.query(`
+        SELECT COUNT(DISTINCT o.id) as count
+        FROM orders o
+        JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Advertiser' AND oa.user_id = ?
+        JOIN order_contents oc ON oc.order_id = o.id
+        WHERE LOWER(oc.status) = 'siap iklan'
+    `, [userId]);
+    const [monthlyAds] = await pool.query(`
+        SELECT COUNT(DISTINCT c.id) as count
+        FROM campaigns c
+        JOIN order_assignments oa ON oa.order_id = c.order_id AND oa.role = 'Advertiser' AND oa.user_id = ?
+        WHERE MONTH(c.created_at) = MONTH(CURRENT_DATE())
+          AND YEAR(c.created_at) = YEAR(CURRENT_DATE())
+    `, [userId]);
+    const [commission] = await pool.query(`
+        SELECT COALESCE(SUM(commission_amount), 0) as total
+        FROM order_assignments
+        WHERE role = 'Advertiser' AND user_id = ?
+    `, [userId]);
+    res.json({
+      readyClients: ready[0].count || 0,
+      monthlyAds: monthlyAds[0].count || 0,
+      advertiserCommissionTotal: commission[0].total || 0
+    });
+  } catch (e) {
+    console.error('Advertiser stats error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 // Meta Ads basic config (stub for UI dropdowns)
 app.get('/api/meta-config', async (_req, res) => {
     try {
@@ -965,27 +1163,49 @@ app.post('/api/orders', async (req, res) => {
         }
 
         let clientId = body.clientId || body.client_id || clientPayload.id || clientPayload.client_id;
+        let isRepeat = false;
+        let businessName = clientPayload.businessName || clientPayload.business_name || null;
+        let whatsapp = clientPayload.whatsapp || clientPayload.wa || null;
         if (!clientId) {
             const name = clientPayload.name || '';
-            const businessName = clientPayload.businessName || clientPayload.business_name || null;
             const businessType = clientPayload.businessType || clientPayload.business_type || null;
-            const whatsapp = clientPayload.whatsapp || clientPayload.wa || null;
             const address = clientPayload.address || null;
 
             if (!name) {
                 return res.status(400).json({ error: 'client.name is required' });
             }
 
-            const [clientResult] = await connection.query(
-                'INSERT INTO clients (name, business_name, business_type, whatsapp, address) VALUES (?, ?, ?, ?, ?)',
-                [name, businessName, businessType, whatsapp, address]
-            );
-            clientId = clientResult.insertId;
+            if (businessName && whatsapp) {
+                const [existingClients] = await connection.query(
+                    'SELECT id FROM clients WHERE business_name = ? AND whatsapp = ? LIMIT 1',
+                    [businessName, whatsapp]
+                );
+                if (existingClients.length > 0) {
+                    clientId = existingClients[0].id;
+                    isRepeat = true;
+                }
+            }
+
+            if (!clientId) {
+                const [clientResult] = await connection.query(
+                    'INSERT INTO clients (name, business_name, business_type, whatsapp, address) VALUES (?, ?, ?, ?, ?)',
+                    [name, businessName, businessType, whatsapp, address]
+                );
+                clientId = clientResult.insertId;
+            }
+        } else {
+            isRepeat = true;
         }
 
-        const status = orderPayload.status || 'pending';
-        const repeatOrderRaw = orderPayload.repeatOrder ?? orderPayload.repeat_order ?? 0;
-        const repeatOrder = repeatOrderRaw === true || repeatOrderRaw === 1 || repeatOrderRaw === '1' || repeatOrderRaw === 'true' ? 1 : 0;
+        let status = orderPayload.status || '';
+        let repeatOrderRaw = orderPayload.repeatOrder ?? orderPayload.repeat_order ?? 0;
+        let repeatOrder = repeatOrderRaw === true || repeatOrderRaw === 1 || repeatOrderRaw === '1' || repeatOrderRaw === 'true' ? 1 : 0;
+        if (isRepeat) {
+            status = 'Perpanjang';
+            repeatOrder = 1;
+        } else {
+            status = status || 'Baru';
+        }
 
         const serviceType = orderPayload.serviceType || orderPayload.service_type || null;
         const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? null;
@@ -1030,19 +1250,29 @@ app.post('/api/orders', async (req, res) => {
         const csId = orderPayload.csId || orderPayload.cs_id || null;
         if (userRole === 'super_admin' && csId) {
             let amount = 0;
-            const [rules] = await connection.query(
+            const statusType = (status || '').toLowerCase() === 'perpanjang' ? 'extend' : 'new';
+            // Try status-specific rule first, fallback to general
+            const [rulesSpecific] = await connection.query(
                 'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
-                [packageId, 'CS', 'general']
+                [packageId, 'CS', statusType]
             );
-            if (rules.length > 0 && rules[0].amount != null) {
-                amount = rules[0].amount;
+            if (rulesSpecific.length > 0 && rulesSpecific[0].amount != null) {
+                amount = rulesSpecific[0].amount;
+            } else {
+                const [rulesGeneral] = await connection.query(
+                    'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                    [packageId, 'CS', 'general']
+                );
+                if (rulesGeneral.length > 0 && rulesGeneral[0].amount != null) {
+                    amount = rulesGeneral[0].amount;
+                }
             }
 
             await connection.query(
                 `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
-                 VALUES (?, ?, 'CS', 'general', ?)
+                 VALUES (?, ?, 'CS', ?, ?)
                  ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
-                [orderId, csId, amount]
+                [orderId, csId, statusType, amount]
             );
         }
 
@@ -1276,20 +1506,35 @@ app.post('/api/orders/:id/assignments', async (req, res) => {
             return res.status(400).json({ error: 'User ID and Role are required' });
         }
 
-        // 1. Get Package ID to calculate commission
-        const [orders] = await pool.query('SELECT package_id FROM orders WHERE id = ?', [id]);
+        // 1. Get Package ID and Status to calculate commission
+        const [orders] = await pool.query('SELECT package_id, status FROM orders WHERE id = ?', [id]);
         if (orders.length === 0) return res.status(404).json({ error: 'Order not found' });
         const packageId = orders[0].package_id;
+        const orderStatus = (orders[0].status || '').toLowerCase();
 
         // 2. Get Commission Rule
         let amount = 0;
+        // Compute content type depending on order status if not specified
+        let effectiveContentType = finalContentType;
+        if (!effectiveContentType || effectiveContentType === 'general') {
+            effectiveContentType = orderStatus === 'perpanjang' ? 'extend' : 'new';
+        }
         if (packageId) {
-            const [rules] = await pool.query(
+            // Try status-specific rule, fallback to general
+            const [rulesSpecific] = await pool.query(
                 'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
-                [packageId, role, finalContentType]
+                [packageId, role, effectiveContentType]
             );
-            if (rules.length > 0) {
-                amount = rules[0].amount;
+            if (rulesSpecific.length > 0) {
+                amount = rulesSpecific[0].amount;
+            } else {
+                const [rulesGeneral] = await pool.query(
+                    'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                    [packageId, role, 'general']
+                );
+                if (rulesGeneral.length > 0) {
+                    amount = rulesGeneral[0].amount;
+                }
             }
         }
 
@@ -1297,7 +1542,7 @@ app.post('/api/orders/:id/assignments', async (req, res) => {
         // Check if exists
         const [existing] = await pool.query(
             'SELECT id FROM order_assignments WHERE order_id = ? AND role = ? AND content_type = ?',
-            [id, role, finalContentType]
+            [id, role, effectiveContentType]
         );
 
         if (existing.length > 0) {
@@ -1308,7 +1553,7 @@ app.post('/api/orders/:id/assignments', async (req, res) => {
         } else {
             await pool.query(
                 'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, ?, ?, ?)',
-                [id, finalUserId, role, finalContentType, amount]
+                [id, finalUserId, role, effectiveContentType, amount]
             );
         }
 
@@ -1361,7 +1606,7 @@ app.post('/api/orders/:id/content/start', async (req, res) => {
 app.post('/api/orders/:id/content/submit', async (req, res) => {
     try {
         const { id } = req.params;
-        const { links } = req.body; // Array of { url, description, type }
+        const { links, userId, userRole } = req.body; // Array of { url, description, type }
 
         // 1. Update Status
         const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
@@ -1380,6 +1625,48 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
                 'INSERT INTO order_content_links (order_id, url, type, description) VALUES ?',
                 [values]
             );
+        }
+
+        // 3. If action by Editor, calculate and upsert commission assignment
+        try {
+            const roleLower = String(userRole || '').toLowerCase();
+            if (userId && roleLower === 'editor') {
+                const [ord] = await pool.query('SELECT package_id, status FROM orders WHERE id = ?', [id]);
+                if (ord.length > 0) {
+                    const packageId = ord[0].package_id;
+                    let amount = 0;
+                    if (packageId) {
+                        // Prefer general rule for Editor, fallback to image+video sum
+                        const [gen] = await pool.query(
+                            'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                            [packageId, 'Editor', 'general']
+                        );
+                        if (gen.length > 0 && gen[0].amount != null) {
+                            amount = parseFloat(gen[0].amount) || 0;
+                        } else {
+                            const [img] = await pool.query(
+                                'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                                [packageId, 'Editor', 'image']
+                            );
+                            const [vid] = await pool.query(
+                                'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?',
+                                [packageId, 'Editor', 'video']
+                            );
+                            const aImg = img.length > 0 && img[0].amount != null ? parseFloat(img[0].amount) || 0 : 0;
+                            const aVid = vid.length > 0 && vid[0].amount != null ? parseFloat(vid[0].amount) || 0 : 0;
+                            amount = aImg + aVid;
+                        }
+                    }
+                    await pool.query(
+                        `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
+                         VALUES (?, ?, 'Editor', 'general', ?)
+                         ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
+                        [id, userId, amount]
+                    );
+                }
+            }
+        } catch (e) {
+            console.error('Auto-assign editor commission error:', e);
         }
 
         res.json({ success: true });

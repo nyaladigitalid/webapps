@@ -161,10 +161,9 @@ body {
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Tanggal</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Klien</th>
-<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Durasi</th>
-              <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Start Date</th>
-              <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">End Date</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status Iklan</th>
               <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status</th>
+              <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">End Date</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">No WhatsApp</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Sisa</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-10"></th>
@@ -531,10 +530,9 @@ document.addEventListener("DOMContentLoaded", function () {
         + (r.businessName ? '<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">' + r.businessName + '</div>' : '')
         + '</div>'
         + '</td>'
-        + '<td class="px-6 py-4 text-sm text-slate-600 dark:text-white/80">' + (r.duration ? r.duration + ' Hari' : '-') + '</td>'
-        + '<td class="px-6 py-4 text-sm text-slate-600 dark:text-white/80">' + ((r.metaData && r.metaData.ads_start_date) ? r.metaData.ads_start_date : '-') + '</td>'
+        + '<td class="px-6 py-4"><span id="type-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
+        + '<td class="px-6 py-4"><span id="status-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
         + '<td class="px-6 py-4 text-sm text-slate-600 dark:text-white/80">' + ((r.metaData && r.metaData.ads_end_date) ? r.metaData.ads_end_date : '-') + '</td>'
-        + '<td class="px-6 py-4">' + statusBadge + '</td>'
         + '<td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-600 dark:text-white/80"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">'
         + clientWa + '</span></div></td>'
         + '<td class="px-6 py-4"><span class="text-xs font-bold text-slate-600 dark:text-white/80">'
@@ -547,6 +545,39 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       tbody.appendChild(tr);
 
+      // Fetch combined status for badges
+      try {
+        fetch('/api/orders/' + encodeURIComponent(r.id) + '/combined-status')
+          .then(function(resp){ return resp.json(); })
+          .then(function(st){
+            var typeEl = document.getElementById('type-' + r.id);
+            var statusEl = document.getElementById('status-' + r.id);
+            if (typeEl) {
+              var t = String(st.type || '').toLowerCase();
+              var typeClass = 'bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30';
+              var typeText = 'Baru';
+              if (t.includes('perpanjang')) {
+                typeClass = 'bg-purple-500/10 text-purple-600 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30';
+                typeText = 'Perpanjang';
+              }
+              typeEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + typeClass;
+              typeEl.textContent = typeText;
+            }
+            if (statusEl) {
+              var p = String(st.process || '').toLowerCase();
+              var statusClass = 'bg-slate-500/10 text-slate-600 border border-slate-500/20 dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/30';
+              var statusText = st.process || 'Menunggu';
+              if (p.includes('mulai konten') || p.includes('proses konten')) statusClass = 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400 dark:border-indigo-500/30';
+              else if (p.includes('siap iklan')) statusClass = 'bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30';
+              else if (p.includes('proses iklan')) statusClass = 'bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30';
+              else if (p.includes('aktif')) statusClass = 'bg-green-500/10 text-green-600 border border-green-500/20 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30';
+              else if (p.includes('tidak aktif')) statusClass = 'bg-red-500/10 text-red-600 border border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30';
+              statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + statusClass;
+              statusEl.textContent = statusText;
+            }
+          })
+          .catch(function(){});
+      } catch(_) {}
       // Mobile Card
       if (mobileContainer) {
           var card = document.createElement("div");
@@ -864,9 +895,10 @@ document.addEventListener("DOMContentLoaded", function () {
                   .then(res => res.json())
                   .then(data => {
                       clientResults.innerHTML = '';
-                      if (data.length > 0) {
+                      var clients = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+                      if (clients.length > 0) {
                           clientResults.classList.remove('hidden');
-                          data.forEach(client => {
+                          clients.forEach(client => {
                               var div = document.createElement('div');
                               div.className = 'p-3 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors';
                               div.innerHTML = `
