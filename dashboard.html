@@ -126,14 +126,18 @@
                         <p class="text-xs text-secondary/80 mt-1">Ringkasan operasional hari ini.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-secondary/80 bg-white/5 hover:bg-white/10 transition-colors">
+                        <button id="btn-header-range" class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-secondary/80 bg-white/5 hover:bg-white/10 transition-colors">
                             <span class="material-symbols-outlined text-sm">calendar_month</span>
                             <span>Hari ini • 07:00–23:59</span>
                         </button>
-                        <button class="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition">
+                        <button id="btn-export-report" class="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition">
                             <span class="material-symbols-outlined text-sm">ios_share</span>
                             <span>Export laporan</span>
                         </button>
+                        <a id="btn-cs-new-order-top" href="order.html?action=new" class="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-bold text-white bg-gradient-to-br from-primary to-orange-600 shadow-lg hover:shadow-primary/25 transition-all">
+                            <span class="material-symbols-outlined text-sm">add_circle</span>
+                            <span>Input Order Baru</span>
+                        </a>
                     </div>
                 </section>
                 <!-- Editor Top Row -->
@@ -318,6 +322,10 @@
                             <div class="p-6 border-b border-white/5 flex justify-between items-center">
                                 <h4 class="text-lg font-bold text-white">Pesanan Terbaru</h4>
                                 <div class="flex flex-wrap items-center gap-2">
+                                    <a id="btn-cs-new-order" href="order.html?action=new" class="hidden inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition bg-white/5 border border-white/10">
+                                        <span class="material-symbols-outlined text-sm">add_circle</span>
+                                        <span>Input Order Baru</span>
+                                    </a>
                                     <select id="dash-status-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
                                         <option value="all">Semua Status</option>
                                         <option value="active">Active</option>
@@ -348,11 +356,11 @@
                                 <table class="w-full text-left">
                                     <thead class="bg-white/5">
                                         <tr>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Proses</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
@@ -463,6 +471,31 @@
                                 <tbody id="cs-recent-orders-body" class="divide-y divide-white/5">
                                     <tr>
                                         <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    
+                    <!-- My Clients Table -->
+                    <section class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                            <h4 class="text-lg font-bold text-white">Klien Saya</h4>
+                            <a href="clients.html" class="text-xs font-semibold text-primary hover:underline">Lihat Semua</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5">
+                                    <tr>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Usaha</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">WhatsApp</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cs-clients-body" class="divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Memuat klien...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -749,7 +782,7 @@
                     </section>
 
                     <!-- Financial Overview Table -->
-                    <section class="glass-panel rounded-2xl overflow-hidden">
+                    <section id="financial-overview" class="glass-panel rounded-2xl overflow-hidden">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center">
                             <h4 class="text-lg font-bold text-white">Ringkasan Order Bulan Ini</h4>
                             <a href="finance.html" class="text-xs font-semibold text-primary hover:underline">Detail Keuangan</a>
@@ -791,14 +824,21 @@
             });
 
             if (role === 'CS') {
-                // CS View + show shared Orders table
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
-                document.getElementById('cs-dashboard-content').classList.remove('hidden');
-                
-                // Load CS Data
-                await loadCSData(userId);
+                document.getElementById('cs-dashboard-content').classList.add('hidden');
+                const fin = document.getElementById('financial-overview');
+                if (fin) fin.style.display = 'none';
+                const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                if (btnNewTop) { btnNewTop.classList.remove('hidden'); btnNewTop.style.display = 'inline-flex'; }
+                const btnNew = document.getElementById('btn-cs-new-order');
+                if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
+                const btnRange = document.getElementById('btn-header-range');
+                if (btnRange) btnRange.style.display = 'none';
+                const btnExport = document.getElementById('btn-export-report');
+                if (btnExport) btnExport.style.display = 'none';
                 await loadAdminOrders(1);
+                await loadCSCards(userId);
             } else if (role.toLowerCase() === 'editor') {
                 // Editor: show only the editor metrics row (hide admin metrics row)
                 const edRow = document.getElementById('editor-metrics-row');
@@ -903,6 +943,30 @@
                         `;
                     });
                     tbody.innerHTML = html;
+                }
+                
+                // My Clients
+                const clientsRes = await fetch(`/api/clients?assigned_to=${userId}&role=CS&limit=5`);
+                const clientsData = await clientsRes.json();
+                const clients = clientsData.data || [];
+                const ctbody = document.getElementById('cs-clients-body');
+                if (clients.length === 0) {
+                    ctbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Belum ada klien</td></tr>';
+                } else {
+                    let html2 = '';
+                    clients.forEach(c => {
+                        html2 += `
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-white">${c.name || '-'}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">${c.business_name || '-'}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">${c.whatsapp || '-'}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="order.html?action=new&client_id=${c.id}" class="text-xs bg-primary hover:bg-primary/80 text-white px-3 py-1.5 rounded transition-colors">Buat Order</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    ctbody.innerHTML = html2;
                 }
             } catch (e) {
                 console.error('Error loading CS data', e);
@@ -1092,7 +1156,10 @@
         async function loadAdminOrders(page) {
             try {
                 const limit = 10000;
-                const res = await fetch(`/api/orders?limit=${limit}`);
+                const roleNow = (localStorage.getItem('role') || '').toLowerCase();
+                const uid = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
+                const qs = (roleNow === 'cs' && uid) ? `assigned_to=${encodeURIComponent(uid)}&role=CS&limit=${limit}` : `limit=${limit}`;
+                const res = await fetch(`/api/orders?${qs}`);
                 const json = await res.json();
                 const data = Array.isArray(json) ? json : (json.data || []);
                 
@@ -1110,7 +1177,7 @@
 
         // Dashboard Filters State
         let dashCurrentPage = 1;
-        let dashItemsPerPage = 10;
+        let dashItemsPerPage = 5;
         let dashStatus = 'all';
         let dashMonth = 'all';
         let dashYear = 'all';
@@ -1175,6 +1242,7 @@
                         const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
 
                         tr.innerHTML = `
+                            <td class="px-6 py-4"><span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
                             <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
                             <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
                             <td class="px-6 py-4">
@@ -1187,7 +1255,6 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                            <td class="px-6 py-4"><span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
                             <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
                             <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
                             <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
@@ -1262,6 +1329,41 @@
                     nextBtn.disabled = dashCurrentPage >= totalPages;
                     nextBtn.onclick = () => applyDashboardFilters(dashCurrentPage + 1);
                 }
+        }
+        
+        async function loadCSCards(userId) {
+            try {
+                const res = await fetch(`/api/dashboard/cs-stats?user_id=${encodeURIComponent(userId || '')}`);
+                const s = await res.json();
+                const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+                const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
+                // Show commission card for CS
+                const commCard = document.getElementById('card-commissions');
+                if (commCard) commCard.style.display = '';
+                const revenueCard = document.getElementById('card-revenue');
+                if (revenueCard) revenueCard.style.display = 'none';
+                const adsSpendCard = document.getElementById('card-ads-spend');
+                if (adsSpendCard) adsSpendCard.style.display = 'none';
+                // Update titles
+                function setTitle(statId, title) {
+                    const el = document.getElementById(statId);
+                    if (!el) return;
+                    const card = el.closest('.metric-card');
+                    const titleSpan = card ? card.querySelector('.flex.items-center.justify-between span.flex.items-center.gap-2 span:last-child') : null;
+                    if (titleSpan) titleSpan.textContent = title;
+                }
+                setTitle('stat-active-orders', 'Total Klien Saya');
+                setTitle('stat-new-clients', 'Klien Baru Bulan Ini');
+                setTitle('stat-extend-orders', 'Klien Perpanjang Bulan Ini');
+                setTitle('stat-commissions', 'Komisi Bulan Ini');
+                // Values
+                setText('stat-active-orders', s.totalClients || 0);
+                setText('stat-new-clients', s.newClientsThisMonth || 0);
+                setText('stat-extend-orders', s.extendClientsThisMonth || 0);
+                setText('stat-commissions', fmtCurrency.format(s.commissionThisMonth || 0));
+            } catch (e) {
+                console.error('Failed to load CS cards', e);
+            }
         }
 
         async function loadKeuanganData() {

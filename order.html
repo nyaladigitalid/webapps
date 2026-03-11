@@ -986,7 +986,7 @@ document.addEventListener("DOMContentLoaded", function () {
                               <option value="shopee">Shopee Ads</option>
                           </select>
                       </div>
-                      <div>
+                      <div class="hidden">
                           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Objective</label>
                           <select name="ads_objective" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary">
                               <option value="awareness">Awareness</option>
@@ -995,19 +995,19 @@ document.addEventListener("DOMContentLoaded", function () {
                               <option value="sales">Sales</option>
                           </select>
                       </div>
-                      <div>
+                      <div class="hidden">
                           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Daily Budget</label>
                           <input type="number" name="ads_budget" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary" placeholder="Ex: 50000">
                       </div>
-                      <div>
+                      <div class="hidden">
                           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Durasi (Hari)</label>
                           <input type="number" name="ads_duration" onchange="calculateAdsEndDate()" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary" value="30">
                       </div>
-                      <div>
+                      <div class="hidden">
                           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Start Date</label>
                           <input type="date" name="ads_start_date" onchange="calculateAdsEndDate()" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary">
                       </div>
-                      <div>
+                      <div class="hidden">
                           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">End Date</label>
                           <input type="date" name="ads_end_date" readonly class="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-500 cursor-not-allowed">
                       </div>
@@ -1506,7 +1506,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const role = (localStorage.getItem('role') || '').toLowerCase();
       const csSection = document.getElementById('step-assignment');
-      if (role === 'super_admin' && csSection) {
+  if ((role === 'super_admin' || role === 'crm') && csSection) {
           csSection.classList.remove('hidden');
           loadCSList();
       } else if (csSection) {
@@ -1530,7 +1530,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const btnInputBaru = document.getElementById('btn-input-baru');
   if (btnInputBaru) {
       // Ensure we clear any inline display:none if allowed
-      if (userRole === 'cs' || userRole === 'super_admin') {
+      if (userRole === 'cs' || userRole === 'super_admin' || userRole === 'crm') {
           btnInputBaru.style.display = 'inline-flex';
           btnInputBaru.classList.remove('hidden');
       } else {

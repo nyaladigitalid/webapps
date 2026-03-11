@@ -612,7 +612,7 @@ tailwind.config = {
                   <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">WhatsApp</p>
                   <div class="flex items-center justify-between">
                     <p id="client-wa" class="text-slate-900 dark:text-white font-semibold"></p>
-                    <button class="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success text-[10px] font-bold rounded-lg border border-success/20 hover:bg-success hover:text-white transition-all">
+                    <button id="btn-wa-send" class="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success text-[10px] font-bold rounded-lg border border-success/20 hover:bg-success hover:text-white transition-all">
                       <span class="material-symbols-outlined text-sm">chat</span>
                       KIRIM PESAN
                     </button>
@@ -1264,6 +1264,25 @@ document.addEventListener("DOMContentLoaded", function(){
       if (roleSafe === 'editor') {
         var editBtn = document.getElementById('btn-edit-client');
         if (editBtn) editBtn.style.display = 'none';
+      }
+      if (roleSafe === 'crm') {
+        var waBtn = document.getElementById('btn-wa-send');
+        if (waBtn) {
+          waBtn.querySelector('span.material-symbols-outlined').textContent = 'chat';
+          waBtn.innerHTML = '<span class="material-symbols-outlined text-sm">chat</span> KIRIM PROSES OTP';
+          waBtn.onclick = async function(){
+            try {
+              var phone = (c.whatsapp || '').replace(/[^\d]/g,'');
+              var msg = "Halo kaka,..\nSaya admin nyala digital, yg kemarin kakak sudah order ke cs kami, saya mau buat iklan untuk kaka tapi perlu daftarkan dulu no WA nya\n\nMohon konfirmasi kak, apakah WA nya sudah tipe bisnis?";
+              var url = "https://wa.me/" + encodeURIComponent(phone) + "?text=" + encodeURIComponent(msg);
+              window.open(url, "_blank");
+              if (o && o.id) {
+                await fetch('/api/orders/' + encodeURIComponent(o.id) + '/content/start', { method: 'POST' });
+                loadContentStatus(o.id);
+              }
+            } catch(e) {}
+          };
+        }
       }
       if (q("brief-objectives")) q("brief-objectives").textContent = d && d.description ? d.description : "";
       if (q("brief-notes")) q("brief-notes").textContent = o && o.notes ? o.notes : (d && d.promo ? d.promo : "");

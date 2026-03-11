@@ -183,6 +183,54 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// CS Dashboard Stats (my clients and commissions)
+app.get('/api/dashboard/cs-stats', async (req, res) => {
+    try {
+        const userId = parseInt(req.query.user_id || '0');
+        if (!userId) return res.status(400).json({ error: 'user_id required' });
+        const [totalClients] = await pool.query(`
+            SELECT COUNT(DISTINCT o.client_id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id
+            WHERE oa.user_id = ? AND oa.role = 'CS'
+        `, [userId]);
+        const [newClients] = await pool.query(`
+            SELECT COUNT(DISTINCT o.client_id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id
+            WHERE oa.user_id = ? AND oa.role = 'CS'
+              AND LOWER(o.status) IN ('baru','new')
+              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        const [extendClients] = await pool.query(`
+            SELECT COUNT(DISTINCT o.client_id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id
+            WHERE oa.user_id = ? AND oa.role = 'CS'
+              AND LOWER(o.status) IN ('perpanjang','extend','repeat')
+              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        const [commission] = await pool.query(`
+            SELECT COALESCE(SUM(oa.commission_amount), 0) as total
+            FROM order_assignments oa
+            JOIN orders o ON oa.order_id = o.id
+            WHERE oa.user_id = ? AND oa.role = 'CS'
+              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        res.json({
+            totalClients: totalClients[0].count || 0,
+            newClientsThisMonth: newClients[0].count || 0,
+            extendClientsThisMonth: extendClients[0].count || 0,
+            commissionThisMonth: commission[0].total || 0
+        });
+    } catch (e) {
+        console.error('CS stats error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 // Dashboard Stats Endpoint
 app.get('/api/dashboard/stats', async (req, res) => {
     try {
@@ -336,7 +384,25 @@ app.get('/api/dashboard/stats', async (req, res) => {
 // Users Endpoint
 app.get('/api/users', async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT id, name, email, role, created_at FROM users');
+        const qRole = (req.query.role || '').toString().trim().toLowerCase();
+        let sql = 'SELECT id, name, email, role, created_at FROM users';
+        let params = [];
+        if (qRole) {
+            const map = {
+                'cs': 'CS',
+                'advertiser': 'Advertiser',
+                'editor': 'Editor',
+                'crm': 'CRM',
+                'team bengkel': 'Team Bengkel',
+                'bengkel': 'Team Bengkel',
+                'super_admin': 'super_admin',
+                'keuangan': 'Keuangan'
+            };
+            const roleValue = map[qRole] || qRole;
+            sql += ' WHERE LOWER(role) = LOWER(?)';
+            params.push(roleValue);
+        }
+        const [users] = await pool.query(sql, params);
         res.json(users);
     } catch (e) {
         console.error('Users fetch error:', e);
@@ -401,6 +467,8 @@ app.get('/api/clients', async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
         const q = req.query.q || '';
+        const assigned_to = req.query.assigned_to || '';
+        const role = req.query.role || '';
 
         let query = `
                     SELECT c.*, 
@@ -423,6 +491,23 @@ app.get('/api/clients', async (req, res) => {
                     params.push(`%${q}%`, `%${q}%`);
                 }
 
+                // Filter by assignment (e.g., CS)
+                if (assigned_to && role) {
+                    // Ensure WHERE exists
+                    query += (query.toLowerCase().includes(' where ') ? ' AND ' : ' WHERE ');
+                    query += `
+                        EXISTS (
+                            SELECT 1
+                            FROM orders o2
+                            JOIN order_assignments oa2 ON o2.id = oa2.order_id
+                            WHERE o2.client_id = c.id
+                              AND oa2.user_id = ?
+                              AND oa2.role = ?
+                        )
+                    `;
+                    params.push(assigned_to, role);
+                }
+
                 query += ' ORDER BY c.created_at DESC LIMIT ? OFFSET ?';
                 params.push(limit, offset);
 
@@ -435,6 +520,21 @@ app.get('/api/clients', async (req, res) => {
         if (q) {
             countQuery += ' WHERE c.name LIKE ? OR c.business_name LIKE ?';
             countParams.push(`%${q}%`, `%${q}%`);
+        }
+
+        if (assigned_to && role) {
+            countQuery += (countQuery.toLowerCase().includes(' where ') ? ' AND ' : ' WHERE ');
+            countQuery += `
+                EXISTS (
+                    SELECT 1
+                    FROM orders o2
+                    JOIN order_assignments oa2 ON o2.id = oa2.order_id
+                    WHERE o2.client_id = c.id
+                      AND oa2.user_id = ?
+                      AND oa2.role = ?
+                )
+            `;
+            countParams.push(assigned_to, role);
         }
         
         const [countResult] = await pool.query(countQuery, countParams);
@@ -1275,6 +1375,12 @@ app.post('/api/orders', async (req, res) => {
                 [orderId, csId, statusType, amount]
             );
         }
+
+        // Initialize content process status to "Proses OTP"
+        await connection.query(
+            'INSERT INTO order_contents (order_id, status) VALUES (?, "Proses OTP")',
+            [orderId]
+        );
 
         await connection.commit();
         res.json({ success: true, orderId });

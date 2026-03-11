@@ -113,12 +113,12 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const ROLE_MENUS = {
     super_admin: ["overview","orders","products","commissions","users","finance","team","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
-    cs: ["overview","orders","products","crm","clients","cpr_calculator"],
-    keuangan: ["overview","finance","orders","products","commissions","clients"],
+    cs: ["overview","orders","crm","clients"],
+    keuangan: ["overview","finance","orders","commissions","clients"],
     advertiser: ["overview","orders","analytics","campaigns"],
     crm: ["overview","crm","orders","clients"],
     editor: ["overview","orders"],
-    "team bengkel": ["overview", "orders", "campaigns", "cpr_calculator"]
+    "team bengkel": ["overview", "orders", "campaigns"]
   };
 
   function applySidebarByRole(role) {
@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         // Assuming overview is allowed for everyone or safe fallback.
         // Actually, let's just alert and go back or home.
         alert("Anda tidak memiliki akses ke halaman ini.");
-        window.location.href = "index.html"; 
+        window.location.href = "dashboard.html"; 
     }
   }
 
@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       if (isOrders) {
         const btn = document.getElementById("btn-input-baru");
         const safeRole = (role || "").toLowerCase();
-        const canInput = safeRole === "super_admin" || safeRole === "cs";
+        const canInput = safeRole === "super_admin" || safeRole === "cs" || safeRole === "crm";
         
         if (btn) {
           if (canInput) {
