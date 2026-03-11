@@ -237,17 +237,17 @@
                 <!-- General/Admin Metrics (second row for editor) -->
                 <div id="admin-dashboard-content">
                     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-1">
-                        <!-- Active Orders -->
+                        <!-- Total Clients -->
                         <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
                             <div class="flex items-center justify-between text-[11px] text-white/80">
                                 <span class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-cyan-400">assignment_turned_in</span>
-                                    <span>Order Aktif</span>
+                                    <span class="material-symbols-outlined text-cyan-400">groups</span>
+                                    <span>Total Klien</span>
                                 </span>
                             </div>
                             <div class="flex items-end justify-between">
                                 <p class="text-lg font-semibold" id="stat-active-orders">-</p>
-                                <p class="text-[10px] text-white/60">Total berjalan</p>
+                                <p class="text-[10px] text-white/60">Total</p>
                             </div>
                         </div>
                         <!-- Revenue This Month -->
@@ -1095,7 +1095,7 @@
                 const statsRes = await fetch('/api/dashboard/stats');
                 const stats = await statsRes.json();
                 
-                document.getElementById('stat-active-orders').textContent = stats.activeOrders || 0;
+                document.getElementById('stat-active-orders').textContent = stats.totalClients || 0;
                 document.getElementById('stat-revenue').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.revenueThisMonth || 0);
                 document.getElementById('stat-new-clients').textContent = stats.newClientsThisMonth || 0;
                 document.getElementById('stat-extend-orders').textContent = stats.extendOrdersThisMonth || 0;

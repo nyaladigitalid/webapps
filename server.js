@@ -259,6 +259,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
                   AND MONTH(created_at) = MONTH(CURRENT_DATE())
                   AND YEAR(created_at) = YEAR(CURRENT_DATE())
             `);
+            const [clientsTotal] = await pool.query(`SELECT COUNT(*) as count FROM clients`);
             // New clients: distinct clients that have orders with status 'Baru' this month
             const [newClients] = await pool.query(`
                 SELECT COUNT(DISTINCT o.client_id) as count
@@ -302,6 +303,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             `);
 
             stats.activeOrders = ordersCount[0].count;
+            stats.totalClients = clientsTotal[0].count || 0;
             stats.newClientsThisMonth = newClients[0].count || 0;
             stats.extendOrdersThisMonth = extendOrders[0].count || 0;
             stats.revenueThisMonth = rev[0].total || 0;
