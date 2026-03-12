@@ -1022,6 +1022,8 @@ tailwind.config = {
                     </div>
                 </div>
 
+                
+
                 <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
                     <table class="w-full text-sm text-left">
                         <thead class="bg-slate-50 dark:bg-white/5 text-xs uppercase font-bold text-slate-500">
@@ -1135,6 +1137,7 @@ document.addEventListener("DOMContentLoaded", function(){
       }
   }
 
+  
   function q(k){ return document.getElementById(k); }
   function getId(){
     var s = new URLSearchParams(window.location.search);
@@ -1277,7 +1280,8 @@ document.addEventListener("DOMContentLoaded", function(){
               var url = "https://wa.me/" + encodeURIComponent(phone) + "?text=" + encodeURIComponent(msg);
               window.open(url, "_blank");
               if (o && o.id) {
-                await fetch('/api/orders/' + encodeURIComponent(o.id) + '/content/start', { method: 'POST' });
+                var uid = localStorage.getItem('user_id') || localStorage.getItem('userId');
+                await fetch('/api/orders/' + encodeURIComponent(o.id) + '/content/otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid }) });
                 loadContentStatus(o.id);
               }
             } catch(e) {}
@@ -2076,7 +2080,9 @@ async function processCampaignCreation(btn) {
             campaignName: campaignName,
             durasi: duration,
             client_id: clientId,
-            order_id: orderId
+            order_id: orderId,
+            user_id: (localStorage.getItem('user_id') || localStorage.getItem('userId') || ''),
+            user_role: (localStorage.getItem('role') || '')
         };
 
         const response = await fetch('/api/campaigns/duplicate', {

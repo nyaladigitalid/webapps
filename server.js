@@ -276,22 +276,21 @@ app.get('/api/dashboard/stats', async (req, res) => {
                   AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
                   AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
             `);
-            // Revenue (Omset): sum package price for ACTIVE orders created this month
+            // Omset (Revenue) dari pembayaran klien bulan ini (transactions.type='income')
             const [rev] = await pool.query(`
-                SELECT SUM(COALESCE(p.price, 0)) as total
-                FROM orders o
-                LEFT JOIN packages p ON o.package_id = p.id
-                WHERE o.status NOT IN ('cancelled','completed')
-                  AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
-                  AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+                SELECT SUM(t.amount) as total
+                FROM transactions t
+                WHERE t.type = 'income'
+                  AND MONTH(t.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(t.created_at) = YEAR(CURRENT_DATE())
             `);
-            // Commission payable: sum assignments commission_amount for orders created this month
-            const [commissions] = await pool.query(`
-                SELECT SUM(oa.commission_amount) as total
-                FROM order_assignments oa
-                JOIN orders o ON oa.order_id = o.id
-                WHERE MONTH(o.created_at) = MONTH(CURRENT_DATE())
-                  AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            // Komisi dibayar bulan ini (transactions.type in commission variants)
+            const [commPaid] = await pool.query(`
+                SELECT SUM(t.amount) as total
+                FROM transactions t
+                WHERE t.type IN ('commission','commission_pay')
+                  AND MONTH(t.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(t.created_at) = YEAR(CURRENT_DATE())
             `);
             // Ads spending this month: transactions type 'expense' in current month
             const [spend] = await pool.query(`
@@ -307,7 +306,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
             stats.newClientsThisMonth = newClients[0].count || 0;
             stats.extendOrdersThisMonth = extendOrders[0].count || 0;
             stats.revenueThisMonth = rev[0].total || 0;
-            stats.commissionsThisMonth = commissions[0].total || 0;
+            stats.commissionsThisMonth = commPaid[0].total || 0;
             stats.adsSpendThisMonth = spend[0].total || 0;
             stats.activeCampaigns = 0; // TODO: compute from campaigns table if available
         }
@@ -346,13 +345,13 @@ app.get('/api/dashboard/stats', async (req, res) => {
              `, [userId]);
              stats.pendingTasks = tasks[0].count;
              
-             // Completed this month
+             // Content created this month: from commission_ledger 'content_ready'
              const [completed] = await pool.query(`
-                SELECT COUNT(DISTINCT o.id) as count
-                FROM orders o
-                JOIN order_assignments oa ON o.id = oa.order_id
-                WHERE oa.user_id = ? AND (oa.role LIKE '%Editor%') 
-                AND o.status = 'completed' AND MONTH(o.updated_at) = MONTH(CURRENT_DATE())
+                SELECT COUNT(*) as count
+                FROM commission_ledger cl
+                WHERE cl.user_id = ? AND cl.role = 'Editor' AND cl.source_event = 'content_ready'
+                  AND MONTH(cl.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(cl.created_at) = YEAR(CURRENT_DATE())
              `, [userId]);
              stats.completedTasks = completed[0].count;
         }
@@ -383,6 +382,56 @@ app.get('/api/dashboard/stats', async (req, res) => {
     }
 });
 
+// CRM Dashboard Stats
+app.get('/api/dashboard/crm-stats', async (req, res) => {
+    try {
+        const userId = parseInt(req.query.user_id || '0');
+        if (!userId) return res.status(400).json({ error: 'user_id required' });
+        const [otpCount] = await pool.query(`
+            SELECT COUNT(*) as count
+            FROM commission_ledger
+            WHERE user_id = ? AND role = 'CRM' AND source_event = 'otp_sent'
+              AND MONTH(created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        const [commPaid] = await pool.query(`
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM commission_ledger
+            WHERE user_id = ? AND role = 'CRM' AND status = 'paid'
+              AND MONTH(posted_at) = MONTH(CURRENT_DATE())
+              AND YEAR(posted_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        // New clients handled by CRM this month
+        const [newClients] = await pool.query(`
+            SELECT COUNT(DISTINCT o.client_id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id
+            WHERE oa.user_id = ? AND oa.role = 'CRM'
+              AND LOWER(o.status) IN ('baru','new')
+              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        // Extend clients handled by CRM this month
+        const [extendClients] = await pool.query(`
+            SELECT COUNT(DISTINCT o.client_id) as count
+            FROM orders o
+            JOIN order_assignments oa ON o.id = oa.order_id
+            WHERE oa.user_id = ? AND oa.role = 'CRM'
+              AND LOWER(o.status) IN ('perpanjang','extend','repeat')
+              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+        `, [userId]);
+        res.json({
+            otpThisMonth: otpCount[0].count || 0,
+            commissionThisMonth: commPaid[0].total || 0,
+            newClientsThisMonth: newClients[0].count || 0,
+            extendClientsThisMonth: extendClients[0].count || 0
+        });
+    } catch (e) {
+        console.error('CRM stats error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 // Users Endpoint
 app.get('/api/users', async (req, res) => {
     try {
@@ -412,6 +461,37 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
+// Finance: Accrual History
+app.get('/api/finance/accrual-history', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let s = startDate, e = endDate;
+        if (!s || !e) {
+            const now = new Date();
+            const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            s = first; e = last;
+        }
+        const [rows] = await pool.query(`
+            SELECT cl.id, cl.order_id, cl.user_id, u.name as user_name, u.role as user_role,
+                   cl.role, cl.content_type, cl.amount, cl.status, cl.source_event,
+                   cl.created_at, cl.posted_at,
+                   o.status as order_status, c.name as client_name, p.name as package_name
+            FROM commission_ledger cl
+            LEFT JOIN users u ON cl.user_id = u.id
+            LEFT JOIN orders o ON cl.order_id = o.id
+            LEFT JOIN clients c ON o.client_id = c.id
+            LEFT JOIN packages p ON o.package_id = p.id
+            WHERE DATE(cl.created_at) BETWEEN ? AND ?
+            ORDER BY cl.created_at DESC
+            LIMIT 200
+        `, [s, e]);
+        res.json(rows);
+    } catch (e) {
+        console.error('Finance accrual history error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 app.post('/api/users', async (req, res) => {
     try {
         const { name, email, role, password } = req.body || {};
@@ -774,6 +854,59 @@ app.post('/api/campaigns/create', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, 'ACTIVE', 0, 0, 0, 0, 0, NOW(), NOW(), 'Results')`,
             [order_id || null, client_id || null, campaignId, name, ad_account_id]
         );
+        // Update content process to "Proses Iklan"
+        if (order_id) {
+            const [existC] = await pool.query('SELECT id FROM order_contents WHERE order_id = ? LIMIT 1', [order_id]);
+            if (existC.length > 0) {
+                await pool.query('UPDATE order_contents SET status = "Proses Iklan" WHERE order_id = ?', [order_id]);
+            } else {
+                await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Iklan")', [order_id]);
+            }
+        }
+        // Accrue advertiser commission and record finance
+        try {
+            const advUserIdRaw = req.body && (req.body.user_id || req.body.userId);
+            const advRole = String((req.body && req.body.user_role) || '').toLowerCase();
+            const advUserId = advUserIdRaw ? parseInt(advUserIdRaw) : null;
+            if (advUserId && advRole === 'advertiser' && order_id) {
+                let amount = 0;
+                const [ord] = await pool.query('SELECT package_id FROM orders WHERE id = ? LIMIT 1', [order_id]);
+                const pkgId = ord.length > 0 ? ord[0].package_id : null;
+                if (pkgId) {
+                    try {
+                        const [rs] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'Advertiser', 'campaign']);
+                        if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                        else {
+                            const [rg] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'Advertiser', 'general']);
+                            if (rg.length > 0 && rg[0].amount != null) amount = Number(rg[0].amount);
+                        }
+                    } catch (_) {
+                        const [r2] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [pkgId, 'Advertiser']);
+                        if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                    }
+                }
+                await pool.query(
+                    `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
+                     VALUES (?, ?, 'Advertiser', 'campaign', ?)
+                     ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
+                    [order_id, advUserId, amount]
+                );
+                const [dup] = await pool.query(
+                    'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "Advertiser" AND source_event = "campaign_created" LIMIT 1',
+                    [order_id, advUserId]
+                );
+                if (dup.length === 0) {
+                    const [ledgerRes] = await pool.query(
+                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "Advertiser", "campaign", NULL, "flat", ?, ?, "accrued", "campaign_created")',
+                        [order_id, advUserId, amount, amount]
+                    );
+                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [order_id, amount]);
+                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+                }
+            }
+        } catch (e) {
+            console.error('Advertiser commission on campaign create error:', e);
+        }
 
         res.json({ success: true, campaign_id: campaignId, created_on_meta: true });
     } catch (e) {
@@ -929,6 +1062,59 @@ app.post('/api/campaigns/duplicate', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, 'ACTIVE', 0, 0, 0, 0, 0, NOW(), NOW(), 'Results')`,
             [order_id || null, client_id || null, newCampaignId, campaignName, addAccountId]
         );
+        // Update content process to "Proses Iklan"
+        if (order_id) {
+            const [existC] = await pool.query('SELECT id FROM order_contents WHERE order_id = ? LIMIT 1', [order_id]);
+            if (existC.length > 0) {
+                await pool.query('UPDATE order_contents SET status = "Proses Iklan" WHERE order_id = ?', [order_id]);
+            } else {
+                await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Iklan")', [order_id]);
+            }
+        }
+        // Accrue advertiser commission and record finance
+        try {
+            const advUserIdRaw = req.body && (req.body.user_id || req.body.userId);
+            const advRole = String((req.body && req.body.user_role) || '').toLowerCase();
+            const advUserId = advUserIdRaw ? parseInt(advUserIdRaw) : null;
+            if (advUserId && advRole === 'advertiser' && order_id) {
+                let amount = 0;
+                const [ord] = await pool.query('SELECT package_id FROM orders WHERE id = ? LIMIT 1', [order_id]);
+                const pkgId = ord.length > 0 ? ord[0].package_id : null;
+                if (pkgId) {
+                    try {
+                        const [rs] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'Advertiser', 'campaign']);
+                        if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                        else {
+                            const [rg] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'Advertiser', 'general']);
+                            if (rg.length > 0 && rg[0].amount != null) amount = Number(rg[0].amount);
+                        }
+                    } catch (_) {
+                        const [r2] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [pkgId, 'Advertiser']);
+                        if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                    }
+                }
+                await pool.query(
+                    `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
+                     VALUES (?, ?, 'Advertiser', 'campaign', ?)
+                     ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
+                    [order_id, advUserId, amount]
+                );
+                const [dup] = await pool.query(
+                    'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "Advertiser" AND source_event = "campaign_created" LIMIT 1',
+                    [order_id, advUserId]
+                );
+                if (dup.length === 0) {
+                    const [ledgerRes] = await pool.query(
+                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "Advertiser", "campaign", NULL, "flat", ?, ?, "accrued", "campaign_created")',
+                        [order_id, advUserId, amount, amount]
+                    );
+                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [order_id, amount]);
+                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+                }
+            }
+        } catch (e) {
+            console.error('Advertiser commission on campaign duplicate error:', e);
+        }
 
         res.json({ success: true, campaign_id: newCampaignId, adsets: createdAdsets });
     } catch (e) {
@@ -1168,7 +1354,7 @@ app.get('/api/orders', async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
-        const { assigned_to, role, status } = req.query;
+        const { assigned_to, role, status, content_status } = req.query;
 
         let query = `
             SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp, 
@@ -1189,6 +1375,20 @@ app.get('/api/orders', async (req, res) => {
             else if (role === 'Advertiser') whereClauses.push(`oa.role = 'Advertiser'`);
             else if (role.includes('Editor')) whereClauses.push(`oa.role LIKE '%Editor%'`);
             else if (role === 'Team Bengkel' || role === 'Bengkel') whereClauses.push(`oa.role = 'Team Bengkel'`);
+        }
+
+        if (content_status) {
+            query += ` JOIN order_contents oc ON oc.order_id = o.id `;
+            const cs = String(content_status).toLowerCase();
+            let target = '';
+            if (cs === 'otp') target = 'Proses OTP';
+            else if (cs === 'menunggu') target = 'Menunggu';
+            else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
+            else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
+            if (target) {
+                whereClauses.push(`LOWER(oc.status) LIKE LOWER(?)`);
+                params.push(`%${target}%`);
+            }
         }
 
         if (status) {
@@ -1218,6 +1418,20 @@ app.get('/api/orders', async (req, res) => {
             else if (role === 'Advertiser') countWhere.push(`oa.role = 'Advertiser'`);
             else if (role.includes('Editor')) countWhere.push(`oa.role LIKE '%Editor%'`);
             else if (role === 'Team Bengkel' || role === 'Bengkel') countWhere.push(`oa.role = 'Team Bengkel'`);
+        }
+
+        if (content_status) {
+            countQuery += ` JOIN order_contents oc ON oc.order_id = o.id `;
+            const cs = String(content_status).toLowerCase();
+            let target = '';
+            if (cs === 'otp') target = 'Proses OTP';
+            else if (cs === 'menunggu') target = 'Menunggu';
+            else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
+            else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
+            if (target) {
+                countWhere.push(`LOWER(oc.status) LIKE LOWER(?)`);
+                countParams.push(`%${target}%`);
+            }
         }
 
         if (status) {
@@ -1376,12 +1590,79 @@ app.post('/api/orders', async (req, res) => {
                  ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
                 [orderId, csId, statusType, amount]
             );
+            const [ledgerResAdminCS] = await connection.query(
+                'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, ?, ?, NULL, "flat", ?, ?, "accrued", "created_order")',
+                [orderId, csId, 'CS', statusType, amount, amount]
+            );
+            const [txnResAdminCS] = await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [orderId, amount]);
+            await connection.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnResAdminCS.insertId, ledgerResAdminCS.insertId]);
+        } else if (userRole === 'cs') {
+            const creatorIdRaw = body.userId || body.user_id;
+            const creatorId = creatorIdRaw ? parseInt(creatorIdRaw) : null;
+            if (creatorId) {
+                let amount = 0;
+                const statusType = (status || '').toLowerCase() === 'perpanjang' ? 'extend' : 'new';
+                try {
+                    const [rs] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [packageId, 'CS', statusType]);
+                    if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                    else {
+                        const [rg] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [packageId, 'CS', 'general']);
+                        if (rg.length > 0 && rg[0].amount != null) amount = Number(rg[0].amount);
+                    }
+                } catch (_) {
+                    const [r2] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [packageId, 'CS']);
+                    if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                }
+                await connection.query(
+                    'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CS", ?, ?)',
+                    [orderId, creatorId, statusType, amount]
+                );
+                const [ledgerResCS] = await connection.query(
+                    'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, ?, ?, NULL, "flat", ?, ?, "accrued", "created_order")',
+                    [orderId, creatorId, 'CS', statusType, amount, amount]
+                );
+                const [txnResCS] = await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [orderId, amount]);
+                await connection.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnResCS.insertId, ledgerResCS.insertId]);
+            }
+        } else if (userRole === 'crm') {
+            const creatorIdRaw = body.userId || body.user_id;
+            const creatorId = creatorIdRaw ? parseInt(creatorIdRaw) : null;
+            if (creatorId) {
+                let amount = 0;
+                let ctype = 'otp';
+                try {
+                    const [rs] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [packageId, 'CRM', 'otp']);
+                    if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                    else {
+                        const [rg] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [packageId, 'CRM', 'general']);
+                        if (rg.length > 0 && rg[0].amount != null) { amount = Number(rg[0].amount); ctype = 'general'; }
+                    }
+                } catch (_) {
+                    const [r2] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [packageId, 'CRM']);
+                    if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                    ctype = 'general';
+                }
+                await connection.query(
+                    'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", ?, ?)',
+                    [orderId, creatorId, ctype, amount]
+                );
+                const [ledgerRes] = await connection.query(
+                    'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "CRM", ?, NULL, "flat", ?, ?, "accrued", "created_order_crm")',
+                    [orderId, creatorId, ctype, amount, amount]
+                );
+                const [txnRes] = await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [orderId, amount]);
+                await connection.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+            }
         }
+        
+        const [pkgRows] = await connection.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+        const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
+        await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [orderId, incomeAmount]);
 
-        // Initialize content process status to "Proses OTP"
+        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? 'Menunggu' : 'Proses OTP';
         await connection.query(
-            'INSERT INTO order_contents (order_id, status) VALUES (?, "Proses OTP")',
-            [orderId]
+            'INSERT INTO order_contents (order_id, status) VALUES (?, ?)',
+            [orderId, initialStatus]
         );
 
         await connection.commit();
@@ -1401,24 +1682,37 @@ app.post('/api/orders', async (req, res) => {
 app.get('/api/finance/orders', async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        let query = `
+        const existsFilter = (startDate && endDate) ? 'AND DATE(ti.created_at) BETWEEN ? AND ?' : '';
+        const query = `
             SELECT o.*, c.name as client_name, p.name as package_name, p.price as package_price,
-            (SELECT COALESCE(SUM(commission_amount), 0) FROM order_assignments WHERE order_id = o.id) as total_commission,
-            (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE order_id = o.id AND type = 'expense') as total_spend
+            (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE order_id = o.id AND type = 'income' AND DATE(created_at) BETWEEN ? AND ?) as total_income,
+            (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE order_id = o.id AND type IN ('commission','commission_pay') AND DATE(created_at) BETWEEN ? AND ?) as total_commission_paid,
+            (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE order_id = o.id AND type = 'expense' AND DATE(created_at) BETWEEN ? AND ?) as total_expense
             FROM orders o
             LEFT JOIN clients c ON o.client_id = c.id
             LEFT JOIN packages p ON o.package_id = p.id
-            WHERE o.payment_status = 'paid'
+            WHERE EXISTS (
+                SELECT 1 FROM transactions ti
+                WHERE ti.order_id = o.id 
+                  AND ti.type IN ('income','commission','commission_pay','expense')
+                  ${existsFilter}
+            )
+            ORDER BY o.created_at DESC
         `;
         
         const params = [];
         if (startDate && endDate) {
-            query += ` AND DATE(o.created_at) BETWEEN ? AND ?`;
-            params.push(startDate, endDate);
+            params.push(startDate, endDate); // income
+            params.push(startDate, endDate); // commission
+            params.push(startDate, endDate); // expense
+            params.push(startDate, endDate); // EXISTS filter
+        } else {
+            const now = new Date();
+            const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            params.push(first, last, first, last, first, last);
         }
 
-        query += ` ORDER BY o.created_at DESC`;
-        
         const [orders] = await pool.query(query, params);
         res.json(orders);
     } catch (e) {
@@ -1535,6 +1829,112 @@ app.get('/api/reports/commissions', async (req, res) => {
     }
 });
 
+// Commission Ledger Endpoints
+app.post('/api/commissions/accrue-from-order', async (req, res) => {
+    try {
+        const { order_id, user_id, role } = req.body || {};
+        if (!order_id || !user_id || !role) {
+            return res.status(400).json({ error: 'order_id, user_id, and role are required' });
+        }
+        const [orders] = await pool.query('SELECT id, package_id, status FROM orders WHERE id = ?', [order_id]);
+        if (orders.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        const order = orders[0];
+        const statusLower = String(order.status || '').toLowerCase();
+        const contentType = statusLower.includes('perpanjang') ? 'extend' : (statusLower.includes('baru') || statusLower.includes('new') ? 'new' : 'general');
+        let ruleAmount = 0;
+        if (order.package_id) {
+            try {
+                const [ruleSpecific] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [order.package_id, role, contentType]);
+                if (ruleSpecific.length > 0 && ruleSpecific[0].amount != null) {
+                    ruleAmount = Number(ruleSpecific[0].amount);
+                } else {
+                    const [ruleGeneral] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [order.package_id, role, 'general']);
+                    if (ruleGeneral.length > 0 && ruleGeneral[0].amount != null) {
+                        ruleAmount = Number(ruleGeneral[0].amount);
+                    }
+                }
+            } catch (e) {
+                const [r2] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [order.package_id, role]);
+                if (r2.length > 0 && r2[0].amount != null) ruleAmount = Number(r2[0].amount);
+            }
+        }
+        await pool.query(`
+            INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event)
+            VALUES (?, ?, ?, ?, NULL, 'flat', ?, ?, 'accrued', 'created_order')
+        `, [order_id, user_id, role, contentType, ruleAmount, ruleAmount]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Accrue commission error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/commissions/ledger', async (req, res) => {
+    try {
+        const { order_id, user_id, status } = req.query || {};
+        let sql = `SELECT * FROM commission_ledger WHERE 1=1`;
+        const params = [];
+        if (order_id) { sql += ' AND order_id = ?'; params.push(order_id); }
+        if (user_id) { sql += ' AND user_id = ?'; params.push(user_id); }
+        if (status) { sql += ' AND status = ?'; params.push(status); }
+        sql += ' ORDER BY created_at DESC';
+        const [rows] = await pool.query(sql, params);
+        res.json(rows);
+    } catch (e) {
+        console.error('Fetch ledger error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/commissions/payouts', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { period_start, period_end } = req.body || {};
+        if (!period_start || !period_end) {
+            connection.release();
+            return res.status(400).json({ error: 'period_start and period_end are required' });
+        }
+        await connection.beginTransaction();
+        const [batchRes] = await connection.query(`
+            INSERT INTO payout_batch (period_start, period_end, status, total_amount)
+            VALUES (?, ?, 'draft', 0)
+        `, [period_start, period_end]);
+        const batchId = batchRes.insertId;
+        const [items] = await connection.query(`
+            SELECT * FROM commission_ledger
+            WHERE status IN ('accrued','approved')
+              AND DATE(created_at) BETWEEN ? AND ?
+        `, [period_start, period_end]);
+        let total = 0;
+        for (const it of items) {
+            const amount = Number(it.amount || 0);
+            total += amount;
+            const [txnRes] = await connection.query(`
+                INSERT INTO transactions (order_id, type, amount)
+                VALUES (?, 'commission', ?)
+            `, [it.order_id, amount]);
+            const txnId = txnRes.insertId;
+            await connection.query(`
+                UPDATE commission_ledger SET status = 'paid', ref_txn_id = ?, posted_at = NOW() WHERE id = ?
+            `, [txnId, it.id]);
+            await connection.query(`
+                INSERT INTO payout_batch_items (batch_id, ledger_id, amount)
+                VALUES (?, ?, ?)
+            `, [batchId, it.id, amount]);
+        }
+        await connection.query(`UPDATE payout_batch SET total_amount = ?, status = 'posted', posted_at = NOW() WHERE id = ?`, [total, batchId]);
+        await connection.commit();
+        res.json({ success: true, batch_id: batchId, total_amount: total, items: items.length });
+    } catch (e) {
+        try { await connection.rollback(); } catch(_) {}
+        console.error('Payout error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
 // Order Assignments Endpoints
 app.get('/api/orders/:id', async (req, res) => {
     try {
@@ -1584,6 +1984,88 @@ app.get('/api/orders/:id', async (req, res) => {
     }
 });
 
+app.get('/api/commissions/payouts', async (req, res) => {
+    try {
+        const [rows] = await pool.query(`SELECT * FROM payout_batch ORDER BY created_at DESC`);
+        res.json(rows);
+    } catch (e) {
+        console.error('List payouts error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/commissions/payouts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [items] = await pool.query(`
+            SELECT pbi.*, cl.order_id, cl.user_id, cl.role, cl.amount, cl.content_type, u.name as user_name, o.client_id
+            FROM payout_batch_items pbi
+            JOIN commission_ledger cl ON pbi.ledger_id = cl.id
+            LEFT JOIN users u ON cl.user_id = u.id
+            LEFT JOIN orders o ON cl.order_id = o.id
+            WHERE pbi.batch_id = ?
+            ORDER BY pbi.created_at DESC
+        `, [id]);
+        res.json(items);
+    } catch (e) {
+        console.error('Get payout items error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+app.post('/api/orders/:id/payments', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { id } = req.params;
+        const body = req.body || {};
+        const amount = Number(body.amount || 0);
+        const method = body.method || 'transfer';
+        if (!id || !amount || amount <= 0) {
+            connection.release();
+            return res.status(400).json({ error: 'amount is required and must be > 0' });
+        }
+        await connection.beginTransaction();
+        const [orders] = await connection.query('SELECT id, package_id, status FROM orders WHERE id = ? LIMIT 1', [id]);
+        if (orders.length === 0) {
+            await connection.rollback();
+            connection.release();
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        const order = orders[0];
+        await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [id, amount]);
+        const [assignments] = await connection.query('SELECT user_id, role FROM order_assignments WHERE order_id = ?', [id]);
+        const statusLower = String(order.status || '').toLowerCase();
+        const contentType = statusLower.includes('perpanjang') ? 'extend' : (statusLower.includes('baru') || statusLower.includes('new') ? 'new' : 'general');
+        // Helper: get rule amount with fallback when content_type column doesn't exist
+        async function getRuleAmount(role, ctype) {
+            if (!order.package_id) return 0;
+            try {
+                const [rs] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [order.package_id, role, ctype]);
+                if (rs.length > 0 && rs[0].amount != null) return Number(rs[0].amount);
+                const [rg] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [order.package_id, role, 'general']);
+                if (rg.length > 0 && rg[0].amount != null) return Number(rg[0].amount);
+            } catch (e) {
+                const [r2] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [order.package_id, role]);
+                if (r2.length > 0 && r2[0].amount != null) return Number(r2[0].amount);
+            }
+            return 0;
+        }
+        for (const a of assignments) {
+            const ruleAmount = await getRuleAmount(a.role, contentType);
+            await connection.query(
+                'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, ?, ?, ?, "flat", ?, ?, "accrued", "payment_income")',
+                [id, a.user_id, a.role, contentType, amount, ruleAmount, ruleAmount]
+            );
+        }
+        await connection.commit();
+        res.json({ success: true });
+    } catch (e) {
+        try { await connection.rollback(); } catch(_) {}
+        console.error('Payment endpoint error:', e);
+        res.status(500).json({ error: e && e.message ? e.message : 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
 app.get('/api/orders/:id/assignments', async (req, res) => {
     try {
         const { id } = req.params;
@@ -1694,6 +2176,8 @@ app.get('/api/orders/:id/content', async (req, res) => {
 app.post('/api/orders/:id/content/start', async (req, res) => {
     try {
         const { id } = req.params;
+        const body = req.body || {};
+        const crmUserIdRaw = body.userId || body.user_id;
         
         // Upsert status
         const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
@@ -1704,9 +2188,157 @@ app.post('/api/orders/:id/content/start', async (req, res) => {
             await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Konten")', [id]);
         }
 
+        // Accrue CRM commission on OTP -> Proses Konten transition and record finance
+        try {
+            // Determine CRM user: from body or existing assignment
+            let crmUserId = crmUserIdRaw ? parseInt(crmUserIdRaw) : null;
+            if (!crmUserId) {
+                const [crmAssign] = await pool.query('SELECT user_id FROM order_assignments WHERE order_id = ? AND role = "CRM" LIMIT 1', [id]);
+                if (crmAssign.length > 0) crmUserId = crmAssign[0].user_id;
+            }
+            // Only proceed if we have a CRM user
+            if (crmUserId) {
+                // Idempotency: skip if ledger already exists for this event
+                const [dup] = await pool.query(
+                    'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "CRM" AND source_event = "otp_to_content" LIMIT 1',
+                    [id, crmUserId]
+                );
+                if (dup.length === 0) {
+                    // Compute commission amount from rules (prefer content_type 'otp', fallback 'general')
+                    let amount = 0;
+                    // Get package id
+                    const [ord] = await pool.query('SELECT package_id FROM orders WHERE id = ? LIMIT 1', [id]);
+                    const pkgId = ord.length > 0 ? ord[0].package_id : null;
+                    if (pkgId) {
+                        try {
+                            const [rs] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'CRM', 'otp']);
+                            if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                            else {
+                                const [rg] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'CRM', 'general']);
+                                if (rg.length > 0 && rg[0].amount != null) amount = Number(rg[0].amount);
+                            }
+                        } catch (_) {
+                            const [r2] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [pkgId, 'CRM']);
+                            if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                        }
+                    }
+                    // Upsert assignment if none
+                    const [hasAssign] = await pool.query('SELECT id FROM order_assignments WHERE order_id = ? AND role = "CRM" LIMIT 1', [id]);
+                    if (hasAssign.length === 0) {
+                        await pool.query(
+                            'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", "otp", ?)',
+                            [id, crmUserId, amount]
+                        );
+                    } else {
+                        await pool.query(
+                            'UPDATE order_assignments SET user_id = ?, commission_amount = ? WHERE id = ?',
+                            [crmUserId, amount, hasAssign[0].id]
+                        );
+                    }
+                    // Create ledger accrued
+                    const [ledgerRes] = await pool.query(
+                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "CRM", "otp", NULL, "flat", ?, ?, "accrued", "otp_to_content")',
+                        [id, crmUserId, amount, amount]
+                    );
+                    const ledgerId = ledgerRes.insertId;
+                    // Record finance immedately as commission transaction and mark ledger paid
+                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [id, amount]);
+                    const txnId = txnRes.insertId;
+                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnId, ledgerId]);
+                }
+            }
+        } catch (e) {
+            console.error('CRM commission on OTP->Content error:', e);
+        }
+
         res.json({ success: true });
     } catch (e) {
         console.error('Start content error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/content/otp', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const body = req.body || {};
+        const crmUserIdRaw = body.userId || body.user_id;
+        const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
+        if (existing.length > 0) {
+            await pool.query('UPDATE order_contents SET status = "Proses OTP" WHERE order_id = ?', [id]);
+        } else {
+            await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses OTP")', [id]);
+        }
+        try {
+            // Hanya lakukan akru komisi dan auto-advance jika request berasal dari CRM (punya user_id)
+            if (crmUserIdRaw) {
+                let crmUserId = parseInt(crmUserIdRaw);
+                const [dup] = await pool.query(
+                    'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "CRM" AND source_event = "otp_sent" LIMIT 1',
+                    [id, crmUserId]
+                );
+                if (dup.length === 0) {
+                    let amount = 0;
+                    const [ord] = await pool.query('SELECT package_id FROM orders WHERE id = ? LIMIT 1', [id]);
+                    const pkgId = ord.length > 0 ? ord[0].package_id : null;
+                    if (pkgId) {
+                        try {
+                            const [rs] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'CRM', 'otp']);
+                            if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                            else {
+                                const [rg] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'CRM', 'general']);
+                                if (rg.length > 0 && rg[0].amount != null) amount = Number(rg[0].amount);
+                            }
+                        } catch (_) {
+                            const [r2] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [pkgId, 'CRM']);
+                            if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                        }
+                    }
+                    await pool.query(
+                        'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", "otp", ?) ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)',
+                        [id, crmUserId, amount]
+                    );
+                    const [ledgerRes] = await pool.query(
+                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "CRM", "otp", NULL, "flat", ?, ?, "accrued", "otp_sent")',
+                        [id, crmUserId, amount, amount]
+                    );
+                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [id, amount]);
+                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+                }
+                // Auto-advance process to "Proses Konten" after OTP send by CRM
+                try {
+                    const [exist2] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
+                    if (exist2.length > 0) {
+                        await pool.query('UPDATE order_contents SET status = "Proses Konten" WHERE order_id = ?', [id]);
+                    } else {
+                        await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Konten")', [id]);
+                    }
+                } catch (e) {
+                    console.error('Advance to Proses Konten error:', e);
+                }
+            }
+        } catch (e) {
+            console.error('CRM commission on OTP sent error:', e);
+        }
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Set OTP error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/content/ready', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
+        if (existing.length > 0) {
+            await pool.query('UPDATE order_contents SET status = "Siap Iklan" WHERE order_id = ?', [id]);
+        } else {
+            await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Siap Iklan")', [id]);
+        }
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Set Ready error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -1743,6 +2375,10 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
                 if (ord.length > 0) {
                     const packageId = ord[0].package_id;
                     let amount = 0;
+                    let ctype = 'general';
+                    const linkTypes = Array.isArray(links) ? links.map(l => String(l.type || '').toLowerCase()) : [];
+                    if (linkTypes.includes('video')) ctype = 'video';
+                    else if (linkTypes.includes('image')) ctype = 'image';
                     if (packageId) {
                         // Prefer general rule for Editor, fallback to image+video sum
                         const [gen] = await pool.query(
@@ -1763,14 +2399,27 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
                             const aImg = img.length > 0 && img[0].amount != null ? parseFloat(img[0].amount) || 0 : 0;
                             const aVid = vid.length > 0 && vid[0].amount != null ? parseFloat(vid[0].amount) || 0 : 0;
                             amount = aImg + aVid;
+                            ctype = (aVid > 0) ? 'video' : ((aImg > 0) ? 'image' : 'general');
                         }
                     }
                     await pool.query(
                         `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
-                         VALUES (?, ?, 'Editor', 'general', ?)
+                         VALUES (?, ?, 'Editor', ?, ?)
                          ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
-                        [id, userId, amount]
+                        [id, userId, ctype, amount]
                     );
+                    const [dup] = await pool.query(
+                        'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "Editor" AND source_event = "content_ready" LIMIT 1',
+                        [id, userId]
+                    );
+                    if (dup.length === 0) {
+                        const [ledgerRes] = await pool.query(
+                            'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "Editor", ?, NULL, "flat", ?, ?, "accrued", "content_ready")',
+                            [id, userId, ctype, amount, amount]
+                        );
+                        const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [id, amount]);
+                        await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+                    }
                 }
             }
         } catch (e) {

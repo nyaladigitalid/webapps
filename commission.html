@@ -164,6 +164,7 @@ body {
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Tipe (Konten/Status)</label>
                     <select id="c-type" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-slate-900 dark:text-white">
                         <option value="general">Umum / Semua</option>
+                        <option value="otp">Proses OTP</option>
                         <option value="image">Image</option>
                         <option value="video">Video</option>
                         <option value="new">Baru</option>
@@ -257,12 +258,26 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        const typeLabel = (t) => {
+            const m = {
+                general: 'Umum',
+                image: 'Image',
+                video: 'Video',
+                new: 'Baru',
+                extend: 'Perpanjang',
+                otp: 'Proses OTP'
+            };
+            return m[(t || '').toLowerCase()] || t || 'Umum';
+        };
+
         commissions.forEach((c, index) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5 last:border-0";
             
-            const typeBadge = c.content_type && c.content_type !== 'general' 
-                ? `<span class="ml-1 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded text-[10px] font-bold uppercase tracking-wider">${c.content_type}</span>` 
+            const type = (c.content_type || '').toLowerCase();
+            const typeText = typeLabel(type);
+            const typeBadge = type && type !== 'general'
+                ? `<span class="ml-1 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded text-[10px] font-bold uppercase tracking-wider">${typeText}</span>`
                 : '<span class="text-slate-400 text-xs italic">Umum</span>';
 
             tr.innerHTML = `

@@ -317,6 +317,62 @@
                         </div>
                     </section>
 
+                    <!-- CRM Cards (shown for role CRM) -->
+                    <section id="crm-cards" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-cyan-400">sms</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Jumlah OTP Bulan Ini</p>
+                                <h3 id="crm-otp-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-indigo-400">person_add</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Klien Baru Bulan Ini</p>
+                                <h3 id="crm-new-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-purple-400">autorenew</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Perpanjang Bulan Ini</p>
+                                <h3 id="crm-extend-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-emerald-400">payments</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Komisi Bulan Ini</p>
+                                <h3 id="crm-commission-total" class="text-3xl font-bold text-emerald-400">Rp 0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="mt-4">
                         <div class="glass-panel rounded-2xl overflow-hidden">
                             <div class="p-6 border-b border-white/5 flex justify-between items-center">
@@ -503,6 +559,64 @@
                     </section>
                 </div>
 
+                <!-- CRM Dashboard -->
+                <div id="crm-dashboard-content" class="hidden space-y-4">
+                    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-cyan-400">sms</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Jumlah OTP Bulan Ini</p>
+                                <h3 id="crm-otp-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-indigo-400">person_add</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Klien Baru Bulan Ini</p>
+                                <h3 id="crm-new-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-purple-400">autorenew</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Perpanjang Bulan Ini</p>
+                                <h3 id="crm-extend-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-emerald-400">payments</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Komisi Bulan Ini</p>
+                                <h3 id="crm-commission-total" class="text-3xl font-bold text-emerald-400">Rp 0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+                                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                <span>Periode saat ini</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
                 <!-- Editor Dashboard -->
                 <div id="editor-dashboard-content" class="hidden space-y-4">
                     <!-- Editor Metrics -->
@@ -581,38 +695,8 @@
 
                 <!-- Advertiser Dashboard -->
                 <div id="advertiser-dashboard-content" class="hidden space-y-4">
-                    <!-- Advertiser Metrics -->
-                    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Ready to Run -->
-                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
-                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-blue-400">campaign</span>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Siap Iklan</p>
-                                <h3 id="advertiser-ready-count" class="text-3xl font-bold text-white">0</h3>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-xs text-blue-400 bg-blue-400/10 w-fit px-2 py-1 rounded-lg">
-                                <span class="material-symbols-outlined text-sm">ads_click</span>
-                                <span>Menunggu setup</span>
-                            </div>
-                        </div>
-
-                        <!-- Running Ads -->
-                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
-                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-emerald-400">rocket_launch</span>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Iklan Tayang</p>
-                                <h3 id="advertiser-running-count" class="text-3xl font-bold text-white">0</h3>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-400/10 w-fit px-2 py-1 rounded-lg">
-                                <span class="material-symbols-outlined text-sm">trending_up</span>
-                                <span>Sedang aktif</span>
-                            </div>
-                        </div>
-
+                    <!-- Advertiser Metrics (hidden, moved to top row) -->
+                    <section id="advertiser-metrics-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
                         <!-- Advertiser Commission -->
                         <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
                             <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -627,10 +711,40 @@
                                 <span>Periode saat ini</span>
                             </div>
                         </div>
+ 
+                        <!-- Running Ads -->
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-emerald-400">rocket_launch</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Iklan Tayang</p>
+                                <h3 id="advertiser-running-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-400/10 w-fit px-2 py-1 rounded-lg">
+                                <span class="material-symbols-outlined text-sm">trending_up</span>
+                                <span>Sedang aktif</span>
+                            </div>
+                        </div>
+ 
+                        <!-- Ready to Run -->
+                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span class="material-symbols-outlined text-6xl text-blue-400">campaign</span>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Siap Iklan</p>
+                                <h3 id="advertiser-ready-count" class="text-3xl font-bold text-white">0</h3>
+                            </div>
+                            <div class="mt-4 flex items-center gap-2 text-xs text-blue-400 bg-blue-400/10 w-fit px-2 py-1 rounded-lg">
+                                <span class="material-symbols-outlined text-sm">ads_click</span>
+                                <span>Menunggu setup</span>
+                            </div>
+                        </div>
                     </section>
 
                     <!-- Ads Tasks Table -->
-                    <section class="glass-panel rounded-2xl overflow-hidden">
+                    <section class="hidden glass-panel rounded-2xl overflow-hidden">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center">
                             <h4 class="text-lg font-bold text-white">Antrian Iklan</h4>
                             <a href="orders.html" class="text-xs font-semibold text-primary hover:underline">Lihat Semua</a>
@@ -806,6 +920,52 @@
                             </table>
                         </div>
                     </section>
+                    
+                    <!-- Detail Komisi -->
+                    <section id="finance-acc-history" class="glass-panel rounded-2xl p-6">
+                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                            <div>
+                                <h4 class="text-lg font-bold text-white">Detail Komisi</h4>
+                                <p class="text-slate-400 text-xs">Perubahan status proses yang memicu komisi</p>
+                            </div>
+                            <div class="flex flex-wrap items-end gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-medium text-slate-400 mb-1">Mulai Tanggal</label>
+                                    <input type="date" id="dash-acc-start" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-slate-400 mb-1">Sampai Tanggal</label>
+                                    <input type="date" id="dash-acc-end" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
+                                </div>
+                                <button id="dash-acc-filter" class="px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                                    Filter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-white/10">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-white/5">
+                                    <tr>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Order</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Klien</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rule</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">User</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Perubahan Status</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tipe</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Komisi</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-acc-body" class="divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="9" class="px-6 py-6 text-center text-slate-500 italic">Memuat histori...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
 
             </main>
@@ -862,12 +1022,16 @@
                 if (adminGrid2) adminGrid2.style.display = 'none';
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
-                document.getElementById('advertiser-dashboard-content').classList.add('hidden');
+                document.getElementById('advertiser-dashboard-content').classList.remove('hidden');
                 document.getElementById('bengkel-dashboard-content').classList.add('hidden');
                 document.getElementById('keuangan-dashboard-content').classList.add('hidden');
+                const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                if (btnNewTop) { btnNewTop.classList.add('hidden'); btnNewTop.style.display = 'none'; }
+                const btnNew = document.getElementById('btn-cs-new-order');
+                if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
                 
                 await loadAdminOrders(1);
-                await loadAdvertiserStats(userId);
+                await loadAdvertiserData(userId);
             } else if (role === 'Team Bengkel' || role.toLowerCase() === 'team bengkel') {
                 // Bengkel View
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
@@ -879,9 +1043,25 @@
                 // Load Bengkel Data
                 await loadBengkelData(userId);
                 await loadAdminOrders(1);
+            } else if ((role || '').toLowerCase() === 'crm') {
+                const adminGrid2 = document.querySelector('#admin-dashboard-content > section');
+                if (adminGrid2) adminGrid2.style.display = 'none';
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
+                document.getElementById('cs-dashboard-content').classList.add('hidden');
+                document.getElementById('editor-dashboard-content').classList.add('hidden');
+                document.getElementById('advertiser-dashboard-content').classList.add('hidden');
+                document.getElementById('bengkel-dashboard-content').classList.add('hidden');
+                document.getElementById('keuangan-dashboard-content').classList.add('hidden');
+                const crmCards = document.getElementById('crm-cards');
+                if (crmCards) crmCards.classList.remove('hidden');
+                const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                if (btnNewTop) { btnNewTop.classList.remove('hidden'); btnNewTop.style.display = 'inline-flex'; }
+                await loadAdminOrders(1);
+                await loadCRMData(userId);
             } else if (role.toLowerCase() === 'keuangan') {
                 // Keuangan View
-                document.getElementById('admin-dashboard-content').classList.remove('hidden');
+                const adminGrid = document.getElementById('admin-dashboard-content');
+                if (adminGrid) adminGrid.classList.add('hidden');
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('advertiser-dashboard-content').classList.add('hidden');
@@ -890,7 +1070,18 @@
 
                 // Load Keuangan Data
                 await loadKeuanganData();
-                await loadAdminOrders(1);
+                // Default dates for Detail Komisi
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const sEl = document.getElementById('dash-acc-start');
+                const eEl = document.getElementById('dash-acc-end');
+                if (sEl) sEl.value = fmt(firstDay);
+                if (eEl) eEl.value = fmt(lastDay);
+                await loadAccrualHistoryDashboard();
+                const btnF = document.getElementById('dash-acc-filter');
+                if (btnF) btnF.addEventListener('click', loadAccrualHistoryDashboard);
             } else {
                 // Ensure Admin View is shown (default, but good to be explicit)
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
@@ -903,6 +1094,11 @@
                 // Load Admin Data
                 await loadAdminData();
                 await loadAdminOrders(1);
+                // Show Input Order Baru for super_admin
+                if (isAdmin) {
+                    const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                    if (btnNewTop) { btnNewTop.classList.remove('hidden'); btnNewTop.style.display = 'inline-flex'; }
+                }
             }
         });
 
@@ -972,6 +1168,81 @@
                 console.error('Error loading CS data', e);
             }
         }
+        
+        async function loadAccrualHistoryDashboard() {
+            const start = document.getElementById('dash-acc-start').value;
+            const end = document.getElementById('dash-acc-end').value;
+            const tbody = document.getElementById('dash-acc-body');
+            tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-6 text-center text-slate-500 italic">Memuat histori...</td></tr>';
+            try {
+                const res = await fetch(`/api/finance/accrual-history?startDate=${start}&endDate=${end}`);
+                const rows = await res.json();
+                if (!Array.isArray(rows) || rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-6 text-center text-slate-500 italic">Tidak ada aktivitas komisi pada periode ini</td></tr>';
+                    return;
+                }
+                const mapType = (t) => {
+                    const m = { otp: 'Proses OTP', general: 'Umum', new: 'Baru', extend: 'Perpanjang', content: 'Proses Konten', ready: 'Siap Iklan' };
+                    const k = String(t || '').toLowerCase();
+                    return m[k] || (t || '-');
+                };
+                const eventLabel = (ev) => {
+                    const e = String(ev || '').toLowerCase();
+                    if (e === 'created_order') return 'Input Baru';
+                    if (e === 'created_order_crm') return 'Input Baru (CRM)';
+                    if (e === 'otp_sent') return 'Kirim Proses OTP';
+                    if (e === 'otp_to_content') return 'Proses OTP → Proses Konten';
+                    if (e === 'content_ready') return 'Proses Konten → Siap Iklan';
+                    return ev || '-';
+                };
+                tbody.innerHTML = rows.map(r => {
+                    const date = r.posted_at || r.created_at;
+                    const d = date ? new Date(date).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                    const amount = Number(r.amount || 0);
+                    const statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold ${String(r.status||'').toLowerCase()==='paid'?'bg-emerald-500/20 text-emerald-400':'bg-slate-500/20 text-slate-300'}">${r.status}</span>`;
+                    return `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-3 text-[12px] text-slate-300">${d}</td>
+                        <td class="px-6 py-3 text-[12px] font-medium text-white">#${r.order_id}</td>
+                        <td class="px-6 py-3 text-[12px] text-slate-300">${r.client_name || '-'}</td>
+                        <td class="px-6 py-3 text-[12px]">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">${r.role || '-'}</span>
+                            <span class="ml-2 px-2 py-1 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">${mapType(r.content_type)}</span>
+                        </td>
+                        <td class="px-6 py-3 text-[12px] text-slate-300">${r.user_name || ('User ' + r.user_id)}</td>
+                        <td class="px-6 py-3 text-[12px] text-slate-300">${eventLabel(r.source_event)}</td>
+                        <td class="px-6 py-3 text-[12px] text-slate-300">${r.content_type || '-'}</td>
+                        <td class="px-6 py-3 text-right text-[12px] font-bold text-emerald-400">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)}</td>
+                        <td class="px-6 py-3 text-[12px]">${statusBadge}</td>
+                    </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-6 text-center text-red-400">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function loadCRMData(userId) {
+            try {
+                const res = await fetch(`/api/dashboard/crm-stats?user_id=${encodeURIComponent(userId || '')}`);
+                const s = await res.json();
+                const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+                const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
+                setText('crm-otp-count', s.otpThisMonth || 0);
+                const cEl = document.getElementById('crm-commission-total');
+                if (cEl) cEl.textContent = fmtCurrency.format(s.commissionThisMonth || 0);
+                setText('crm-new-count', s.newClientsThisMonth || 0);
+                setText('crm-extend-count', s.extendClientsThisMonth || 0);
+                // Hide CRM cards for non-CRM roles
+                const role = (localStorage.getItem('role') || '').toLowerCase();
+                if (role !== 'crm') {
+                    const crmCards = document.getElementById('crm-cards');
+                    if (crmCards) crmCards.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error('CRM stats load error:', e);
+            }
+        }
 
         async function loadEditorData(userId) {
             try {
@@ -1015,10 +1286,24 @@
 
         async function loadAdvertiserData(userId) {
              try {
-                // Stats
-                const statsRes = await fetch(`/api/dashboard/stats?role=Advertiser&user_id=${userId}`);
+                const statsRes = await fetch(`/api/dashboard/advertiser-stats?user_id=${encodeURIComponent(userId || '')}`);
                 const stats = await statsRes.json();
-                document.getElementById('advertiser-active-campaigns').textContent = stats.activeCampaigns || 0;
+                const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+                const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
+                setText('advertiser-ready-count', stats.readyClients || 0);
+                setText('advertiser-running-count', stats.monthlyAds || 0);
+                const cEl = document.getElementById('advertiser-commission-total');
+                if (cEl) cEl.textContent = fmtCurrency.format(stats.advertiserCommissionTotal || 0);
+                // Top cards (above Pesanan Terbaru)
+                setText('stat-adv-ready', stats.readyClients || 0);
+                setText('stat-adv-monthly-ads', stats.monthlyAds || 0);
+                const cTop = document.getElementById('stat-adv-commission');
+                if (cTop) cTop.textContent = fmtCurrency.format(stats.advertiserCommissionTotal || 0);
+                // Override ready count using current "Pesanan Terbaru" which is filtered to Siap Iklan for Advertiser
+                const dashReady = Array.isArray(window.dashAllOrders) ? window.dashAllOrders.length : 0;
+                setText('stat-adv-ready', dashReady);
+                const arEl = document.getElementById('advertiser-ready-count');
+                if (arEl) arEl.textContent = String(dashReady);
                 
                 // Active Campaigns List (using orders for now, ideally campaigns table)
                 const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Advertiser&limit=5`);
@@ -1026,6 +1311,7 @@
                 const tasks = tasksData.data;
 
                 const tbody = document.getElementById('advertiser-campaigns-body');
+                if (!tbody) return;
                  if (tasks.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada kampanye aktif</td></tr>';
                 } else {
@@ -1158,7 +1444,10 @@
                 const limit = 10000;
                 const roleNow = (localStorage.getItem('role') || '').toLowerCase();
                 const uid = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
-                const qs = (roleNow === 'cs' && uid) ? `assigned_to=${encodeURIComponent(uid)}&role=CS&limit=${limit}` : `limit=${limit}`;
+                let qs = `limit=${limit}`;
+                if (roleNow === 'cs' && uid) qs = `assigned_to=${encodeURIComponent(uid)}&role=CS&limit=${limit}`;
+                else if (roleNow === 'crm') qs = `content_status=otp&limit=${limit}`;
+                else if (roleNow === 'advertiser') qs = `content_status=ready&limit=${limit}`;
                 const res = await fetch(`/api/orders?${qs}`);
                 const json = await res.json();
                 const data = Array.isArray(json) ? json : (json.data || []);
@@ -1242,7 +1531,14 @@
                         const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
 
                         tr.innerHTML = `
-                            <td class="px-6 py-4"><span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span>
+                                    <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                        <option value="">Ubah...</option>
+                                    </select>
+                                </div>
+                            </td>
                             <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
                             <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
                             <td class="px-6 py-4">
@@ -1278,7 +1574,15 @@
                                 try {
                                   const role = (localStorage.getItem('role') || '').toLowerCase();
                                   const procVal = String(st.process || '').toLowerCase();
-                                   if (role === 'editor' && !(procVal.includes('menunggu') || procVal.includes('proses konten'))) {
+                                   if (role === 'cs' && !procVal.includes('menunggu')) {
+                                    tr.style.display = 'none';
+                                    return;
+                                   }
+                                   if (role === 'crm' && !procVal.includes('proses otp')) {
+                                    tr.style.display = 'none';
+                                    return;
+                                   }
+                                   if (role === 'editor' && !procVal.includes('proses konten')) {
                                     tr.style.display = 'none';
                                     return;
                                   }
@@ -1310,6 +1614,58 @@
                                   else if (p.includes('tidak aktif')) cls = 'bg-red-500/10 text-red-300 border border-red-500/20';
                                   statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + cls;
                                   statusEl.textContent = txt;
+                                }
+                                const sel = document.getElementById('proc-' + order.id);
+                                if (sel) {
+                                    const roleLower = (localStorage.getItem('role') || '').toLowerCase();
+                                    const p = String(st.process || '').toLowerCase();
+                                    if (roleLower === 'crm' || roleLower === 'editor' || roleLower === 'advertiser') {
+                                        sel.style.display = 'none';
+                                    } else {
+                                        sel.innerHTML = '<option value="">Ubah...</option>';
+                                        if (roleLower === 'cs' && p.includes('menunggu')) {
+                                            const opt = document.createElement('option'); opt.value = 'otp'; opt.textContent = 'Proses OTP'; sel.appendChild(opt);
+                                        } else {
+                                            sel.disabled = true;
+                                        }
+                                        sel.addEventListener('click', e => e.stopPropagation());
+                                        sel.addEventListener('change', async function(e){
+                                        const v = e.target.value;
+                                        if (!v) return;
+                                        try {
+                                            let url = '';
+                                            if (v === 'otp') url = '/api/orders/' + encodeURIComponent(order.id) + '/content/otp';
+                                            else if (v === 'content') url = '/api/orders/' + encodeURIComponent(order.id) + '/content/start';
+                                            else if (v === 'ready') url = '/api/orders/' + encodeURIComponent(order.id) + '/content/ready';
+                                            if (!url) return;
+                                            const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                                            const rj = await resp.json();
+                                            if (!resp.ok || rj.error) { alert('Gagal update status: ' + (rj.error || 'unknown')); return; }
+                                            fetch('/api/orders/' + encodeURIComponent(order.id) + '/combined-status')
+                                              .then(rr => rr.json())
+                                              .then(ns => {
+                                                const statusEl = document.getElementById('status-' + order.id);
+                                                if (statusEl) {
+                                                  const p2 = String(ns.process || '').toLowerCase();
+                                                  let cls = 'bg-slate-500/10 text-slate-300 border border-slate-500/20';
+                                                  let txt = ns.process || 'Menunggu';
+                                                  if (p2.includes('mulai konten') || p2.includes('proses konten')) cls = 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20';
+                                                  else if (p2.includes('siap iklan')) cls = 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20';
+                                                  else if (p2.includes('proses iklan')) cls = 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
+                                                  else if (p2.includes('aktif')) cls = 'bg-green-500/10 text-green-300 border border-green-500/20';
+                                                  else if (p2.includes('tidak aktif')) cls = 'bg-red-500/10 text-red-300 border border-red-500/20';
+                                                  statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + cls;
+                                                  statusEl.textContent = txt;
+                                                }
+                                                applyDashboardFilters(dashCurrentPage);
+                                              });
+                                        } catch (err) {
+                                            alert('Error: ' + (err.message || err));
+                                        } finally {
+                                            e.target.value = '';
+                                        }
+                                    });
+                                    }
                                 }
                               })
                               .catch(()=>{});
@@ -1387,11 +1743,11 @@
                 } else {
                     let html = '';
                     orders.forEach(order => {
-                        const price = parseFloat(order.package_price) || 0;
-                        const comm = parseFloat(order.total_commission) || 0;
-                        const net = price - comm;
+                        const income = parseFloat(order.total_income) || 0;
+                        const comm = parseFloat(order.total_commission_paid) || 0;
+                        const net = income - comm;
 
-                        totalOmset += price;
+                        totalOmset += income;
                         totalCommission += comm;
 
                         const date = new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
@@ -1403,7 +1759,7 @@
                                     <div class="font-medium text-white">${order.client_name || '-'}</div>
                                     <div class="text-[10px] text-slate-500">${order.package_name || '-'}</div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-right text-slate-300">Rp ${price.toLocaleString('id-ID')}</td>
+                                <td class="px-6 py-4 text-sm text-right text-slate-300">Rp ${income.toLocaleString('id-ID')}</td>
                                 <td class="px-6 py-4 text-sm text-right text-red-400">Rp ${comm.toLocaleString('id-ID')}</td>
                                 <td class="px-6 py-4 text-sm text-right font-medium text-emerald-400">Rp ${net.toLocaleString('id-ID')}</td>
                             </tr>
