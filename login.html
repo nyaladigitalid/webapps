@@ -180,13 +180,57 @@ Belum punya akun?
                 submitButton.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span> Signing in...';
 
                 try {
-                    const response = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    });
+                    const makeBaseCandidates = () => {
+                        try {
+                            const o = window.location && window.location.origin ? String(window.location.origin) : '';
+                            if (!o || o === 'null') return ['http://localhost:3000', 'http://localhost:3001'];
+                            const u = new URL(o);
+                            const host3000 = u.protocol + '//' + u.hostname + ':3000';
+                            const host3001 = u.protocol + '//' + u.hostname + ':3001';
+                            return [u.origin, host3000, host3001];
+                        } catch (_) {
+                            return ['http://localhost:3000', 'http://localhost:3001'];
+                        }
+                    };
 
-                    const data = await response.json();
+                    const postLogin = async (base) => {
+                        const url = base.replace(/\/$/, '') + '/api/login';
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        const raw = await response.text();
+                        let data;
+                        try {
+                            data = JSON.parse(raw);
+                        } catch (_) {
+                            return { ok: false, response, url, raw };
+                        }
+                        return { ok: true, response, url, data };
+                    };
+
+                    const candidates = makeBaseCandidates();
+                    let result = null;
+                    for (const base of candidates) {
+                        try {
+                            const r = await postLogin(base);
+                            if (r.ok) {
+                                result = r;
+                                break;
+                            }
+                            result = r;
+                        } catch (e) {
+                            result = { ok: false, url: base, error: e };
+                        }
+                    }
+
+                    if (!result || !result.ok) {
+                        throw new Error("API login tidak terbaca (baliknya HTML/Invalid). Pastikan server Node aktif (jalankan: node server.js) dan akses lewat http://localhost:3000/login.html");
+                    }
+
+                    const response = result.response;
+                    const data = result.data;
 
                     if (!response.ok) {
                         throw new Error(data.error || 'Login failed');
@@ -199,7 +243,8 @@ Belum punya akun?
                     localStorage.setItem('role', data.user.role);
 
                     // Redirect
-                    window.location.href = "dashboard.html";
+                    const baseUsed = (result.url || '').replace(/\/api\/login$/, '');
+                    window.location.href = (baseUsed || window.location.origin) + "/dashboard.html";
                 } catch (err) {
                     console.error(err);
                     if (errorBox) {

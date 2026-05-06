@@ -12,6 +12,17 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); // Serve static files from root
+app.use((req, res, next) => {
+    if (req.path && String(req.path).startsWith('/api/')) {
+        const origin = req.headers.origin ? String(req.headers.origin) : '*';
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        if (req.method === 'OPTIONS') return res.sendStatus(204);
+    }
+    next();
+});
 
 // Database Connection
 const pool = mysql.createPool(process.env.MYSQL_URL);
@@ -152,7 +163,15 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password required' });
         }
 
-        const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const identifier = String(email || '').trim();
+        const [users] = await pool.query(
+            `SELECT *
+             FROM users
+             WHERE LOWER(email) = LOWER(?) OR LOWER(name) = LOWER(?)
+             ORDER BY id ASC
+             LIMIT 1`,
+            [identifier, identifier]
+        );
         
         if (users.length === 0) {
             return res.status(401).json({ error: 'Invalid credentials' });

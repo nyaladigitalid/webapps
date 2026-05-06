@@ -13,7 +13,7 @@ async function run() {
         content_type VARCHAR(20),
         basis_amount DECIMAL(12,2),
         rate_type ENUM('flat','percent') NOT NULL,
-        rate_value DECIMAL(8,4) NOT NULL,
+        rate_value DECIMAL(12,4) NOT NULL,
         amount DECIMAL(12,2) NOT NULL,
         status ENUM('accrued','approved','paid','reversed') NOT NULL DEFAULT 'accrued',
         source_event VARCHAR(50),
@@ -22,37 +22,13 @@ async function run() {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         posted_at DATETIME,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_ledger_event (order_id, user_id, role, source_event),
         INDEX idx_ledger_order (order_id),
         INDEX idx_ledger_user (user_id),
         INDEX idx_ledger_status (status)
       )
     `);
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS payout_batch (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        period_start DATE,
-        period_end DATE,
-        created_by INT,
-        status ENUM('draft','posted') NOT NULL DEFAULT 'draft',
-        total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        posted_at DATETIME,
-        INDEX idx_batch_status (status)
-      )
-    `);
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS payout_batch_items (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        batch_id INT NOT NULL,
-        ledger_id INT NOT NULL,
-        amount DECIMAL(12,2) NOT NULL,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uniq_batch_ledger (batch_id, ledger_id),
-        INDEX idx_items_batch (batch_id),
-        INDEX idx_items_ledger (ledger_id)
-      )
-    `);
-    console.log('Migration completed: commission_ledger, payout_batch, payout_batch_items');
+    console.log('Migration completed: commission_ledger');
   } catch (e) {
     console.error('Migration failed:', e);
   } finally {
