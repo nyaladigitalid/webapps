@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch from MySQL API
   var allOrders = [];
   var currentPage = 1;
-  var itemsPerPage = 5;
+  var itemsPerPage = 10;
   var currentStatus = 'all';
   var currentMonth = 'all';
   var currentYear = 'all';
@@ -698,11 +698,26 @@ document.addEventListener("DOMContentLoaded", function () {
         return dateB - dateA || b.id - a.id;
     });
 
-    currentPage = 1;
-    var paginatedItems = filtered.slice(0, itemsPerPage);
+    var totalItems = filtered.length;
+    var totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    var startIdx = (currentPage - 1) * itemsPerPage;
+    var endIdx = startIdx + itemsPerPage;
+    var paginatedItems = filtered.slice(startIdx, endIdx);
 
     renderOrders(paginatedItems);
-    hidePagination();
+    renderPagination(
+        totalItems,
+        totalItems > 0 ? (startIdx + 1) : 0,
+        Math.min(endIdx, totalItems),
+        totalPages
+    );
+    var controlsEl = document.getElementById('pagination-controls');
+    if (controlsEl && controlsEl.parentElement) {
+        controlsEl.parentElement.style.display = '';
+    }
   }
 
   function renderPagination(totalItems, start, end, totalPages) {

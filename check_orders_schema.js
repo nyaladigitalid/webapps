@@ -14,7 +14,7 @@ async function checkOrdersSchema() {
         // We can't easily test the running server from here without knowing if it's running.
         // But we can simulate the query logic.
         
-        const limit = 5;
+        const limit = 10;
         const offset = 0;
         
         let query = `

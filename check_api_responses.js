@@ -35,7 +35,7 @@ function get(path) {
 async function checkApis() {
     console.log('--- Checking /api/orders ---');
     try {
-        const res = await get('/api/orders?limit=5');
+        const res = await get('/api/orders?limit=10');
         console.log('Status:', res.status);
         if (res.data.data) {
              console.log('Data Count:', res.data.data.length);
@@ -53,7 +53,7 @@ async function checkApis() {
 
     console.log('\n--- Checking /api/campaigns ---');
     try {
-        const res = await get('/api/campaigns?limit=5');
+        const res = await get('/api/campaigns?limit=10');
         console.log('Status:', res.status);
         if (res.data.data) {
              console.log('Data Count:', res.data.data.length);

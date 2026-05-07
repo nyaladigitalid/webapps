@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
+const crypto = require('crypto');
 const path = require('path');
 // const cors = require('cors'); // Cors not installed in package.json
 
@@ -9,7 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json());
+app.use(express.json({
+    limit: '2mb',
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); // Serve static files from root
 app.use((req, res, next) => {
@@ -39,6 +45,27 @@ function ensureEnv() {
 
 // --- Scalev Webhook Integration ---
 
+async function ensureUsersPhoneColumn() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE users ADD COLUMN phone VARCHAR(30)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE users ADD INDEX idx_users_phone (phone)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_KEYNAME') throw e;
+        }
+        console.log('Users phone column ready');
+    } catch (e) {
+        console.error('Error ensuring users phone column:', e);
+    }
+}
+
 // Create table if not exists
 async function createScalevTable() {
     try {
@@ -58,22 +85,208 @@ async function createScalevTable() {
                 status VARCHAR(50),
                 raw_data TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX (scalev_order_id),
+                UNIQUE KEY uniq_scalev_order_id (scalev_order_id),
                 INDEX (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci; 
         `);
+        try {
+            await p.query(`ALTER TABLE scalev_orders ADD UNIQUE KEY uniq_scalev_order_id (scalev_order_id)`);
+        } catch (e) {
+            const code = String(e && e.code || '');
+            if (code !== 'ER_DUP_KEYNAME' && code !== 'ER_DUP_ENTRY') throw e;
+        }
         console.log('Scalev orders table ready');
     } catch (e) {
         console.error('Error creating scalev table:', e);
     }
 }
+
+async function createScalevWebhookEventsTable() {
+    try {
+        const p = await getPool();
+        await p.query(`
+            CREATE TABLE IF NOT EXISTS scalev_webhook_events (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                unique_id VARCHAR(100) NOT NULL,
+                event VARCHAR(100) NOT NULL,
+                received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_unique_id (unique_id),
+                INDEX (event),
+                INDEX (received_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `);
+        console.log('Scalev webhook events table ready');
+    } catch (e) {
+        console.error('Error creating scalev webhook events table:', e);
+    }
+}
+
+async function createScalevLeadsTable() {
+    try {
+        const p = await getPool();
+        await p.query(`
+            CREATE TABLE IF NOT EXISTS scalev_leads (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                scalev_lead_id VARCHAR(120),
+                name VARCHAR(191),
+                phone VARCHAR(50),
+                email VARCHAR(191),
+                status VARCHAR(80),
+                source VARCHAR(120),
+                campaign VARCHAR(191),
+                notes TEXT,
+                business_username VARCHAR(191),
+                business_client_id VARCHAR(191),
+                handler_email VARCHAR(191),
+                advertiser VARCHAR(191),
+                order_link TEXT,
+                event_source_url TEXT,
+                raw_data LONGTEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_scalev_lead_id (scalev_lead_id),
+                INDEX (phone),
+                INDEX (email),
+                INDEX (status),
+                INDEX (handler_email),
+                INDEX (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `);
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN notes TEXT`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN business_username VARCHAR(191)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN business_client_id VARCHAR(191)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN handler_email VARCHAR(191)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN advertiser VARCHAR(191)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN order_link TEXT`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD COLUMN event_source_url TEXT`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE scalev_leads ADD INDEX idx_scalev_leads_handler_email (handler_email)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_KEYNAME') throw e;
+        }
+        console.log('Scalev leads table ready');
+    } catch (e) {
+        console.error('Error creating scalev leads table:', e);
+    }
+}
+
+function getScalevSigningSecret() {
+    const secret = process.env.SCALEV_SIGNING_SECRET || process.env.SCALEV_WEBHOOK_SIGNING_SECRET;
+    if (!secret) return null;
+    return String(secret);
+}
+
+function calculateScalevHmacBase64(rawBodyBuffer, signingSecret) {
+    return crypto.createHmac('sha256', signingSecret).update(rawBodyBuffer).digest('base64');
+}
+
+function getScalevLeadKey(payload, rawBody) {
+    const data = payload && payload.data ? payload.data : {};
+    const direct =
+        data.lead_id ||
+        data.leadId ||
+        data.id ||
+        data.uuid ||
+        data.uid ||
+        (payload ? payload.lead_id : null) ||
+        (payload ? payload.leadId : null) ||
+        (payload ? payload.id : null);
+    if (direct) return String(direct);
+
+    if (payload && payload.unique_id) return `event_${String(payload.unique_id)}`;
+
+    if (rawBody && Buffer.isBuffer(rawBody) && rawBody.length) {
+        return `body_${crypto.createHash('sha256').update(rawBody).digest('hex')}`;
+    }
+
+    return `unknown_${crypto.randomBytes(16).toString('hex')}`;
+}
+
+function safeEqual(a, b) {
+    const ba = Buffer.from(String(a || ''), 'utf8');
+    const bb = Buffer.from(String(b || ''), 'utf8');
+    if (ba.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ba, bb);
+}
+
+async function verifyScalevWebhook(req) {
+    const signature = String(req.headers['x-scalev-hmac-sha256'] || '').trim();
+    const signingSecret = getScalevSigningSecret();
+    if (!signingSecret) return { ok: false, reason: 'missing_signing_secret' };
+    if (!signature) return { ok: false, reason: 'missing_signature' };
+    if (!req.rawBody || !Buffer.isBuffer(req.rawBody)) return { ok: false, reason: 'missing_raw_body' };
+    const calculated = calculateScalevHmacBase64(req.rawBody, signingSecret);
+    if (!safeEqual(signature, calculated)) return { ok: false, reason: 'invalid_signature' };
+    return { ok: true };
+}
+
+ensureUsersPhoneColumn();
 createScalevTable();
+createScalevWebhookEventsTable();
+createScalevLeadsTable();
 
 app.post('/api/webhooks/scalev', async (req, res) => {
     ensureEnv();
     try {
+        const verified = await verifyScalevWebhook(req);
+        if (!verified.ok) {
+            return res.status(401).json({ error: 'Unauthorized', reason: verified.reason });
+        }
+
         const payload = req.body;
-        console.log('Webhook received:', JSON.stringify(payload).substring(0, 200) + '...');
+        console.log('Scalev webhook received:', String(payload && payload.event || 'unknown'));
+
+        const p = await getPool();
+        const uniqueId = payload && payload.unique_id ? String(payload.unique_id) : '';
+        if (uniqueId) {
+            try {
+                await p.query(
+                    `INSERT INTO scalev_webhook_events (unique_id, event) VALUES (?, ?)`,
+                    [uniqueId, String(payload.event || 'unknown')]
+                );
+            } catch (e) {
+                if (String(e && e.code) === 'ER_DUP_ENTRY') {
+                    return res.status(200).json({ received: true, duplicate: true });
+                }
+                throw e;
+            }
+        }
         
         // 1. Handle Test Event
         if (payload.event === 'business.test_event') {
@@ -82,34 +295,237 @@ app.post('/api/webhooks/scalev', async (req, res) => {
         }
 
         // 2. Handle Order Created
-        if (payload.event === 'order.created') {
+        if (
+            payload.event === 'order.created' ||
+            payload.event === 'order.updated' ||
+            payload.event === 'order.epayment_created' ||
+            payload.event === 'order.spam_created'
+        ) {
             const data = payload.data;
-            const p = await getPool();
+            const mv = (data && data.message_variables) || payload.message_variables || {};
             
             // Extract relevant fields
             const orderId = data.order_id;
             const invoice = data.invoice_number || orderId; // Fallback
-            const customerName = data.destination_address?.name || 'Unknown';
-            const customerPhone = data.destination_address?.phone || '';
-            const customerEmail = data.destination_address?.email || '';
+            const customerName = data.destination_address?.name || mv.name || 'Unknown';
+            const customerPhone = data.destination_address?.phone || mv.phone || '';
+            const customerEmail = data.destination_address?.email || mv.email || '';
             const total = data.net_revenue || data.gross_revenue || 0;
             const status = data.status || 'pending';
             const items = JSON.stringify(data.orderlines || []);
             const paymentMethod = data.payment_method || '';
             const paymentStatus = data.payment_status || 'unpaid';
 
-            // Insert into scalev_orders
-            await p.query(`
-                INSERT INTO scalev_orders 
-                (scalev_order_id, invoice_number, customer_name, customer_phone, customer_email, 
-                 payment_method, payment_status, total_amount, items, status, raw_data)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `, [
-                orderId, invoice, customerName, customerPhone, customerEmail,
-                paymentMethod, paymentStatus, total, items, status, JSON.stringify(payload)
-            ]);
+            const rawData = JSON.stringify(payload);
+            const [upd] = await p.query(
+                `UPDATE scalev_orders
+                 SET invoice_number = ?,
+                     customer_name = ?,
+                     customer_phone = ?,
+                     customer_email = ?,
+                     payment_method = ?,
+                     payment_status = ?,
+                     total_amount = ?,
+                     items = ?,
+                     status = ?,
+                     raw_data = ?
+                 WHERE scalev_order_id = ?`,
+                [
+                    invoice, customerName, customerPhone, customerEmail,
+                    paymentMethod, paymentStatus, total, items, status, rawData,
+                    orderId
+                ]
+            );
+            if (!upd || !upd.affectedRows) {
+                await p.query(
+                    `INSERT INTO scalev_orders
+                     (scalev_order_id, invoice_number, customer_name, customer_phone, customer_email,
+                      payment_method, payment_status, total_amount, items, status, raw_data)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        orderId, invoice, customerName, customerPhone, customerEmail,
+                        paymentMethod, paymentStatus, total, items, status, rawData
+                    ]
+                );
+            }
+
+            const leadKey =
+                (data.customer_id ? `customer_${String(data.customer_id)}` : null) ||
+                (customerPhone ? `phone_${String(customerPhone)}` : null) ||
+                (customerEmail ? `email_${String(customerEmail)}` : null) ||
+                `order_${String(orderId)}`;
+            const leadStatus = status;
+            const leadSource =
+                (data.store && data.store.name ? String(data.store.name) : '') ||
+                (data.business && data.business.username ? String(data.business.username) : '') ||
+                '';
+            const leadNotes =
+                (data && data.notes ? String(data.notes) : '') ||
+                (data.destination_address && data.destination_address.notes ? String(data.destination_address.notes) : '') ||
+                (mv && mv.notes ? String(mv.notes) : '') ||
+                '';
+            const leadBusinessUsername = data.business && data.business.username ? String(data.business.username) : '';
+            const leadBusinessClientId = data.business && data.business.client_id ? String(data.business.client_id) : '';
+            const handlerEmail = mv && mv.handler ? String(mv.handler).trim().toLowerCase() : '';
+            const advertiser = mv && mv.advertiser ? String(mv.advertiser).trim() : '';
+            const orderLink = mv && mv.order_link ? String(mv.order_link).trim() : '';
+            const eventSourceUrl =
+                (mv && mv.event_source_url ? String(mv.event_source_url).trim() : '') ||
+                (data.metadata && data.metadata.event_source_url ? String(data.metadata.event_source_url).trim() : '') ||
+                '';
+            const [leadUpd] = await p.query(
+                `UPDATE scalev_leads
+                 SET name = ?,
+                     phone = ?,
+                     email = ?,
+                     status = ?,
+                     source = ?,
+                     campaign = ?,
+                     notes = ?,
+                     business_username = ?,
+                     business_client_id = ?,
+                     handler_email = ?,
+                     advertiser = ?,
+                     order_link = ?,
+                     event_source_url = ?,
+                     raw_data = ?
+                 WHERE scalev_lead_id = ?`,
+                [customerName, customerPhone, customerEmail, leadStatus, leadSource, '', leadNotes, leadBusinessUsername, leadBusinessClientId, handlerEmail, advertiser, orderLink, eventSourceUrl, rawData, leadKey]
+            );
+            if (!leadUpd || !leadUpd.affectedRows) {
+                await p.query(
+                    `INSERT INTO scalev_leads
+                     (scalev_lead_id, name, phone, email, status, source, campaign, notes, business_username, business_client_id, handler_email, advertiser, order_link, event_source_url, raw_data)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [leadKey, customerName, customerPhone, customerEmail, leadStatus, leadSource, '', leadNotes, leadBusinessUsername, leadBusinessClientId, handlerEmail, advertiser, orderLink, eventSourceUrl, rawData]
+                );
+            }
             
-            console.log(`Scalev Order Saved: ${orderId}`);
+            console.log(`Scalev Order Upserted: ${orderId}`);
+            return res.status(200).json({ success: true });
+        }
+
+        if (String(payload.event || '').startsWith('lead.')) {
+            const data = payload.data || {};
+            const leadKey = getScalevLeadKey(payload, req.rawBody);
+            const mv = (data && data.message_variables) || payload.message_variables || {};
+
+            const name =
+                data.name ||
+                data.full_name ||
+                data.fullName ||
+                data.customer_name ||
+                (data.contact ? data.contact.name : null) ||
+                (data.customer ? data.customer.name : null) ||
+                mv.name ||
+                '';
+            const phone =
+                data.phone ||
+                data.whatsapp ||
+                data.mobile ||
+                (data.contact ? (data.contact.phone || data.contact.whatsapp) : null) ||
+                (data.customer ? (data.customer.phone || data.customer.whatsapp) : null) ||
+                mv.phone ||
+                '';
+            const email =
+                data.email ||
+                (data.contact ? data.contact.email : null) ||
+                (data.customer ? data.customer.email : null) ||
+                mv.email ||
+                '';
+            const status = data.status || data.lead_status || data.stage || '';
+            const source = data.source || data.channel || data.platform || '';
+            const campaign = data.campaign || data.campaign_name || data.ad_name || data.form_name || '';
+            const notes =
+                data.notes ||
+                data.note ||
+                data.message ||
+                (data.destination_address ? data.destination_address.notes : null) ||
+                mv.notes ||
+                '';
+            const businessUsername =
+                (data.business && data.business.username ? String(data.business.username) : '') ||
+                (payload.data && payload.data.business && payload.data.business.username ? String(payload.data.business.username) : '') ||
+                '';
+            const businessClientId =
+                (data.business && data.business.client_id ? String(data.business.client_id) : '') ||
+                (payload.data && payload.data.business && payload.data.business.client_id ? String(payload.data.business.client_id) : '') ||
+                '';
+            const handlerEmail = mv && mv.handler ? String(mv.handler).trim().toLowerCase() : '';
+            const advertiser = mv && mv.advertiser ? String(mv.advertiser).trim() : '';
+            const orderLink = mv && mv.order_link ? String(mv.order_link).trim() : '';
+            const eventSourceUrl =
+                (mv && mv.event_source_url ? String(mv.event_source_url).trim() : '') ||
+                (data.metadata && data.metadata.event_source_url ? String(data.metadata.event_source_url).trim() : '') ||
+                '';
+
+            const rawData = JSON.stringify(payload);
+            const [upd] = await p.query(
+                `UPDATE scalev_leads
+                 SET name = ?,
+                     phone = ?,
+                     email = ?,
+                     status = ?,
+                     source = ?,
+                     campaign = ?,
+                     notes = ?,
+                     business_username = ?,
+                     business_client_id = ?,
+                     handler_email = ?,
+                     advertiser = ?,
+                     order_link = ?,
+                     event_source_url = ?,
+                     raw_data = ?
+                 WHERE scalev_lead_id = ?`,
+                [name, phone, email, status, source, campaign, String(notes || ''), businessUsername, businessClientId, handlerEmail, advertiser, orderLink, eventSourceUrl, rawData, leadKey]
+            );
+            if (!upd || !upd.affectedRows) {
+                await p.query(
+                    `INSERT INTO scalev_leads
+                     (scalev_lead_id, name, phone, email, status, source, campaign, notes, business_username, business_client_id, handler_email, advertiser, order_link, event_source_url, raw_data)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [leadKey, name, phone, email, status, source, campaign, String(notes || ''), businessUsername, businessClientId, handlerEmail, advertiser, orderLink, eventSourceUrl, rawData]
+                );
+            }
+            return res.status(200).json({ success: true });
+        }
+
+        if (payload.event === 'order.status_changed') {
+            const data = payload.data || {};
+            const orderId = data.order_id;
+            const status = data.status || '';
+            if (orderId) {
+                await p.query(
+                    `UPDATE scalev_orders SET status = ?, raw_data = ? WHERE scalev_order_id = ?`,
+                    [status, JSON.stringify(payload), orderId]
+                );
+            }
+            return res.status(200).json({ success: true });
+        }
+
+        if (payload.event === 'order.payment_status_changed') {
+            const data = payload.data || {};
+            const orderId = data.order_id;
+            const paymentStatus = data.payment_status || '';
+            const paymentMethod = data.payment_method || '';
+            if (orderId) {
+                await p.query(
+                    `UPDATE scalev_orders SET payment_status = ?, payment_method = ?, raw_data = ? WHERE scalev_order_id = ?`,
+                    [paymentStatus, paymentMethod, JSON.stringify(payload), orderId]
+                );
+            }
+            return res.status(200).json({ success: true });
+        }
+
+        if (payload.event === 'order.deleted') {
+            const data = payload.data || {};
+            const orderId = data.order_id;
+            if (orderId) {
+                await p.query(
+                    `UPDATE scalev_orders SET status = 'deleted', raw_data = ? WHERE scalev_order_id = ?`,
+                    [JSON.stringify(payload), orderId]
+                );
+            }
             return res.status(200).json({ success: true });
         }
 
@@ -127,7 +543,7 @@ app.get('/api/scalev/orders', async (req, res) => {
     try {
         const p = await getPool();
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
         const [rows] = await p.query(`
@@ -135,6 +551,58 @@ app.get('/api/scalev/orders', async (req, res) => {
             ORDER BY created_at DESC 
             LIMIT ? OFFSET ?
         `, [limit, offset]);
+
+        const [countResult] = await p.query('SELECT FOUND_ROWS() as total');
+        const total = countResult[0].total;
+
+        res.json({
+            data: rows,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: String(e && e.message || e) });
+    }
+});
+
+app.get('/api/scalev/leads', async (req, res) => {
+    ensureEnv();
+    try {
+        const p = await getPool();
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const role = String(req.query.role || '').toLowerCase();
+        const userId = parseInt(req.query.user_id || '0');
+
+        let whereSql = '';
+        let whereParams = [];
+
+        if (role === 'cs' && userId) {
+            const [urows] = await p.query(`SELECT email FROM users WHERE id = ? LIMIT 1`, [userId]);
+            const email = urows && urows[0] && urows[0].email ? String(urows[0].email).trim().toLowerCase() : '';
+            if (!email) {
+                return res.json({ data: [], meta: { page, limit, total: 0, totalPages: 0 } });
+            }
+            whereSql = `WHERE LOWER(handler_email) = ?`;
+            whereParams = [email];
+        }
+
+        const [rows] = await p.query(
+            `
+            SELECT SQL_CALC_FOUND_ROWS *
+            FROM scalev_leads
+            ${whereSql}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+            `,
+            [...whereParams, limit, offset]
+        );
 
         const [countResult] = await p.query('SELECT FOUND_ROWS() as total');
         const total = countResult[0].total;
@@ -164,14 +632,26 @@ app.post('/api/login', async (req, res) => {
         }
 
         const identifier = String(email || '').trim();
-        const [users] = await pool.query(
-            `SELECT *
-             FROM users
-             WHERE LOWER(email) = LOWER(?) OR LOWER(name) = LOWER(?)
-             ORDER BY id ASC
-             LIMIT 1`,
-            [identifier, identifier]
-        );
+        const identifierPhone = identifier.replace(/[^0-9]/g, '');
+        const phoneCandidates = [];
+        if (identifierPhone) {
+            phoneCandidates.push(identifierPhone);
+            if (identifierPhone.startsWith('0')) phoneCandidates.push('62' + identifierPhone.slice(1));
+        }
+
+        let sql = `
+            SELECT *
+            FROM users
+            WHERE LOWER(email) = LOWER(?) OR LOWER(name) = LOWER(?)
+        `;
+        const params = [identifier, identifier];
+        for (const p of phoneCandidates) {
+            sql += ` OR phone = ?`;
+            params.push(p);
+        }
+        sql += ` ORDER BY id ASC LIMIT 1`;
+
+        const [users] = await pool.query(sql, params);
         
         if (users.length === 0) {
             return res.status(401).json({ error: 'Invalid credentials' });

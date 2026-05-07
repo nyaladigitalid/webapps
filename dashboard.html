@@ -532,6 +532,30 @@
                             </table>
                         </div>
                     </section>
+
+                    <section class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                            <h4 class="text-lg font-bold text-white">Leads Saya (Scalev)</h4>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5">
+                                    <tr>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">WhatsApp</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Advertiser</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cs-leads-body" class="divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Memuat leads...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
 
                 <!-- CRM Dashboard -->
@@ -1088,7 +1112,7 @@
                 document.getElementById('cs-expiry-count').textContent = stats.expiryCount || 0;
                 
                 // My Clients
-                const clientsRes = await fetch(`/api/clients?assigned_to=${userId}&role=CS&limit=5`);
+                const clientsRes = await fetch(`/api/clients?assigned_to=${userId}&role=CS&limit=10`);
                 const clientsData = await clientsRes.json();
                 const clients = clientsData.data || [];
                 const ctbody = document.getElementById('cs-clients-body');
@@ -1109,6 +1133,38 @@
                         `;
                     });
                     ctbody.innerHTML = html2;
+                }
+
+                const leadsTbody = document.getElementById('cs-leads-body');
+                if (leadsTbody) {
+                    const leadsRes = await fetch(`/api/scalev/leads?role=CS&user_id=${encodeURIComponent(userId || '')}&limit=10&page=1`);
+                    const leadsJson = await leadsRes.json();
+                    const leads = leadsJson.data || [];
+                    if (!Array.isArray(leads) || leads.length === 0) {
+                        leadsTbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Belum ada leads</td></tr>';
+                    } else {
+                        leadsTbody.innerHTML = leads.map(l => {
+                            const name = l.name || '-';
+                            const phone = l.phone || '-';
+                            const status = l.status || '-';
+                            const adv = l.advertiser || '-';
+                            const orderLink = l.order_link || '';
+                            const src = l.event_source_url || '';
+                            const actionLink = orderLink || src;
+                            const actionHtml = actionLink
+                                ? `<a href="${actionLink}" target="_blank" rel="noopener" class="text-xs bg-white/10 hover:bg-white/15 text-white px-3 py-1.5 rounded transition-colors">Buka</a>`
+                                : `<span class="text-xs text-slate-500">-</span>`;
+                            return `
+                                <tr class="hover:bg-white/5 transition-colors">
+                                    <td class="px-6 py-4 text-sm font-medium text-white">${name}</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">${phone}</td>
+                                    <td class="px-6 py-4 text-xs font-bold text-slate-300 uppercase">${status}</td>
+                                    <td class="px-6 py-4 text-sm text-slate-300">${adv}</td>
+                                    <td class="px-6 py-4 text-right">${actionHtml}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
                 }
             } catch (e) {
                 console.error('Error loading CS data', e);
@@ -1252,7 +1308,7 @@
                 if (arEl) arEl.textContent = String(dashReady);
                 
                 // Active Campaigns List (using orders for now, ideally campaigns table)
-                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Advertiser&limit=5`);
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Advertiser&limit=10`);
                 const tasksData = await tasksRes.json();
                 const tasks = tasksData.data;
 
