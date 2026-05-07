@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html class="dark" lang="id">
+<html class="theme-openai" lang="id">
 <head>
-    <script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Nyala Digital Apps - Super Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="js/include.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -373,7 +373,7 @@
                         </div>
                     </section>
 
-                    <section class="mt-4">
+                    <section id="dashboard-recent-orders" class="mt-4">
                         <div class="glass-panel rounded-2xl overflow-hidden">
                             <div class="p-6 border-b border-white/5 flex justify-between items-center">
                                 <h4 class="text-lg font-bold text-white">Pesanan Terbaru</h4>
@@ -508,31 +508,6 @@
                         </div>
                     </section>
 
-                    <!-- Recent Orders Table -->
-                    <section class="glass-panel rounded-2xl overflow-hidden">
-                        <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                            <h4 class="text-lg font-bold text-white">Pesanan Terakhir Saya</h4>
-                            <a href="orders.html" class="text-xs font-semibold text-primary hover:underline">Lihat Semua</a>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead class="bg-white/5">
-                                    <tr>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Project</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Klien</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Tanggal</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cs-recent-orders-body" class="divide-y divide-white/5">
-                                    <tr>
-                                        <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                    
                     <!-- My Clients Table -->
                     <section class="glass-panel rounded-2xl overflow-hidden">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center">
@@ -972,7 +947,6 @@
         </div>
         <div id="include-footer"></div>
     </div>
-    <script src="js/include.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const role = localStorage.getItem('role') || 'super_admin';
@@ -987,6 +961,8 @@
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
+                const recentOrders = document.getElementById('dashboard-recent-orders');
+                if (recentOrders) recentOrders.style.display = 'none';
                 const fin = document.getElementById('financial-overview');
                 if (fin) fin.style.display = 'none';
                 const btnNewTop = document.getElementById('btn-cs-new-order-top');
@@ -1110,36 +1086,6 @@
                 document.getElementById('cs-active-orders-count').textContent = stats.activeOrders || 0;
                 document.getElementById('cs-commission-total').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.commission || 0);
                 document.getElementById('cs-expiry-count').textContent = stats.expiryCount || 0;
-
-                // Recent Orders (My Orders)
-                const ordersRes = await fetch(`/api/orders?assigned_to=${userId}&role=CS&limit=5`);
-                const ordersData = await ordersRes.json();
-                const orders = ordersData.data;
-
-                const tbody = document.getElementById('cs-recent-orders-body');
-                if (orders.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan aktif</td></tr>';
-                } else {
-                    let html = '';
-                    orders.forEach(o => {
-                        let statusColor = 'text-slate-400';
-                        if(o.status === 'active') statusColor = 'text-emerald-500';
-                        else if(o.status === 'pending') statusColor = 'text-amber-500';
-
-                        html += `
-                            <tr class="hover:bg-white/5 transition-colors">
-                                <td class="px-6 py-4 text-sm font-medium text-white">${o.package_name || '-'}</td>
-                                <td class="px-6 py-4 text-sm text-slate-300">
-                                    <div>${o.client_name || '-'}</div>
-                                    <div class="text-[10px] text-slate-500">${o.business_name || ''}</div>
-                                </td>
-                                <td class="px-6 py-4 text-xs font-bold ${statusColor} uppercase">${o.status}</td>
-                                <td class="px-6 py-4 text-sm text-right text-slate-400">${new Date(o.created_at).toLocaleDateString('id-ID')}</td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
-                }
                 
                 // My Clients
                 const clientsRes = await fetch(`/api/clients?assigned_to=${userId}&role=CS&limit=5`);

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 
-<html class="dark" lang="id"><head>
-<script>(function(){try{var t=localStorage.getItem("theme");if(t==="light"){document.documentElement.classList.remove("dark");}else{document.documentElement.classList.add("dark");}}catch(e){document.documentElement.classList.add("dark");}})();</script>
+<html class="theme-openai" lang="id"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Nyala Digital Apps - Pesanan</title>
@@ -9,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="js/include.js"></script>
 <script id="tailwind-config">
 tailwind.config = {
     darkMode: "class",
@@ -445,7 +445,6 @@ body {
 <div id="include-footer"></div>
 </main>
 </div>
-<script src="js/include.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   var cleanupModalHandlers = null;
@@ -621,13 +620,20 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch from MySQL API
   var allOrders = [];
   var currentPage = 1;
-  var itemsPerPage = 10;
+  var itemsPerPage = 5;
   var currentStatus = 'all';
   var currentMonth = 'all';
   var currentYear = 'all';
   var currentSearch = '';
   var currentDateStart = '';
   var currentDateEnd = '';
+
+  function hidePagination() {
+      var controlsEl = document.getElementById('pagination-controls');
+      if (controlsEl && controlsEl.parentElement) {
+          controlsEl.parentElement.style.display = 'none';
+      }
+  }
 
   function applyFilters() {
     var filtered = allOrders.filter(function(r) {
@@ -692,18 +698,11 @@ document.addEventListener("DOMContentLoaded", function () {
         return dateB - dateA || b.id - a.id;
     });
 
-    var totalItems = filtered.length;
-    var totalPages = Math.ceil(totalItems / itemsPerPage);
-    
-    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-    
-    var start = (currentPage - 1) * itemsPerPage;
-    var end = start + itemsPerPage;
-    var paginatedItems = filtered.slice(start, end);
+    currentPage = 1;
+    var paginatedItems = filtered.slice(0, itemsPerPage);
 
     renderOrders(paginatedItems);
-    renderPagination(totalItems, Math.min(start + 1, totalItems), Math.min(end, totalItems), totalPages);
+    hidePagination();
   }
 
   function renderPagination(totalItems, start, end, totalPages) {

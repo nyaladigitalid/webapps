@@ -1,3 +1,61 @@
+(function () {
+  const root = document.documentElement;
+  root.classList.add("theme-openai");
+  root.classList.remove("dark");
+  if (document.getElementById("openai-preload-style")) return;
+  const style = document.createElement("style");
+  style.id = "openai-preload-style";
+  style.textContent = `
+    html.theme-openai{
+      color-scheme: light;
+      --oa-bg: #ffffff;
+      --oa-surface: #f7f7f5;
+      --oa-panel: #ffffff;
+      --oa-border: rgba(17, 24, 39, 0.10);
+      --oa-text: #111827;
+      --oa-muted: #6b7280;
+      --oa-accent: #111827;
+      --oa-accent-contrast: #ffffff;
+      --oa-header-h: 64px;
+      --oa-sidebar-w: 252px;
+      --oa-gutter-l: 16px;
+      --oa-gutter-r: 28px;
+    }
+    html.theme-openai body{background:var(--oa-bg) !important;color:var(--oa-text) !important}
+    html.theme-openai header,
+    html.theme-openai header.glass-panel{background:var(--oa-surface) !important;border-bottom:1px solid var(--oa-border) !important}
+    html.theme-openai .layout-sidebar{background:var(--oa-surface) !important;border-right:1px solid var(--oa-border) !important}
+    html.theme-openai main{padding-right:var(--oa-gutter-r) !important;scrollbar-gutter:stable !important}
+    html.theme-openai #new-order-modal{z-index:100 !important}
+    html.theme-openai #smartorder-root{z-index:100 !important}
+    html.theme-openai .glass-panel,
+    html.theme-openai .metric-card{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
+    html.theme-openai .text-primary{color:var(--oa-accent) !important}
+    html.theme-openai .bg-primary{background-color:var(--oa-accent) !important}
+    html.theme-openai button.bg-primary,
+    html.theme-openai a.bg-primary{color:var(--oa-accent-contrast) !important}
+    html.theme-openai button.bg-gradient-to-br,
+    html.theme-openai a.bg-gradient-to-br,
+    html.theme-openai button.bg-gradient-to-r,
+    html.theme-openai a.bg-gradient-to-r{color:var(--oa-accent-contrast) !important}
+    html.theme-openai .bg-primary\\/10{background-color:rgba(17, 24, 39, 0.06) !important}
+    html.theme-openai .bg-primary\\/15{background-color:rgba(17, 24, 39, 0.10) !important}
+    html.theme-openai .bg-primary\\/20{background-color:rgba(17, 24, 39, 0.14) !important}
+    html.theme-openai .hover\\:bg-primary\\/90:hover{background-color:rgba(17, 24, 39, 0.92) !important}
+    html.theme-openai .from-primary{--tw-gradient-from: var(--oa-accent) !important}
+    html.theme-openai .to-orange-600{--tw-gradient-to: var(--oa-accent) !important}
+    html.theme-openai .to-orange-400{--tw-gradient-to: var(--oa-accent) !important}
+    html.theme-openai .bg-gradient-to-br.from-primary,
+    html.theme-openai .bg-gradient-to-r.from-primary{background-image:linear-gradient(135deg, var(--oa-accent), var(--oa-accent)) !important}
+    html.theme-openai .pill{background:rgba(15, 23, 42, 0.04) !important;border:1px solid var(--oa-border) !important;color:var(--oa-text) !important}
+    html.theme-openai body[data-active="overview"] .glass-panel{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
+    html.theme-openai body[data-active="overview"] .metric-card{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
+    html.theme-openai body[data-active="overview"] a#btn-cs-new-order-top,
+    html.theme-openai body[data-active="overview"] a#btn-cs-new-order-top *{color:var(--oa-accent-contrast) !important}
+  `;
+  document.head.appendChild(style);
+})();
+
 // Authentication Check
 (function() {
     const isLoginPage = window.location.pathname.endsWith('login.html');
@@ -72,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       const saved = localStorage.getItem("theme");
       if (saved === "light" || saved === "dark") return saved;
     } catch (_) {}
-    return "dark";
+    return "light";
   }
 
   function setTheme(theme) {
@@ -86,6 +144,21 @@ document.addEventListener("DOMContentLoaded", async function () {
     } else {
       root.classList.add("dark");
     }
+  }
+
+  function getUiTheme() {
+    return "openai";
+  }
+
+  function setUiTheme(uiTheme) {
+    try { localStorage.setItem("ui_theme", uiTheme); } catch (_) {}
+  }
+
+  function applyUiTheme(uiTheme) {
+    const root = document.documentElement;
+    root.classList.add("theme-openai");
+    setTheme("light");
+    applyTheme("light");
   }
 
   function getRole() {
@@ -181,19 +254,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         }
 
-        // Add Logout Button if not exists
-        if (!document.getElementById('logout-btn')) {
-            const logoutBtn = document.createElement("button");
-            logoutBtn.id = "logout-btn";
-            logoutBtn.className = "ml-2 h-8 w-8 flex items-center justify-center rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors";
-            logoutBtn.title = "Keluar";
-            logoutBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">logout</span>';
-            logoutBtn.onclick = function() {
-                localStorage.clear();
-                window.location.href = 'login.html';
-            };
-            profileContainer.appendChild(logoutBtn);
-        }
     }
   }
 
@@ -204,7 +264,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
 
-  function injectThemeSelector(theme) {
+  function injectModeSelector(theme) {
     const rightCluster = Array.from(document.querySelectorAll("header .flex.items-center.gap-3")).pop();
     if (!rightCluster) return;
     const wrap = document.createElement("div");
@@ -224,6 +284,33 @@ document.addEventListener("DOMContentLoaded", async function () {
       const t = sel.value === "light" ? "light" : "dark";
       setTheme(t);
       applyTheme(t);
+    });
+    wrap.appendChild(sel);
+    rightCluster.insertBefore(wrap, rightCluster.firstChild);
+  }
+
+  function injectUiThemeSelector(uiTheme) {
+    const rightCluster = Array.from(document.querySelectorAll("header .flex.items-center.gap-3")).pop();
+    if (!rightCluster) return;
+    const wrap = document.createElement("div");
+    wrap.className = "hidden md:flex items-center gap-2";
+    const sel = document.createElement("select");
+    sel.id = "ui-theme-select";
+    sel.className = "text-[11px] bg-white/5 border border-white/10 text-secondary/80 rounded-lg pl-2 pr-6 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/50";
+    const opts = [["default", "Default"], ["openai", "OpenAI"]];
+    opts.forEach(([val, label]) => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = label;
+      if (val === uiTheme) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener("change", () => {
+      const next = sel.value === "openai" ? "openai" : "default";
+      setUiTheme(next);
+      applyUiTheme(next);
+      const modeWrap = document.getElementById("theme-select") ? document.getElementById("theme-select").closest("div") : null;
+      if (modeWrap) modeWrap.style.display = next === "openai" ? "none" : "";
     });
     wrap.appendChild(sel);
     rightCluster.insertBefore(wrap, rightCluster.firstChild);
@@ -321,6 +408,189 @@ document.addEventListener("DOMContentLoaded", async function () {
     document.head.appendChild(style);
   }
 
+  function ensureOpenAIThemeCSS() {
+    if (document.getElementById("openai-theme-style")) return;
+    const style = document.createElement("style");
+    style.id = "openai-theme-style";
+    style.textContent = `
+      html.theme-openai{
+        color-scheme: light;
+        --oa-bg: #ffffff;
+        --oa-surface: #f7f7f5;
+        --oa-panel: #ffffff;
+        --oa-border: rgba(17, 24, 39, 0.10);
+        --oa-border-strong: rgba(17, 24, 39, 0.16);
+        --oa-text: #111827;
+        --oa-muted: #6b7280;
+        --oa-muted-2: #9ca3af;
+        --oa-accent: #111827;
+        --oa-accent-2: #111827;
+        --oa-accent-contrast: #ffffff;
+        --oa-header-h: 64px;
+        --oa-sidebar-w: 252px;
+        --oa-gutter-l: 16px;
+        --oa-gutter-r: 28px;
+      }
+      html.theme-openai body{background:var(--oa-bg) !important;color:var(--oa-text) !important}
+      html.theme-openai body{overflow:hidden !important}
+      html.theme-openai body > .relative.z-10.min-h-screen{height:100vh !important;min-height:100vh !important}
+      html.theme-openai .glass-surface{background:none !important}
+      html.theme-openai .dark\\:block{display:none !important}
+      html.theme-openai .glass-panel{
+        background:var(--oa-panel) !important;
+        border:1px solid var(--oa-border) !important;
+        backdrop-filter:none !important;
+        -webkit-backdrop-filter:none !important;
+        box-shadow:none !important;
+      }
+      html.theme-openai .metric-card{
+        background:var(--oa-panel) !important;
+        border:1px solid var(--oa-border) !important;
+        box-shadow:none !important;
+      }
+      html.theme-openai header{
+        background:var(--oa-surface) !important;
+        border-bottom:1px solid var(--oa-border) !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 60 !important;
+      }
+      html.theme-openai #new-order-modal{z-index:100 !important}
+      html.theme-openai #smartorder-root{z-index:100 !important}
+      html.theme-openai header.glass-panel{
+        background:var(--oa-surface) !important;
+      }
+      html.theme-openai #top-nav{
+        display:none !important;
+      }
+      html.theme-openai body .header-brand{color:#0f172a !important;letter-spacing:0.22em !important}
+      html.theme-openai .header-subtitle,
+      html.theme-openai .header-status,
+      html.theme-openai .text-secondary\\/80,
+      html.theme-openai .text-secondary\\/70,
+      html.theme-openai .text-secondary\\/60{color:var(--oa-muted) !important}
+      html.theme-openai .text-white,
+      html.theme-openai .text-white\\/90{color:var(--oa-text) !important}
+      html.theme-openai .text-primary{color:var(--oa-accent) !important}
+      html.theme-openai .bg-primary{background-color:var(--oa-accent) !important}
+      html.theme-openai button.bg-primary,
+      html.theme-openai a.bg-primary{color:var(--oa-accent-contrast) !important}
+      html.theme-openai button.bg-gradient-to-br,
+      html.theme-openai a.bg-gradient-to-br,
+      html.theme-openai button.bg-gradient-to-r,
+      html.theme-openai a.bg-gradient-to-r{color:var(--oa-accent-contrast) !important}
+      html.theme-openai .bg-primary\\/10{background-color:rgba(17, 24, 39, 0.06) !important}
+      html.theme-openai .bg-primary\\/15{background-color:rgba(17, 24, 39, 0.10) !important}
+      html.theme-openai .bg-primary\\/20{background-color:rgba(17, 24, 39, 0.14) !important}
+      html.theme-openai .hover\\:bg-primary\\/90:hover{background-color:rgba(17, 24, 39, 0.92) !important}
+      html.theme-openai .pill{
+        background:rgba(15, 23, 42, 0.04) !important;
+        border:1px solid var(--oa-border) !important;
+        color:var(--oa-text) !important;
+      }
+      html.theme-openai .header-profile-icon{
+        background:rgba(15, 23, 42, 0.06) !important;
+        color:var(--oa-text) !important;
+        box-shadow:none !important;
+      }
+      html.theme-openai .bg-white\\/5{background-color:rgba(15, 23, 42, 0.04) !important;border-color:var(--oa-border) !important}
+      html.theme-openai .hover\\:bg-white\\/10:hover{background-color:rgba(15, 23, 42, 0.06) !important}
+      html.theme-openai .border-white\\/10{border-color:var(--oa-border) !important}
+      html.theme-openai .border-white\\/5{border-color:rgba(15, 23, 42, 0.06) !important}
+      html.theme-openai .from-primary{--tw-gradient-from: var(--oa-accent) !important}
+      html.theme-openai .to-orange-600{--tw-gradient-to: var(--oa-accent-2) !important}
+      html.theme-openai .to-orange-400{--tw-gradient-to: var(--oa-accent-2) !important}
+      html.theme-openai .bg-gradient-to-br.from-primary,
+      html.theme-openai .bg-gradient-to-r.from-primary{background-image:linear-gradient(135deg, var(--oa-accent), var(--oa-accent)) !important}
+
+      html.theme-openai #include-sidebar{width:0 !important;flex:0 0 0 !important}
+      html.theme-openai .layout-sidebar{
+        position: fixed !important;
+        left: 0 !important;
+        top: var(--oa-header-h) !important;
+        bottom: 0 !important;
+        width: var(--oa-sidebar-w) !important;
+        border-radius: 0 !important;
+        padding: 12px !important;
+        background: var(--oa-surface) !important;
+        border: none !important;
+        border-right: 1px solid var(--oa-border) !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+      }
+      html.theme-openai .layout-sidebar nav{margin-top:8px !important}
+      html.theme-openai .layout-sidebar.w-56{width:var(--oa-sidebar-w) !important}
+      html.theme-openai .layout-sidebar .bg-white{background:transparent !important;border-color:var(--oa-border) !important}
+      html.theme-openai .layout-sidebar .dark\\:bg-white\\/5{background:transparent !important}
+
+      html.theme-openai body > .relative.z-10 > .flex-1.max-w-7xl.mx-auto.w-full{
+        max-width: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: calc(var(--oa-sidebar-w) + var(--oa-gutter-l)) !important;
+        padding-right: var(--oa-gutter-r) !important;
+      }
+      html.theme-openai #include-header > header .max-w-7xl.mx-auto{
+        max-width: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      html.theme-openai #include-header > header .max-w-7xl.mx-auto.px-6{
+        padding-left: var(--oa-gutter-l) !important;
+        padding-right: var(--oa-gutter-r) !important;
+      }
+      html.theme-openai #sidebar-toggle{display:none !important}
+
+      html.theme-openai .layout-sidebar nav a{
+        color:var(--oa-muted) !important;
+      }
+      html.theme-openai .layout-sidebar nav a:hover{
+        color:var(--oa-text) !important;
+        background:rgba(17, 24, 39, 0.05) !important;
+      }
+      html.theme-openai .layout-sidebar nav a.is-active{
+        color:var(--oa-text) !important;
+        background:rgba(17, 24, 39, 0.06) !important;
+        border:1px solid rgba(17, 24, 39, 0.14) !important;
+      }
+      html.theme-openai .layout-sidebar .sidebar-logout{
+        color:#b91c1c !important;
+        background:transparent !important;
+        border:1px solid rgba(185, 28, 28, 0.18) !important;
+      }
+      html.theme-openai .layout-sidebar .sidebar-logout:hover{
+        background:rgba(185, 28, 28, 0.06) !important;
+      }
+
+      html.theme-openai main{gap:12px !important}
+      html.theme-openai main{
+        overflow:auto !important;
+        max-height: calc(100vh - var(--oa-header-h)) !important;
+        padding-bottom: 16px !important;
+        padding-right: var(--oa-gutter-r) !important;
+        scrollbar-gutter: stable !important;
+      }
+      html.theme-openai .grid{gap:10px !important}
+      html.theme-openai .metric-card{padding:12px 14px !important}
+      html.theme-openai .max-w-7xl.mx-auto.w-full.px-6.py-6{padding-top:16px !important;padding-bottom:16px !important}
+      html.theme-openai table{border-collapse:separate !important;border-spacing:0 !important}
+      html.theme-openai table thead{background:rgba(17, 24, 39, 0.03) !important}
+      html.theme-openai table th,
+      html.theme-openai table td{padding:8px 12px !important}
+      html.theme-openai table tbody tr:hover td{background:rgba(17, 24, 39, 0.03) !important}
+      html.theme-openai table tbody .text-secondary\\/70{color:var(--oa-muted) !important}
+      html.theme-openai ::-webkit-scrollbar-thumb{background:rgba(17,24,39,0.20) !important}
+      html.theme-openai body[data-active="overview"].bg-background-light{background-color:var(--oa-bg) !important}
+      html.theme-openai body[data-active="overview"] .glass-panel{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
+      html.theme-openai body[data-active="overview"] .metric-card{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
+      html.theme-openai body[data-active="overview"] header.glass-panel{background:var(--oa-surface) !important;border-bottom:1px solid var(--oa-border) !important}
+      html.theme-openai body[data-active="overview"] .layout-sidebar{background:var(--oa-surface) !important;border-right:1px solid var(--oa-border) !important}
+      html.theme-openai body[data-active="overview"] a#btn-cs-new-order-top,
+      html.theme-openai body[data-active="overview"] a#btn-cs-new-order-top *{color:var(--oa-accent-contrast) !important}
+    `;
+    document.head.appendChild(style);
+  }
+
   function setActiveSidebar() {
     const active = document.body.dataset.active;
     const navLinks = document.querySelectorAll(".layout-sidebar nav a");
@@ -345,6 +615,16 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.body.classList.toggle("sidebar-hidden");
       });
     }
+  }
+
+  function initLogout() {
+    const sidebarLogout = document.getElementById("sidebar-logout");
+    if (!sidebarLogout) return;
+    sidebarLogout.addEventListener("click", function (e) {
+      e.preventDefault();
+      try { localStorage.clear(); } catch (_) {}
+      window.location.href = "login.html";
+    });
   }
 
   function applyPagePermissions(role) {
@@ -374,19 +654,19 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const role = getRole();
   setRole(role);
+  const uiTheme = getUiTheme();
+  applyUiTheme(uiTheme);
   const theme = getTheme();
-  applyTheme(theme);
   // injectRoleSelector(role); // Removed in favor of real profile
   updateProfileInfo();
-  injectThemeSelector(theme);
   applySidebarByRole(role);
   checkPageAccess(role);
   ensureSidebarHideCSS();
-  ensureSurfaceThemeCSS();
+  ensureOpenAIThemeCSS();
   setActiveSidebar();
   injectTopNav();
   initToggle();
+  initLogout();
   applyPagePermissions(role);
-  // Default hide sidebar
-  document.body.classList.add("sidebar-hidden");
+  document.body.classList.remove("sidebar-hidden");
 }); 
