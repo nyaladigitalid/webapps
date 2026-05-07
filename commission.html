@@ -124,9 +124,21 @@ body {
 </tbody>
 </table>
 </div>
+<div class="px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10">
+    <p id="commission-pagination-info" class="text-[11px] text-slate-500 dark:text-secondary/80">Menampilkan <span class="text-slate-900 dark:text-white font-medium">0 - 0</span> dari <span class="text-slate-900 dark:text-white font-medium">0</span> aturan</p>
+    <div class="flex items-center gap-2">
+        <button id="commission-prev" class="size-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-secondary/80 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors" disabled>
+            <span class="material-symbols-outlined text-lg">chevron_left</span>
+        </button>
+        <button id="commission-next" class="size-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-secondary/80 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors" disabled>
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+        </button>
+    </div>
+</div>
 </div>
 </div>
 <div id="include-footer"></div>
+</main>
 </main>
 </div>
 
@@ -191,8 +203,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById('commission-form');
     const btnAdd = document.getElementById('btn-add-commission');
     const searchInput = document.getElementById('search-input');
+    const paginationInfo = document.getElementById('commission-pagination-info');
+    const btnPrev = document.getElementById('commission-prev');
+    const btnNext = document.getElementById('commission-next');
     let allCommissions = [];
     let allPackages = [];
+    let filteredCommissions = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     window.closeModal = function() {
         modal.classList.add('hidden');
@@ -248,12 +266,30 @@ document.addEventListener("DOMContentLoaded", function () {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
 
+    function updatePaginationUI(totalItems, start, end, totalPages) {
+        if (paginationInfo) {
+            paginationInfo.innerHTML = `Menampilkan <span class="text-slate-900 dark:text-white font-medium">${totalItems > 0 ? start : 0} - ${end}</span> dari <span class="text-slate-900 dark:text-white font-medium">${totalItems}</span> aturan`;
+        }
+        if (btnPrev) btnPrev.disabled = currentPage <= 1;
+        if (btnNext) btnNext.disabled = currentPage >= totalPages;
+    }
+
     function renderCommissions(commissions) {
         const tbody = document.getElementById('commissions-tbody');
         tbody.innerHTML = '';
         
-        if (commissions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">Belum ada aturan komisi.</td></tr>';
+        const totalItems = commissions.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
+        const pageItems = commissions.slice(startIdx, endIdx);
+
+        if (pageItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">Belum ada aturan komisi.</td></tr>';
+            updatePaginationUI(0, 0, 0, 1);
             return;
         }
 
@@ -269,7 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return m[(t || '').toLowerCase()] || t || 'Umum';
         };
 
-        commissions.forEach((c, index) => {
+        pageItems.forEach((c, index) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5 last:border-0";
             
@@ -280,7 +316,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 : '<span class="text-slate-400 text-xs italic">Umum</span>';
 
             tr.innerHTML = `
-                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${index + 1}</td>
+                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${startIdx + index + 1}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 capitalize">${c.package_category || '-'}</td>
                 <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">${c.package_name}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
@@ -297,6 +333,8 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
             tbody.appendChild(tr);
         });
+
+        updatePaginationUI(totalItems, totalItems > 0 ? (startIdx + 1) : 0, endIdx, totalPages);
 
         // Attach event listeners
         document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -328,7 +366,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const res = await fetch('/api/commissions');
             const data = await res.json();
             allCommissions = data;
-            renderCommissions(allCommissions);
+            filteredCommissions = allCommissions;
+            currentPage = 1;
+            renderCommissions(filteredCommissions);
         } catch (e) {
             console.error('Failed to fetch commissions', e);
         }
@@ -371,13 +411,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     searchInput.addEventListener('input', function(e) {
         const val = e.target.value.toLowerCase();
-        const filtered = allCommissions.filter(c => 
+        filteredCommissions = allCommissions.filter(c => 
             (c.package_name && c.package_name.toLowerCase().includes(val)) || 
             (c.role && c.role.toLowerCase().includes(val)) ||
             (c.package_category && c.package_category.toLowerCase().includes(val))
         );
-        renderCommissions(filtered);
+        currentPage = 1;
+        renderCommissions(filteredCommissions);
     });
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderCommissions(filteredCommissions);
+            }
+        });
+    }
+    if (btnNext) {
+        btnNext.addEventListener('click', function() {
+            const totalPages = Math.ceil((filteredCommissions || []).length / itemsPerPage) || 1;
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderCommissions(filteredCommissions);
+            }
+        });
+    }
 
     loadPackages();
     fetchCommissions();

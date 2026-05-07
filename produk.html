@@ -106,9 +106,21 @@ body {
 </tbody>
 </table>
 </div>
+<div class="px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10">
+    <p id="products-pagination-info" class="text-[11px] text-slate-500 dark:text-secondary/80">Menampilkan <span class="text-slate-900 dark:text-white font-medium">0 - 0</span> dari <span class="text-slate-900 dark:text-white font-medium">0</span> paket</p>
+    <div class="flex items-center gap-2">
+        <button id="products-prev" class="size-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-secondary/80 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors" disabled>
+            <span class="material-symbols-outlined text-lg">chevron_left</span>
+        </button>
+        <button id="products-next" class="size-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-secondary/80 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors" disabled>
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+        </button>
+    </div>
+</div>
 </div>
 </div>
 <div id="include-footer"></div>
+</main>
 </main>
 </div>
 
@@ -176,7 +188,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById('product-form');
     const btnAdd = document.getElementById('btn-add-product');
     const searchInput = document.getElementById('search-input');
+    const paginationInfo = document.getElementById('products-pagination-info');
+    const btnPrev = document.getElementById('products-prev');
+    const btnNext = document.getElementById('products-next');
     let allProducts = [];
+    let filteredProducts = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     window.closeModal = function() {
         modal.classList.add('hidden');
@@ -209,11 +227,34 @@ document.addEventListener("DOMContentLoaded", function () {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
 
+    function updatePaginationUI(totalItems, start, end, totalPages) {
+        if (paginationInfo) {
+            paginationInfo.innerHTML = `Menampilkan <span class="text-slate-900 dark:text-white font-medium">${totalItems > 0 ? start : 0} - ${end}</span> dari <span class="text-slate-900 dark:text-white font-medium">${totalItems}</span> paket`;
+        }
+        if (btnPrev) btnPrev.disabled = currentPage <= 1;
+        if (btnNext) btnNext.disabled = currentPage >= totalPages;
+    }
+
     function renderProducts(products) {
         const tbody = document.getElementById('products-tbody');
         tbody.innerHTML = '';
         
-        products.forEach((p, index) => {
+        const totalItems = products.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
+        const pageItems = products.slice(startIdx, endIdx);
+
+        if (pageItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500 italic">Tidak ada data paket.</td></tr>';
+            updatePaginationUI(0, 0, 0, 1);
+            return;
+        }
+
+        pageItems.forEach((p, index) => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-100 dark:border-white/5 last:border-0";
             
@@ -222,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 : '<span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400">Non-Aktif</span>';
 
             tr.innerHTML = `
-                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${index + 1}</td>
+                <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${startIdx + index + 1}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 capitalize">${p.category || '-'}</td>
                 <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">${p.code}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${p.name}</td>
@@ -236,6 +277,8 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
             tbody.appendChild(tr);
         });
+
+        updatePaginationUI(totalItems, totalItems > 0 ? (startIdx + 1) : 0, endIdx, totalPages);
 
         // Attach event listeners
         document.querySelectorAll('.btn-edit').forEach(btn => {
@@ -267,7 +310,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const res = await fetch('/api/packages');
             const data = await res.json();
             allProducts = data;
-            renderProducts(allProducts);
+            filteredProducts = allProducts;
+            currentPage = 1;
+            renderProducts(filteredProducts);
         } catch (e) {
             console.error('Failed to fetch products', e);
         }
@@ -309,12 +354,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
     searchInput.addEventListener('input', function(e) {
         const val = e.target.value.toLowerCase();
-        const filtered = allProducts.filter(p => 
-            p.code.toLowerCase().includes(val) || 
-            p.name.toLowerCase().includes(val)
+        filteredProducts = allProducts.filter(p => 
+            String(p.code || '').toLowerCase().includes(val) || 
+            String(p.name || '').toLowerCase().includes(val)
         );
-        renderProducts(filtered);
+        currentPage = 1;
+        renderProducts(filteredProducts);
     });
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderProducts(filteredProducts);
+            }
+        });
+    }
+    if (btnNext) {
+        btnNext.addEventListener('click', function() {
+            const totalPages = Math.ceil((filteredProducts || []).length / itemsPerPage) || 1;
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderProducts(filteredProducts);
+            }
+        });
+    }
 
     fetchProducts();
 });
