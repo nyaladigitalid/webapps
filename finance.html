@@ -34,15 +34,30 @@ body { font-family: 'Inter', sans-serif; }
               radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
 }
 .glass-panel {
-  background: rgba(6, 12, 31, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(15,23,42,0.1);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
 }
+.metric-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+  border: 1px solid rgba(15,23,42,0.08);
+}
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+  border: 1px solid rgba(15,23,42,0.08);
+}
+.dark .glass-panel {
+  background: rgba(6, 12, 31, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+.dark .metric-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.dark .glass-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(255,255,255,0.1);
 }
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .finance-table thead th {
@@ -84,39 +99,39 @@ body { font-family: 'Inter', sans-serif; }
       <div class="space-y-8">
 <!-- KPI Section -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-<div class="glass-card p-6 rounded-xl flex flex-col gap-2">
+<div class="metric-card p-6 rounded-xl flex flex-col gap-2">
 <div class="flex justify-between items-start">
 <span class="text-slate-400 text-sm font-medium">Pemasukan</span>
 <div class="p-2 rounded-lg">
 <span class="material-symbols-outlined text-[#ef7225]">trending_up</span>
 </div>
 </div>
-<h3 id="kpi-revenue" class="text-2xl font-bold text-white">Rp 0</h3>
+<h3 id="kpi-revenue" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
 <p class="text-emerald-400 text-xs font-medium flex items-center gap-1">
 <span class="material-symbols-outlined text-[14px]">arrow_upward</span> +0% vs last month
                         </p>
 </div>
-<div class="glass-card p-6 rounded-xl flex flex-col gap-2">
+<div class="metric-card p-6 rounded-xl flex flex-col gap-2">
 <div class="flex justify-between items-start">
 <span class="text-slate-400 text-sm font-medium">Ad Spend</span>
 <div class="p-2 rounded-lg bg-orange-500/10 text-orange-500">
 <span class="material-symbols-outlined">ad_units</span>
 </div>
 </div>
-<h3 id="kpi-ad-spend" class="text-2xl font-bold text-white">Rp 0</h3>
+<h3 id="kpi-ad-spend" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
 <p class="text-slate-400 text-xs font-medium">Meta Ads &amp; Google Ads</p>
 </div>
-<div class="glass-card p-6 rounded-xl flex flex-col gap-2">
+<div class="metric-card p-6 rounded-xl flex flex-col gap-2">
 <div class="flex justify-between items-start">
 <span class="text-slate-400 text-sm font-medium">Operasional</span>
 <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
 <span class="material-symbols-outlined">receipt_long</span>
 </div>
 </div>
-<h3 id="kpi-operational" class="text-2xl font-bold text-white">Rp 0</h3>
+<h3 id="kpi-operational" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
 <p class="text-slate-400 text-xs font-medium">SaaS &amp; Infrastructure</p>
 </div>
-<div class="glass-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+<div class="metric-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
 <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 <div class="flex justify-between items-start">
 <span class="text-slate-400 text-sm font-medium">Laba Bersih</span>
