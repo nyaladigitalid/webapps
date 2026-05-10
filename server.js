@@ -1706,7 +1706,7 @@ app.post('/api/campaigns/create', async (req, res) => {
         res.json({ success: true, campaign_id: campaignId, created_on_meta: true });
     } catch (e) {
         console.error('Campaign create error:', e);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: e && e.message ? e.message : 'Internal server error' });
     }
 });
 
@@ -1920,7 +1920,7 @@ app.post('/api/campaigns/duplicate', async (req, res) => {
         res.json({ success: true, campaign_id: newCampaignId, adsets: createdAdsets });
     } catch (e) {
         console.error('Duplicate campaign error:', e);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: e && e.message ? e.message : 'Internal server error' });
     }
 });
 // Campaigns by Order
