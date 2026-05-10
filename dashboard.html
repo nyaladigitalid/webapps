@@ -919,52 +919,6 @@
                             </table>
                         </div>
                     </section>
-                    
-                    <!-- Detail Komisi -->
-                    <section id="finance-acc-history" class="glass-panel rounded-2xl p-6">
-                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-                            <div>
-                                <h4 class="text-lg font-bold text-white">Detail Komisi</h4>
-                                <p class="text-slate-400 text-xs">Perubahan status proses yang memicu komisi</p>
-                            </div>
-                            <div class="flex flex-wrap items-end gap-3">
-                                <div>
-                                    <label class="block text-[10px] font-medium text-slate-400 mb-1">Mulai Tanggal</label>
-                                    <input type="date" id="dash-acc-start" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-medium text-slate-400 mb-1">Sampai Tanggal</label>
-                                    <input type="date" id="dash-acc-end" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
-                                </div>
-                                <button id="dash-acc-filter" class="px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[16px]">filter_list</span>
-                                    Filter
-                                </button>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto rounded-xl border border-white/10">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-white/5">
-                                    <tr>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Order</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Klien</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rule</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">User</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Perubahan Status</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tipe</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Komisi</th>
-                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dash-acc-body" class="divide-y divide-white/5">
-                                    <tr>
-                                        <td colspan="9" class="px-6 py-6 text-center text-slate-500 italic">Memuat histori...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
                 </div>
 
             </main>
@@ -1070,18 +1024,6 @@
 
                 // Load Keuangan Data
                 await loadKeuanganData();
-                // Default dates for Detail Komisi
-                const now = new Date();
-                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                const sEl = document.getElementById('dash-acc-start');
-                const eEl = document.getElementById('dash-acc-end');
-                if (sEl) sEl.value = fmt(firstDay);
-                if (eEl) eEl.value = fmt(lastDay);
-                await loadAccrualHistoryDashboard();
-                const btnF = document.getElementById('dash-acc-filter');
-                if (btnF) btnF.addEventListener('click', loadAccrualHistoryDashboard);
             } else {
                 // Ensure Admin View is shown (default, but good to be explicit)
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
@@ -1171,59 +1113,6 @@
             }
         }
         
-        async function loadAccrualHistoryDashboard() {
-            const start = document.getElementById('dash-acc-start').value;
-            const end = document.getElementById('dash-acc-end').value;
-            const tbody = document.getElementById('dash-acc-body');
-            tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-6 text-center text-slate-500 italic">Memuat histori...</td></tr>';
-            try {
-                const res = await fetch(`/api/finance/accrual-history?startDate=${start}&endDate=${end}`);
-                const rows = await res.json();
-                if (!Array.isArray(rows) || rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-6 text-center text-slate-500 italic">Tidak ada aktivitas komisi pada periode ini</td></tr>';
-                    return;
-                }
-                const mapType = (t) => {
-                    const m = { otp: 'Proses OTP', general: 'Umum', new: 'Baru', extend: 'Perpanjang', content: 'Proses Konten', ready: 'Siap Iklan' };
-                    const k = String(t || '').toLowerCase();
-                    return m[k] || (t || '-');
-                };
-                const eventLabel = (ev) => {
-                    const e = String(ev || '').toLowerCase();
-                    if (e === 'created_order') return 'Input Baru';
-                    if (e === 'created_order_crm') return 'Input Baru (CRM)';
-                    if (e === 'otp_sent') return 'Kirim Proses OTP';
-                    if (e === 'otp_to_content') return 'Proses OTP → Proses Konten';
-                    if (e === 'content_ready') return 'Proses Konten → Siap Iklan';
-                    return ev || '-';
-                };
-                tbody.innerHTML = rows.map(r => {
-                    const date = r.posted_at || r.created_at;
-                    const d = date ? new Date(date).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-                    const amount = Number(r.amount || 0);
-                    const statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold ${String(r.status||'').toLowerCase()==='paid'?'bg-emerald-500/20 text-emerald-400':'bg-slate-500/20 text-slate-300'}">${r.status}</span>`;
-                    return `
-                    <tr class="hover:bg-white/5 transition-colors">
-                        <td class="px-6 py-3 text-[12px] text-slate-300">${d}</td>
-                        <td class="px-6 py-3 text-[12px] font-medium text-white">#${r.order_id}</td>
-                        <td class="px-6 py-3 text-[12px] text-slate-300">${r.client_name || '-'}</td>
-                        <td class="px-6 py-3 text-[12px]">
-                            <span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">${r.role || '-'}</span>
-                            <span class="ml-2 px-2 py-1 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">${mapType(r.content_type)}</span>
-                        </td>
-                        <td class="px-6 py-3 text-[12px] text-slate-300">${r.user_name || ('User ' + r.user_id)}</td>
-                        <td class="px-6 py-3 text-[12px] text-slate-300">${eventLabel(r.source_event)}</td>
-                        <td class="px-6 py-3 text-[12px] text-slate-300">${r.content_type || '-'}</td>
-                        <td class="px-6 py-3 text-right text-[12px] font-bold text-emerald-400">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)}</td>
-                        <td class="px-6 py-3 text-[12px]">${statusBadge}</td>
-                    </tr>
-                    `;
-                }).join('');
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-6 text-center text-red-400">Error: ${e.message}</td></tr>`;
-            }
-        }
-
         async function loadCRMData(userId) {
             try {
                 const res = await fetch(`/api/dashboard/crm-stats?user_id=${encodeURIComponent(userId || '')}`);
