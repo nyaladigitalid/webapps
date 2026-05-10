@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="theme-openai" lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Nyala Digital Apps - Histori Komisi CS</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="js/include.js"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#ef7225",
+            secondary: "#0d3b66",
+            "background-light": "#f5f7f8",
+            "background-dark": "#0b0e14",
+            "sidebar-dark": "#101922"
+          },
+          fontFamily: { display: ["Inter", "sans-serif"] },
+          borderRadius: { DEFAULT: "0.5rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .glass-surface {
+      background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .dark .glass-panel {
+      background: rgba(6, 12, 31, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="commissions">
+  <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+    <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+  </div>
+  <div class="relative z-10 min-h-screen flex flex-col">
+    <div id="include-header"></div>
+    <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+      <div id="include-sidebar"></div>
+      <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div class="flex-1 overflow-y-auto space-y-5">
+          <div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Histori Komisi Saya</h1>
+              <p class="text-secondary/80 text-sm mt-1">Riwayat komisi untuk akun CS yang sedang login.</p>
+            </div>
+          </div>
+
+          <div class="px-4 md:px-0 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="w-full md:w-72">
+              <input id="search-input" type="text" placeholder="Cari Order ID, status, tipe..." class="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full px-4 py-2 text-sm text-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-slate-400"/>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+              <select id="approval-filter" class="w-full md:w-auto bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm">
+                <option value="">Semua Approval</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button id="btn-refresh" class="inline-flex items-center gap-1 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+                <span class="material-symbols-outlined text-base">refresh</span>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-2xl overflow-hidden mx-4 md:mx-0 border border-slate-200 dark:border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+                    <th class="px-4 py-3 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Tanggal</th>
+                    <th class="px-4 py-3 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Order ID</th>
+                    <th class="px-4 py-3 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Tipe</th>
+                    <th class="px-4 py-3 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Approval</th>
+                    <th class="px-4 py-3 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider text-right">Nominal</th>
+                  </tr>
+                </thead>
+                <tbody id="history-body" class="divide-y divide-slate-100 dark:divide-white/5">
+                  <tr>
+                    <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">Memuat data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="px-4 py-3 flex items-center justify-between bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10">
+              <p id="pagination-info" class="text-[11px] text-slate-500 dark:text-secondary/80">Menampilkan 0 - 0 dari 0 data</p>
+              <div class="flex items-center gap-2">
+                <button id="btn-prev" class="size-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center disabled:opacity-30" disabled>
+                  <span class="material-symbols-outlined text-lg">chevron_left</span>
+                </button>
+                <button id="btn-next" class="size-8 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center disabled:opacity-30" disabled>
+                  <span class="material-symbols-outlined text-lg">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="include-footer"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const role = String(localStorage.getItem("role") || "").toLowerCase();
+      const userId = localStorage.getItem("user_id");
+      if (role !== "cs") {
+        window.location.href = "commission.html";
+        return;
+      }
+      if (!userId) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const body = document.getElementById("history-body");
+      const searchInput = document.getElementById("search-input");
+      const approvalFilter = document.getElementById("approval-filter");
+      const btnRefresh = document.getElementById("btn-refresh");
+      const btnPrev = document.getElementById("btn-prev");
+      const btnNext = document.getElementById("btn-next");
+      const paginationInfo = document.getElementById("pagination-info");
+
+      let rows = [];
+      let filteredRows = [];
+      let currentPage = 1;
+      const perPage = 5;
+
+      function formatDate(value) {
+        if (!value) return "-";
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return String(value);
+        return d.toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      function formatMoney(value) {
+        return new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 0
+        }).format(Number(value || 0));
+      }
+
+      function applyFilter() {
+        const q = String(searchInput.value || "").toLowerCase().trim();
+        const approval = String(approvalFilter.value || "").toLowerCase();
+        filteredRows = rows.filter((r) => {
+          const okApproval = !approval || String(r.approval_status || "").toLowerCase() === approval;
+          if (!okApproval) return false;
+          if (!q) return true;
+          const haystack = [
+            r.order_id,
+            r.content_type,
+            r.status,
+            r.approval_status,
+            r.source_event
+          ].map((v) => String(v || "").toLowerCase()).join(" ");
+          return haystack.includes(q);
+        });
+        currentPage = 1;
+        render();
+      }
+
+      function render() {
+        body.innerHTML = "";
+        const total = filteredRows.length;
+        const totalPages = Math.ceil(total / perPage) || 1;
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        const startIdx = (currentPage - 1) * perPage;
+        const endIdx = Math.min(startIdx + perPage, total);
+        const pageRows = filteredRows.slice(startIdx, endIdx);
+
+        if (pageRows.length === 0) {
+          body.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">Belum ada histori komisi.</td></tr>';
+          paginationInfo.textContent = "Menampilkan 0 - 0 dari 0 data";
+          btnPrev.disabled = true;
+          btnNext.disabled = true;
+          return;
+        }
+
+        pageRows.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors";
+          tr.innerHTML = `
+            <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">${formatDate(r.created_at || r.posted_at)}</td>
+            <td class="px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white">#${r.order_id || "-"}</td>
+            <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">${r.content_type || "-"}</td>
+            <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">${r.status || "-"}</td>
+            <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">${r.approval_status || "pending"}</td>
+            <td class="px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white text-right">${formatMoney(r.amount)}</td>
+          `;
+          body.appendChild(tr);
+        });
+
+        paginationInfo.textContent = "Menampilkan " + (startIdx + 1) + " - " + endIdx + " dari " + total + " data";
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+      }
+
+      async function loadData() {
+        body.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">Memuat data...</td></tr>';
+        try {
+          const url = "/api/commissions/ledger?user_id=" + encodeURIComponent(userId);
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("Gagal memuat histori");
+          rows = await res.json();
+          filteredRows = rows.slice();
+          currentPage = 1;
+          render();
+        } catch (err) {
+          console.error(err);
+          body.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">Gagal memuat data histori komisi.</td></tr>';
+          paginationInfo.textContent = "Menampilkan 0 - 0 dari 0 data";
+          btnPrev.disabled = true;
+          btnNext.disabled = true;
+        }
+      }
+
+      searchInput.addEventListener("input", applyFilter);
+      approvalFilter.addEventListener("change", applyFilter);
+      btnRefresh.addEventListener("click", loadData);
+      btnPrev.addEventListener("click", function () {
+        if (currentPage > 1) {
+          currentPage--;
+          render();
+        }
+      });
+      btnNext.addEventListener("click", function () {
+        const totalPages = Math.ceil(filteredRows.length / perPage) || 1;
+        if (currentPage < totalPages) {
+          currentPage++;
+          render();
+        }
+      });
+
+      loadData();
+    });
+  </script>
+</body>
+</html>

@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const ROLE_MENUS = {
     super_admin: ["overview","orders","products","commissions","users","finance","team","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
-    cs: ["overview","orders","crm","clients"],
+    cs: ["overview","orders","commissions","crm"],
     keuangan: ["overview","finance","orders","commissions","clients"],
     advertiser: ["overview","orders","analytics","campaigns"],
     crm: ["overview","crm","orders","clients"],
@@ -205,6 +205,17 @@ document.addEventListener("DOMContentLoaded", async function () {
         a.style.display = "";
       }
     });
+  }
+
+  function applyRoleSpecificMenuLink(role) {
+    const safeRole = String(role || "").toLowerCase();
+    const commissionLink = document.querySelector('.layout-sidebar nav a[data-menu="commissions"]');
+    if (!commissionLink) return;
+    if (safeRole === "cs") {
+      commissionLink.setAttribute("href", "commission-history.html");
+    } else {
+      commissionLink.setAttribute("href", "commission.html");
+    }
   }
 
   function checkPageAccess(role) {
@@ -684,6 +695,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // injectRoleSelector(role); // Removed in favor of real profile
   updateProfileInfo();
   applySidebarByRole(role);
+  applyRoleSpecificMenuLink(role);
   checkPageAccess(role);
   ensureSidebarHideCSS();
   ensureOpenAIThemeCSS();
