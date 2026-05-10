@@ -840,7 +840,22 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  fetch('/api/orders?limit=10000')
+  const roleNow = (localStorage.getItem('role') || '').toLowerCase();
+  const uidNow = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
+  let ordersUrl = '/api/orders?limit=10000';
+  if (uidNow) {
+      if (roleNow === 'cs') {
+          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=CS&limit=10000';
+      } else if (roleNow === 'advertiser') {
+          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=Advertiser&limit=10000';
+      } else if (roleNow === 'editor') {
+          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=Editor&limit=10000';
+      } else if (roleNow === 'bengkel' || roleNow === 'team_bengkel' || roleNow === 'team bengkel') {
+          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=Team Bengkel&limit=10000';
+      }
+  }
+
+  fetch(ordersUrl)
     .then(function(res){ return res.json(); })
     .then(function(json){
        var rawData = [];

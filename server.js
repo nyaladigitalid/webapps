@@ -2263,6 +2263,7 @@ app.get('/api/orders', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const offset = (page - 1) * limit;
         const { assigned_to, role, status, content_status } = req.query;
+        const roleFilter = String(role || '').toLowerCase();
 
         let query = `
             SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp, 
@@ -2275,14 +2276,14 @@ app.get('/api/orders', async (req, res) => {
         const params = [];
         let whereClauses = [];
 
-        if (assigned_to && role) {
+        if (assigned_to && roleFilter) {
             query += ` JOIN order_assignments oa ON o.id = oa.order_id `;
             whereClauses.push(`oa.user_id = ?`);
             params.push(assigned_to);
-            if (role === 'CS') whereClauses.push(`oa.role = 'CS'`);
-            else if (role === 'Advertiser') whereClauses.push(`oa.role = 'Advertiser'`);
-            else if (role.includes('Editor')) whereClauses.push(`oa.role LIKE '%Editor%'`);
-            else if (role === 'Team Bengkel' || role === 'Bengkel') whereClauses.push(`oa.role = 'Team Bengkel'`);
+            if (roleFilter === 'cs') whereClauses.push(`oa.role = 'CS'`);
+            else if (roleFilter === 'advertiser') whereClauses.push(`oa.role = 'Advertiser'`);
+            else if (roleFilter.includes('editor')) whereClauses.push(`oa.role LIKE '%Editor%'`);
+            else if (roleFilter === 'team bengkel' || roleFilter === 'bengkel' || roleFilter === 'team_bengkel') whereClauses.push(`oa.role = 'Team Bengkel'`);
         }
 
         if (content_status) {
@@ -2329,14 +2330,14 @@ app.get('/api/orders', async (req, res) => {
         const countParams = [];
         let countWhere = [];
 
-        if (assigned_to && role) {
+        if (assigned_to && roleFilter) {
             countQuery += ` JOIN order_assignments oa ON o.id = oa.order_id `;
             countWhere.push(`oa.user_id = ?`);
             countParams.push(assigned_to);
-             if (role === 'CS') countWhere.push(`oa.role = 'CS'`);
-            else if (role === 'Advertiser') countWhere.push(`oa.role = 'Advertiser'`);
-            else if (role.includes('Editor')) countWhere.push(`oa.role LIKE '%Editor%'`);
-            else if (role === 'Team Bengkel' || role === 'Bengkel') countWhere.push(`oa.role = 'Team Bengkel'`);
+             if (roleFilter === 'cs') countWhere.push(`oa.role = 'CS'`);
+            else if (roleFilter === 'advertiser') countWhere.push(`oa.role = 'Advertiser'`);
+            else if (roleFilter.includes('editor')) countWhere.push(`oa.role LIKE '%Editor%'`);
+            else if (roleFilter === 'team bengkel' || roleFilter === 'bengkel' || roleFilter === 'team_bengkel') countWhere.push(`oa.role = 'Team Bengkel'`);
         }
 
         if (content_status) {
