@@ -419,13 +419,17 @@ body { font-family: 'Inter', sans-serif; }
         if (payoutStart) payoutStart.value = formatDate(firstDay);
         if (payoutEnd) payoutEnd.value = formatDate(lastDay);
         const payoutBody = document.getElementById('payout-batches-body');
-        if (payoutBody) loadPayoutBatches();
+        const payoutSection = document.getElementById('payout-section');
+        if (payoutSection && canApproveCommission) {
+            payoutSection.classList.remove('hidden');
+        }
+        if (payoutBody && canApproveCommission) loadPayoutBatches();
         const btn = document.getElementById('btn-create-payout');
-        if (btn) btn.addEventListener('click', createPayoutBatch);
+        if (btn && canApproveCommission) btn.addEventListener('click', createPayoutBatch);
         const approvalStatusFilter = document.getElementById('approval-status-filter');
-        if (approvalStatusFilter) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
+        if (approvalStatusFilter && canApproveCommission) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
         loadAccrualHistory();
-        loadCommissionApprovals();
+        if (canApproveCommission) loadCommissionApprovals();
     });
 
     async function loadCommissionReport() {
