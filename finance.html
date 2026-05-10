@@ -45,6 +45,25 @@ body { font-family: 'Inter', sans-serif; }
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.finance-table thead th {
+  color: #64748b;
+  font-weight: 800;
+}
+.finance-table tbody td {
+  color: #334155;
+}
+.finance-table tbody tr:hover td {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+.dark .finance-table thead th {
+  color: #90aecb;
+}
+.dark .finance-table tbody td {
+  color: #e2e8f0;
+}
+.dark .finance-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.04);
+}
 </style>
 </head>
 <body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="finance">
@@ -60,16 +79,6 @@ body { font-family: 'Inter', sans-serif; }
         <div>
           <h2 class="text-2xl md:text-3xl font-black tracking-tight">Keuangan &amp; Billing</h2>
           <p class="text-secondary/80 text-sm mt-1">Ringkasan arus kas, spend, dan payroll.</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full px-3 py-1.5 w-64">
-            <span class="material-symbols-outlined text-[#90aecb] text-lg">search</span>
-            <input type="text" placeholder="Search report..." class="bg-transparent border-none focus:ring-0 text-sm text-white placeholder-[#90aecb] w-full">
-          </div>
-          <button class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white bg-primary hover:bg-primary/90 border border-white/10 transition-colors">
-            <span class="material-symbols-outlined text-sm">download</span>
-            <span>Export PDF</span>
-          </button>
         </div>
       </div>
       <div class="space-y-8">
@@ -147,7 +156,7 @@ body { font-family: 'Inter', sans-serif; }
     </div>
 
 <div class="glass-card rounded-xl overflow-hidden">
-<table class="w-full text-left border-collapse">
+<table class="finance-table w-full text-left border-collapse">
 <thead>
 <tr class="border-b border-white/10 bg-white/2">
 <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order Name</th>
@@ -175,54 +184,6 @@ body { font-family: 'Inter', sans-serif; }
 </div>
       <!-- Summary Row Removed -->
 
-<!-- User Commission Report -->
-<div class="glass-card rounded-xl p-6 mt-8">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-        <div>
-            <h3 class="text-xl font-bold text-white">Laporan Komisi User</h3>
-            <p class="text-slate-400 text-sm">Total komisi per user berdasarkan periode.</p>
-        </div>
-        <div class="flex flex-wrap items-end gap-3">
-            <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Mulai Tanggal</label>
-                <input type="date" id="comm-start-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Sampai Tanggal</label>
-                <input type="date" id="comm-end-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-            </div>
-            <button onclick="loadCommissionReport()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
-                <span class="material-symbols-outlined text-lg">filter_list</span>
-                Filter
-            </button>
-        </div>
-    </div>
-
-    <div class="overflow-hidden rounded-xl border border-white/10">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-white/5">
-                <tr>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Nama User</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Role</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Jumlah Pesanan</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Total Komisi</th>
-                </tr>
-            </thead>
-            <tbody id="commission-report-body" class="divide-y divide-white/5">
-                <tr>
-                    <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Silakan pilih rentang tanggal dan klik Filter</td>
-                </tr>
-            </tbody>
-            <tfoot class="bg-white/5 border-t border-white/10 font-bold">
-                <tr>
-                    <td colspan="2" class="px-6 py-4 text-right text-white">TOTAL</td>
-                    <td id="total-orders-sum" class="px-6 py-4 text-center text-white">-</td>
-                    <td id="total-commission-sum" class="px-6 py-4 text-right text-primary">-</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-</div>
 <!-- Payout Komisi -->
 <div id="payout-section" class="hidden glass-card rounded-xl p-6 mt-8">
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
@@ -272,7 +233,7 @@ body { font-family: 'Inter', sans-serif; }
             </div>
         </div>
         <div class="overflow-hidden rounded-xl border border-white/10">
-            <table class="w-full text-left border-collapse">
+            <table class="finance-table w-full text-left border-collapse">
                 <thead class="bg-white/5">
                     <tr>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
@@ -293,53 +254,8 @@ body { font-family: 'Inter', sans-serif; }
             </table>
         </div>
     </div>
-    <!-- Accrual History -->
-    <div class="glass-card rounded-xl p-6 mt-8">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-            <div>
-                <h3 class="text-xl font-bold text-white">Histori Akru Komisi</h3>
-                <p class="text-slate-400 text-sm">Perubahan status proses yang memicu komisi.</p>
-            </div>
-            <div class="flex flex-wrap items-end gap-3">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Mulai Tanggal</label>
-                    <input type="date" id="acc-start-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Sampai Tanggal</label>
-                    <input type="date" id="acc-end-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-                </div>
-                <button onclick="loadAccrualHistory()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">filter_list</span>
-                    Filter
-                </button>
-            </div>
-        </div>
-        <div class="overflow-hidden rounded-xl border border-white/10">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-white/5">
-                    <tr>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Klien</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rule</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Perubahan Status</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tipe</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Komisi</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="acc-history-body" class="divide-y divide-white/5">
-                    <tr>
-                        <td colspan="9" class="px-6 py-8 text-center text-slate-500 italic">Memuat histori...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
     <div class="overflow-hidden rounded-xl border border-white/10">
-        <table class="w-full text-left border-collapse">
+        <table class="finance-table w-full text-left border-collapse">
             <thead class="bg-white/5">
                 <tr>
                     <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Batch</th>
@@ -361,7 +277,7 @@ body { font-family: 'Inter', sans-serif; }
             <h4 class="text-sm font-bold text-white">Detail Batch</h4>
             <span id="payout-detail-label" class="text-xs text-slate-400">-</span>
         </div>
-        <table class="w-full text-left border-collapse">
+        <table class="finance-table w-full text-left border-collapse">
             <thead class="bg-white/5">
                 <tr>
                     <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order</th>
@@ -398,21 +314,12 @@ body { font-family: 'Inter', sans-serif; }
             return `${year}-${month}-${day}`;
         };
 
-        const startDateInput = document.getElementById('comm-start-date');
-        const endDateInput = document.getElementById('comm-end-date');
         const financeStartDate = document.getElementById('finance-start-date');
         const financeEndDate = document.getElementById('finance-end-date');
 
-        if(startDateInput) startDateInput.value = formatDate(firstDay);
-        if(endDateInput) endDateInput.value = formatDate(lastDay);
         if(financeStartDate) financeStartDate.value = formatDate(firstDay);
         if(financeEndDate) financeEndDate.value = formatDate(lastDay);
-        const accStart = document.getElementById('acc-start-date');
-        const accEnd = document.getElementById('acc-end-date');
-        if(accStart) accStart.value = formatDate(firstDay);
-        if(accEnd) accEnd.value = formatDate(lastDay);
-        
-        loadCommissionReport();
+
         loadFinanceOrders(); // Load main finance table
         const payoutStart = document.getElementById('payout-start-date');
         const payoutEnd = document.getElementById('payout-end-date');
@@ -428,72 +335,8 @@ body { font-family: 'Inter', sans-serif; }
         if (btn && canApproveCommission) btn.addEventListener('click', createPayoutBatch);
         const approvalStatusFilter = document.getElementById('approval-status-filter');
         if (approvalStatusFilter && canApproveCommission) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
-        loadAccrualHistory();
         if (canApproveCommission) loadCommissionApprovals();
     });
-
-    async function loadCommissionReport() {
-        const startDate = document.getElementById('comm-start-date').value;
-        const endDate = document.getElementById('comm-end-date').value;
-        const tbody = document.getElementById('commission-report-body');
-        
-        if(!startDate || !endDate) return;
-
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td></tr>';
-
-        try {
-            const res = await fetch(`/api/reports/commissions?startDate=${startDate}&endDate=${endDate}`);
-            const data = await res.json();
-            
-            if (data.error) throw new Error(data.error);
-            
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data pada periode ini</td></tr>';
-                document.getElementById('total-orders-sum').innerText = '0';
-                document.getElementById('total-commission-sum').innerText = 'Rp 0';
-                return;
-            }
-
-            let totalOrders = 0;
-            let totalCommission = 0;
-
-            tbody.innerHTML = data.map(item => {
-                totalOrders += parseInt(item.order_count);
-                totalCommission += parseFloat(item.total_commission);
-                return `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                                ${item.user_name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-white">${item.user_name}</p>
-                                <p class="text-xs text-slate-400">${item.user_email}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 rounded text-xs font-bold ${item.user_role === 'super_admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}">
-                            ${item.user_role}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-center text-sm text-white font-bold">${item.order_count}</td>
-                    <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">
-                        ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.total_commission)}
-                    </td>
-                </tr>
-                `;
-            }).join('');
-
-            document.getElementById('total-orders-sum').innerText = totalOrders;
-            document.getElementById('total-commission-sum').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalCommission);
-
-        } catch (error) {
-            console.error(error);
-            tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Error: ${error.message}</td></tr>`;
-        }
-    }
 
     let allFinanceOrders = [];
     let filteredFinanceOrders = [];
@@ -602,21 +445,21 @@ body { font-family: 'Inter', sans-serif; }
                         <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">${clientInitial}</div>
                         <div>
                             <p class="text-sm font-bold text-white group-hover:text-primary transition-colors">${order.client_name || 'Unknown'}</p>
-                            <p class="text-xs text-slate-400">${order.package_name || 'Custom'}</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-300">${order.package_name || 'Custom'}</p>
                         </div>
                     </div>
                 </td>
                 <td class="px-6 py-4">
                     <p class="text-sm font-medium text-white">${formatRupiah(revenue)}</p>
-                    <p class="text-xs text-slate-500">${createdDate}</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300">${createdDate}</p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="text-sm font-medium text-slate-300">${formatRupiah(commission)}</p>
-                    <p class="text-xs text-slate-500">Commission</p>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">${formatRupiah(commission)}</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300">Commission</p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="text-sm font-medium text-slate-300">${formatRupiah(adSpend)}</p>
-                    <p class="text-xs text-slate-500">Meta/Google Ads</p>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">${formatRupiah(adSpend)}</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300">Meta/Google Ads</p>
                 </td>
                 <td class="px-6 py-4">
                     <p class="text-sm font-bold ${textColor}">${formatRupiah(profit)}</p>
@@ -625,7 +468,7 @@ body { font-family: 'Inter', sans-serif; }
                     </div>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    <button class="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                    <button class="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-[18px]">more_vert</span>
                     </button>
                 </td>
@@ -692,7 +535,7 @@ body { font-family: 'Inter', sans-serif; }
                 return `
                 <tr class="hover:bg-white/5 transition-colors">
                     <td class="px-6 py-4 text-sm font-bold text-white">#${b.id}</td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${period}</td>
+                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${period}</td>
                     <td class="px-6 py-4">${statusBadge}</td>
                     <td class="px-6 py-4 text-right text-sm font-bold text-primary">${formatRupiah(b.total_amount || 0)}</td>
                     <td class="px-6 py-4 text-right">
@@ -766,16 +609,16 @@ body { font-family: 'Inter', sans-serif; }
                 const canAction = canApproveCommission && String(r.approval_status || '').toLowerCase() === 'pending' && String(r.status || '').toLowerCase() !== 'paid';
                 return `
                 <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4 text-sm text-slate-300">${dt}</td>
+                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${dt}</td>
                     <td class="px-6 py-4 text-sm font-medium text-white">#${r.order_id || '-'}</td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${r.user_name || ('User ' + r.user_id)}</td>
+                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${r.user_name || ('User ' + r.user_id)}</td>
                     <td class="px-6 py-4 text-sm">
                         <span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">${r.role || '-'}</span>
                         <span class="ml-2 px-2 py-1 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">${r.content_type || 'general'}</span>
                     </td>
                     <td class="px-6 py-4 text-sm">${approvalBadge(r.approval_status)}</td>
                     <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(Number(r.amount || 0))}</td>
-                    <td class="px-6 py-4 text-xs text-slate-400">${r.approval_note || '-'}</td>
+                    <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-300">${r.approval_note || '-'}</td>
                     <td class="px-6 py-4 text-right">
                         ${canAction ? `
                             <button onclick="approveCommission(${r.id})" class="px-2.5 py-1.5 text-[11px] font-bold rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 mr-2">Approve</button>
@@ -805,7 +648,6 @@ body { font-family: 'Inter', sans-serif; }
             const data = await res.json();
             if (!res.ok || data.error) throw new Error(data.error || 'Gagal approve komisi');
             await loadCommissionApprovals();
-            await loadAccrualHistory();
         } catch (e) {
             alert('Gagal approve: ' + e.message);
         }
@@ -830,7 +672,6 @@ body { font-family: 'Inter', sans-serif; }
             const data = await res.json();
             if (!res.ok || data.error) throw new Error(data.error || 'Gagal reject komisi');
             await loadCommissionApprovals();
-            await loadAccrualHistory();
         } catch (e) {
             alert('Gagal reject: ' + e.message);
         }
@@ -855,9 +696,9 @@ body { font-family: 'Inter', sans-serif; }
                 return `
                 <tr class="hover:bg-white/5 transition-colors">
                     <td class="px-6 py-4 text-sm font-medium text-white">#${it.order_id}</td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${it.user_name || ('User ' + it.user_id)}</td>
+                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${it.user_name || ('User ' + it.user_id)}</td>
                     <td class="px-6 py-4 text-sm"><span class="px-2 py-1 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400">${it.role}</span></td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${it.content_type || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${it.content_type || '-'}</td>
                     <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(it.amount || 0)}</td>
                 </tr>
                 `;
@@ -867,57 +708,5 @@ body { font-family: 'Inter', sans-serif; }
         }
     }
 
-    async function loadAccrualHistory() {
-        const start = document.getElementById('acc-start-date').value;
-        const end = document.getElementById('acc-end-date').value;
-        const tbody = document.getElementById('acc-history-body');
-        tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500 italic">Memuat histori...</td></tr>';
-        try {
-            const res = await fetch(`/api/finance/accrual-history?startDate=${start}&endDate=${end}`);
-            const rows = await res.json();
-            if (!Array.isArray(rows) || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada aktivitas komisi pada periode ini</td></tr>';
-                return;
-            }
-            const mapType = (t) => {
-                const m = { otp: 'Proses OTP', general: 'Umum', new: 'Baru', extend: 'Perpanjang', content: 'Proses Konten', ready: 'Siap Iklan' };
-                const k = String(t || '').toLowerCase();
-                return m[k] || (t || '-');
-            };
-            const eventLabel = (ev) => {
-                const e = String(ev || '').toLowerCase();
-                if (e === 'created_order') return 'Input Baru';
-                if (e === 'created_order_crm') return 'Input Baru (CRM)';
-                if (e === 'otp_sent') return 'Kirim Proses OTP';
-                if (e === 'otp_to_content') return 'Proses OTP → Proses Konten';
-                if (e === 'content_ready') return 'Proses Konten → Siap Iklan';
-                return ev || '-';
-            };
-            tbody.innerHTML = rows.map(r => {
-                const date = r.posted_at || r.created_at;
-                const d = date ? new Date(date).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-                const amount = Number(r.amount || 0);
-                const statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold ${String(r.status||'').toLowerCase()==='paid'?'bg-emerald-500/20 text-emerald-400':'bg-slate-500/20 text-slate-300'}">${r.status}</span>`;
-                return `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4 text-sm text-slate-300">${d}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-white">#${r.order_id}</td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${r.client_name || '-'}</td>
-                    <td class="px-6 py-4 text-sm">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">${r.role || '-'}</span>
-                        <span class="ml-2 px-2 py-1 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">${mapType(r.content_type)}</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${r.user_name || ('User ' + r.user_id)}</td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${eventLabel(r.source_event)}</td>
-                    <td class="px-6 py-4 text-sm text-slate-300">${r.content_type || '-'}</td>
-                    <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(amount)}</td>
-                    <td class="px-6 py-4 text-sm">${statusBadge}</td>
-                </tr>
-                `;
-            }).join('');
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-8 text-center text-red-400">Error: ${e.message}</td></tr>`;
-        }
-    }
 </script>
 </body></html>
