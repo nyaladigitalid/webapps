@@ -233,7 +233,23 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const userName = localStorage.getItem('user_name') || 'User';
     const userRole = localStorage.getItem('role') || 'guest';
+    const loginAtRaw = localStorage.getItem('login_at') || '';
     const userInitials = userName.substring(0, 2).toUpperCase();
+    let loginAtText = '-';
+    if (loginAtRaw) {
+      try {
+        const d = new Date(loginAtRaw);
+        if (!isNaN(d.getTime())) {
+          loginAtText = d.toLocaleString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+      } catch (_) {}
+    }
 
     // Find the specific elements inside
     // The structure is: div.flex > div.header-profile-icon + div.hidden.sm:block > p + p
@@ -254,6 +270,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         }
 
+    }
+
+    const sidebarLoginAt = document.getElementById('sidebar-login-at');
+    if (sidebarLoginAt) {
+      sidebarLoginAt.textContent = loginAtText;
     }
   }
 
@@ -489,9 +510,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         color:var(--oa-text) !important;
       }
       html.theme-openai .header-profile-icon{
-        background:rgba(15, 23, 42, 0.06) !important;
-        color:var(--oa-text) !important;
-        box-shadow:none !important;
+        background:linear-gradient(135deg,#ef7225 0%,#f97316 100%) !important;
+        color:#ffffff !important;
+        box-shadow:0 2px 4px rgba(239,114,37,0.25) !important;
+      }
+      html.theme-openai header .material-symbols-outlined{
+        color:#64748b !important;
       }
       html.theme-openai .bg-white\\/5{background-color:rgba(15, 23, 42, 0.04) !important;border-color:var(--oa-border) !important}
       html.theme-openai .hover\\:bg-white\\/10:hover{background-color:rgba(15, 23, 42, 0.06) !important}

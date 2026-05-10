@@ -1112,7 +1112,7 @@
                 document.getElementById('cs-expiry-count').textContent = stats.expiryCount || 0;
                 
                 // My Clients
-                const clientsRes = await fetch(`/api/clients?assigned_to=${userId}&role=CS&limit=10`);
+                const clientsRes = await fetch(`/api/clients?assigned_to=${userId}&role=CS&limit=5`);
                 const clientsData = await clientsRes.json();
                 const clients = clientsData.data || [];
                 const ctbody = document.getElementById('cs-clients-body');
@@ -1137,7 +1137,7 @@
 
                 const leadsTbody = document.getElementById('cs-leads-body');
                 if (leadsTbody) {
-                    const leadsRes = await fetch(`/api/scalev/leads?role=CS&user_id=${encodeURIComponent(userId || '')}&limit=10&page=1`);
+                    const leadsRes = await fetch(`/api/scalev/leads?role=CS&user_id=${encodeURIComponent(userId || '')}&limit=5&page=1`);
                     const leadsJson = await leadsRes.json();
                     const leads = leadsJson.data || [];
                     if (!Array.isArray(leads) || leads.length === 0) {
@@ -1255,7 +1255,7 @@
                 document.getElementById('editor-completed-count').textContent = stats.completedTasks || 0;
 
                 // Tasks (Orders assigned to editor)
-                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Editor&limit=10`);
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Editor&limit=5`);
                 const tasksData = await tasksRes.json();
                 const tasks = tasksData.data;
 
@@ -1308,7 +1308,7 @@
                 if (arEl) arEl.textContent = String(dashReady);
                 
                 // Active Campaigns List (using orders for now, ideally campaigns table)
-                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Advertiser&limit=10`);
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Advertiser&limit=5`);
                 const tasksData = await tasksRes.json();
                 const tasks = tasksData.data;
 
@@ -1346,7 +1346,7 @@
                 document.getElementById('bengkel-queue-count').textContent = stats.pendingTasks || 0;
                 
                 // Tasks
-                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Team Bengkel&limit=10`);
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Team Bengkel&limit=5`);
                 const tasksData = await tasksRes.json();
                 const tasks = tasksData.data;
 

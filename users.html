@@ -94,6 +94,7 @@ body {
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Email</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">No HP</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Role</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-20 text-center">Aksi</th>
 </tr>
@@ -118,7 +119,6 @@ body {
 </div>
 <div id="include-footer"></div>
 </main>
-</main>
 </div>
 
 <!-- User Modal -->
@@ -139,6 +139,10 @@ body {
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Email</label>
                     <input type="email" id="u-email" required class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">No HP</label>
+                    <input type="text" id="u-phone" class="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="08xxxxxxxxxx / 62xxxxxxxxxx">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Password</label>
@@ -179,7 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let allUsers = [];
     let filteredUsers = [];
     let currentPage = 1;
-    const itemsPerPage = 10;
+    const itemsPerPage = 5;
 
     window.closeModal = function() {
         modal.classList.add('hidden');
@@ -193,6 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById('u-id').value = user.id;
             document.getElementById('u-name').value = user.name;
             document.getElementById('u-email').value = user.email;
+            document.getElementById('u-phone').value = user.phone || '';
             document.getElementById('u-role').value = user.role;
             document.getElementById('u-password').value = '';
             document.getElementById('u-password').required = false;
@@ -213,10 +218,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const id = document.getElementById('u-id').value;
         const name = document.getElementById('u-name').value;
         const email = document.getElementById('u-email').value;
+        const phone = document.getElementById('u-phone').value;
         const password = document.getElementById('u-password').value;
         const role = document.getElementById('u-role').value;
 
-        const payload = { name, email, role };
+        const payload = { name, email, phone, role };
         if (password) payload.password = password;
 
         const url = id ? `/api/users/${id}` : '/api/users';
@@ -253,6 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
         filteredUsers = allUsers.filter(u => 
             String(u.name || '').toLowerCase().includes(filter) || 
             String(u.email || '').toLowerCase().includes(filter) ||
+            String(u.phone || '').toLowerCase().includes(filter) ||
             String(u.role || '').toLowerCase().includes(filter)
         );
         currentPage = 1;
@@ -273,7 +280,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const pageItems = (filteredUsers || []).slice(startIdx, endIdx);
 
         if (pageItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500 italic">Tidak ada data pengguna.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">Tidak ada data pengguna.</td></tr>';
             updatePaginationUI(0, 0, 0, 1);
             return;
         }
@@ -286,6 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] text-center">${startIdx + index + 1}</td>
                 <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">${u.name}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${u.email}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-mono">${u.phone || '-'}</td>
                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
                     <span class="px-2 py-1 bg-slate-100 dark:bg-white/10 rounded text-xs font-bold uppercase">${u.role}</span>
                 </td>

@@ -1,8 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
-const path = require('path');
 // const cors = require('cors'); // Cors not installed in package.json
 
 // Initialize Express
@@ -31,15 +33,20 @@ app.use((req, res, next) => {
 });
 
 // Database Connection
-const pool = mysql.createPool(process.env.MYSQL_URL);
+const DATABASE_URL = process.env.MYSQL_URL || process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+    console.error('Missing MYSQL_URL/DATABASE_URL env. Make sure .env exists in app folder or PM2 env is set.');
+    process.exit(1);
+}
+const pool = mysql.createPool(DATABASE_URL);
 
 // Helper function for Scalev code compatibility
 const getPool = () => pool;
 
 // Helper function to ensure environment is ready (mock implementation)
 function ensureEnv() {
-    if (!process.env.MYSQL_URL) {
-        throw new Error('MYSQL_URL is missing');
+    if (!process.env.MYSQL_URL && !process.env.DATABASE_URL) {
+        throw new Error('MYSQL_URL/DATABASE_URL is missing');
     }
 }
 
@@ -63,6 +70,175 @@ async function ensureUsersPhoneColumn() {
         console.log('Users phone column ready');
     } catch (e) {
         console.error('Error ensuring users phone column:', e);
+    }
+}
+
+async function ensurePackagesSchema() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE packages ADD COLUMN category VARCHAR(50)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE packages ADD COLUMN duration VARCHAR(50)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE packages ADD COLUMN price DECIMAL(15,2)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`UPDATE packages SET price = price_monthly WHERE price IS NULL AND price_monthly IS NOT NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+        }
+        console.log('Packages schema ready');
+    } catch (e) {
+        console.error('Error ensuring packages schema:', e);
+    }
+}
+
+async function ensureOrdersExtraColumns() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN service_type VARCHAR(50)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN meta_data JSON`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_DUP_FIELDNAME') {
+                // ignore
+            } else {
+                try {
+                    await p.query(`ALTER TABLE orders ADD COLUMN meta_data LONGTEXT`);
+                } catch (e2) {
+                    const code2 = String((e2 && e2.code) || '');
+                    if (code2 !== 'ER_DUP_FIELDNAME') throw e;
+                }
+            }
+        }
+        console.log('Orders extra columns ready');
+    } catch (e) {
+        console.error('Error ensuring orders extra columns:', e);
+    }
+}
+
+async function ensureOrdersRenewalColumns() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN parent_order_id INT NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN renewal_count INT DEFAULT 0`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        console.log('Orders renewal columns ready');
+    } catch (e) {
+        console.error('Error ensuring orders renewal columns:', e);
+    }
+}
+
+async function ensureOrdersTimingColumns() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN go_live_date DATE NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN start_date_source VARCHAR(30) DEFAULT 'system'`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        console.log('Orders timing columns ready');
+    } catch (e) {
+        console.error('Error ensuring orders timing columns:', e);
+    }
+}
+
+function parseDurationDays(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return 30;
+    const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
+    return Number.isFinite(n) && n > 0 ? n : 30;
+}
+
+async function getOrderDurationDays(orderId) {
+    const [rows] = await pool.query(
+        `SELECT p.duration AS package_duration
+         FROM orders o
+         LEFT JOIN packages p ON p.id = o.package_id
+         WHERE o.id = ? LIMIT 1`,
+        [orderId]
+    );
+    if (!rows.length) return 30;
+    return parseDurationDays(rows[0].package_duration);
+}
+
+async function applyActualGoLiveDate(orderId, liveDate, durationDays) {
+    await ensureOrdersTimingColumns();
+    const d = String(liveDate || '').trim();
+    if (!d) return;
+    const days = Number.isFinite(Number(durationDays)) && Number(durationDays) > 0 ? Number(durationDays) : 30;
+    await pool.query(
+        `UPDATE orders
+         SET go_live_date = ?,
+             start_date = ?,
+             end_date = DATE_ADD(?, INTERVAL ? DAY),
+             start_date_source = 'advertiser_actual'
+         WHERE id = ?
+           AND (go_live_date IS NULL OR start_date_source IS NULL OR start_date_source IN ('cs_estimate', 'system', ''))`,
+        [d, d, d, days, orderId]
+    );
+}
+
+async function ensureCommissionLedgerSchema() {
+    try {
+        const p = await getPool();
+        const tryAdd = async (sql) => {
+            try {
+                await p.query(sql);
+            } catch (e) {
+                const code = String((e && e.code) || '');
+                if (code === 'ER_DUP_FIELDNAME') return;
+                if (code === 'ER_NO_SUCH_TABLE') return;
+                throw e;
+            }
+        };
+
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN content_type VARCHAR(50)`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN basis_amount DECIMAL(15,2) NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN rate_type VARCHAR(20) NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN rate_value DECIMAL(15,4) NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN source_event VARCHAR(60) NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN ref_txn_id INT NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN posted_at DATETIME NULL`);
+
+        console.log('Commission ledger schema ready');
+    } catch (e) {
+        console.error('Error ensuring commission ledger schema:', e);
     }
 }
 
@@ -257,6 +433,11 @@ async function verifyScalevWebhook(req) {
 }
 
 ensureUsersPhoneColumn();
+ensurePackagesSchema();
+ensureOrdersExtraColumns();
+ensureOrdersRenewalColumns();
+ensureOrdersTimingColumns();
+ensureCommissionLedgerSchema();
 createScalevTable();
 createScalevWebhookEventsTable();
 createScalevLeadsTable();
@@ -543,7 +724,7 @@ app.get('/api/scalev/orders', async (req, res) => {
     try {
         const p = await getPool();
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 5;
         const offset = (page - 1) * limit;
 
         const [rows] = await p.query(`
@@ -574,7 +755,7 @@ app.get('/api/scalev/leads', async (req, res) => {
     try {
         const p = await getPool();
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 5;
         const offset = (page - 1) * limit;
 
         const role = String(req.query.role || '').toLowerCase();
@@ -935,7 +1116,7 @@ app.get('/api/dashboard/crm-stats', async (req, res) => {
 app.get('/api/users', async (req, res) => {
     try {
         const qRole = (req.query.role || '').toString().trim().toLowerCase();
-        let sql = 'SELECT id, name, email, role, created_at FROM users';
+        let sql = 'SELECT id, name, email, phone, role, created_at FROM users';
         let params = [];
         if (qRole) {
             const map = {
@@ -952,8 +1133,17 @@ app.get('/api/users', async (req, res) => {
             sql += ' WHERE LOWER(role) = LOWER(?)';
             params.push(roleValue);
         }
-        const [users] = await pool.query(sql, params);
-        res.json(users);
+        try {
+            const [users] = await pool.query(sql, params);
+            return res.json(users);
+        } catch (e) {
+            if (String(e && e.code) === 'ER_BAD_FIELD_ERROR') {
+                const fallbackSql = sql.replace(', phone', '');
+                const [users] = await pool.query(fallbackSql, params);
+                return res.json(users);
+            }
+            throw e;
+        }
     } catch (e) {
         console.error('Users fetch error:', e);
         res.status(500).json({ error: 'Internal server error' });
@@ -993,7 +1183,7 @@ app.get('/api/finance/accrual-history', async (req, res) => {
 });
 app.post('/api/users', async (req, res) => {
     try {
-        const { name, email, role, password } = req.body || {};
+        const { name, email, role, password, phone } = req.body || {};
         if (!name || !email || !role) {
             return res.status(400).json({ error: 'Name, email, and role are required' });
         }
@@ -1001,10 +1191,24 @@ app.post('/api/users', async (req, res) => {
         if (existing.length > 0) {
             return res.status(409).json({ error: 'Email already exists' });
         }
-        const [result] = await pool.query(
-            'INSERT INTO users (name, email, role, password_hash) VALUES (?, ?, ?, ?)',
-            [name, email, role, password || '']
-        );
+        await ensureUsersPhoneColumn();
+        const normalizedPhone = phone ? String(phone).replace(/[^0-9]/g, '') : '';
+        let result;
+        try {
+            [result] = await pool.query(
+                'INSERT INTO users (name, email, phone, role, password_hash) VALUES (?, ?, ?, ?, ?)',
+                [name, email, normalizedPhone, role, password || '']
+            );
+        } catch (e) {
+            if (String(e && e.code) === 'ER_BAD_FIELD_ERROR') {
+                [result] = await pool.query(
+                    'INSERT INTO users (name, email, role, password_hash) VALUES (?, ?, ?, ?)',
+                    [name, email, role, password || '']
+                );
+            } else {
+                throw e;
+            }
+        }
         res.json({ success: true, id: result.insertId });
     } catch (e) {
         console.error('User create error:', e);
@@ -1015,14 +1219,27 @@ app.post('/api/users', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, role, password } = req.body || {};
+        const { name, email, role, password, phone } = req.body || {};
         if (!name || !email || !role) {
             return res.status(400).json({ error: 'Name, email, and role are required' });
         }
-        await pool.query(
-            'UPDATE users SET name = ?, email = ?, role = ?, password_hash = COALESCE(?, password_hash) WHERE id = ?',
-            [name, email, role, password || null, id]
-        );
+        await ensureUsersPhoneColumn();
+        const normalizedPhone = phone ? String(phone).replace(/[^0-9]/g, '') : '';
+        try {
+            await pool.query(
+                'UPDATE users SET name = ?, email = ?, phone = ?, role = ?, password_hash = COALESCE(?, password_hash) WHERE id = ?',
+                [name, email, normalizedPhone, role, password || null, id]
+            );
+        } catch (e) {
+            if (String(e && e.code) === 'ER_BAD_FIELD_ERROR') {
+                await pool.query(
+                    'UPDATE users SET name = ?, email = ?, role = ?, password_hash = COALESCE(?, password_hash) WHERE id = ?',
+                    [name, email, role, password || null, id]
+                );
+            } else {
+                throw e;
+            }
+        }
         res.json({ success: true });
     } catch (e) {
         console.error('User update error:', e);
@@ -1037,6 +1254,12 @@ app.delete('/api/users/:id', async (req, res) => {
         res.json({ success: true });
     } catch (e) {
         console.error('User delete error:', e);
+        const code = String((e && e.code) || '');
+        if (code === 'ER_ROW_IS_REFERENCED_2') {
+            return res.status(409).json({
+                error: 'User masih dipakai di data lain (mis. order_assignments). Hapus/ubah assignment dulu sebelum delete user.'
+            });
+        }
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -1045,7 +1268,7 @@ app.delete('/api/users/:id', async (req, res) => {
 app.get('/api/clients', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 5;
         const offset = (page - 1) * limit;
         const q = req.query.q || '';
         const assigned_to = req.query.assigned_to || '';
@@ -1191,10 +1414,23 @@ app.post('/api/packages', async (req, res) => {
         if (!code || !name) {
             return res.status(400).json({ error: 'Code and name required' });
         }
-        const [result] = await pool.query(
-            'INSERT INTO packages (code, name, duration, price, description, active, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [code, name, duration || null, price || null, description || null, active ? 1 : 0, category || null]
-        );
+        await ensurePackagesSchema();
+        let result;
+        try {
+            [result] = await pool.query(
+                'INSERT INTO packages (code, name, duration, price, description, active, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [code, name, duration || null, price || null, description || null, active ? 1 : 0, category || null]
+            );
+        } catch (e) {
+            if (String(e && e.code) === 'ER_BAD_FIELD_ERROR') {
+                [result] = await pool.query(
+                    'INSERT INTO packages (code, name, price_monthly, description, active) VALUES (?, ?, ?, ?, ?)',
+                    [code, name, price || null, description || null, active ? 1 : 0]
+                );
+            } else {
+                throw e;
+            }
+        }
         res.json({ success: true, id: result.insertId });
     } catch (e) {
         console.error('Package create error:', e);
@@ -1209,10 +1445,22 @@ app.put('/api/packages/:id', async (req, res) => {
         if (!code || !name) {
             return res.status(400).json({ error: 'Code and name required' });
         }
-        await pool.query(
-            'UPDATE packages SET code = ?, name = ?, duration = ?, price = ?, description = ?, active = ?, category = ? WHERE id = ?',
-            [code, name, duration || null, price || null, description || null, active ? 1 : 0, category || null, id]
-        );
+        await ensurePackagesSchema();
+        try {
+            await pool.query(
+                'UPDATE packages SET code = ?, name = ?, duration = ?, price = ?, description = ?, active = ?, category = ? WHERE id = ?',
+                [code, name, duration || null, price || null, description || null, active ? 1 : 0, category || null, id]
+            );
+        } catch (e) {
+            if (String(e && e.code) === 'ER_BAD_FIELD_ERROR') {
+                await pool.query(
+                    'UPDATE packages SET code = ?, name = ?, price_monthly = ?, description = ?, active = ? WHERE id = ?',
+                    [code, name, price || null, description || null, active ? 1 : 0, id]
+                );
+            } else {
+                throw e;
+            }
+        }
         res.json({ success: true });
     } catch (e) {
         console.error('Package update error:', e);
@@ -1360,6 +1608,13 @@ app.post('/api/campaigns/create', async (req, res) => {
                 await pool.query('UPDATE order_contents SET status = "Proses Iklan" WHERE order_id = ?', [order_id]);
             } else {
                 await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Iklan")', [order_id]);
+            }
+            try {
+                const durationDays = Number(duration) > 0 ? Number(duration) : await getOrderDurationDays(order_id);
+                const liveDate = new Date().toISOString().split('T')[0];
+                await applyActualGoLiveDate(order_id, liveDate, durationDays);
+            } catch (e) {
+                console.error('Apply go_live_date on campaign create error:', e);
             }
         }
         // Accrue advertiser commission and record finance
@@ -1568,6 +1823,13 @@ app.post('/api/campaigns/duplicate', async (req, res) => {
                 await pool.query('UPDATE order_contents SET status = "Proses Iklan" WHERE order_id = ?', [order_id]);
             } else {
                 await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Proses Iklan")', [order_id]);
+            }
+            try {
+                const durationDays = Number(durasi) > 0 ? Number(durasi) : await getOrderDurationDays(order_id);
+                const liveDate = new Date().toISOString().split('T')[0];
+                await applyActualGoLiveDate(order_id, liveDate, durationDays);
+            } catch (e) {
+                console.error('Apply go_live_date on campaign duplicate error:', e);
             }
         }
         // Accrue advertiser commission and record finance
@@ -1851,7 +2113,7 @@ app.post('/api/meta-config', async (req, res) => {
 app.get('/api/orders', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 5;
         const offset = (page - 1) * limit;
         const { assigned_to, role, status, content_status } = req.query;
 
@@ -1902,7 +2164,18 @@ app.get('/api/orders', async (req, res) => {
         query += ` ORDER BY o.created_at DESC LIMIT ? OFFSET ?`;
         params.push(limit, offset);
 
-        const [orders] = await pool.query(query, params);
+        let orders;
+        try {
+            [orders] = await pool.query(query, params);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR' && query.includes('p.price as package_price')) {
+                const fallbackQuery = query.replace('p.price as package_price', 'p.price_monthly as package_price');
+                [orders] = await pool.query(fallbackQuery, params);
+            } else {
+                throw e;
+            }
+        }
         
         // Count Query
         let countQuery = 'SELECT COUNT(DISTINCT o.id) as total FROM orders o';
@@ -2029,12 +2302,15 @@ app.post('/api/orders', async (req, res) => {
         const startDate = orderPayload.startDate || orderPayload.start_date || (metaDataRaw && metaDataRaw.startDate) || null;
         const endDate = orderPayload.endDate || orderPayload.end_date || (metaDataRaw && metaDataRaw.endDate) || null;
 
+        await ensureOrdersTimingColumns();
         await connection.beginTransaction();
 
+        const startDateSource = startDate ? 'cs_estimate' : 'system';
+
         const [orderResult] = await connection.query(
-            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [clientId, packageId, status, repeatOrder, startDate, endDate, serviceType, metaData]
+            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data, go_live_date, start_date_source)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+            [clientId, packageId, status, repeatOrder, startDate, endDate, serviceType, metaData, startDateSource]
         );
 
         const orderId = orderResult.insertId;
@@ -2154,7 +2430,18 @@ app.post('/api/orders', async (req, res) => {
             }
         }
         
-        const [pkgRows] = await connection.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+        await ensurePackagesSchema();
+        let pkgRows;
+        try {
+            [pkgRows] = await connection.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR') {
+                [pkgRows] = await connection.query('SELECT price_monthly as price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+            } else {
+                throw e;
+            }
+        }
         const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
         await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [orderId, incomeAmount]);
 
@@ -2171,6 +2458,176 @@ app.post('/api/orders', async (req, res) => {
             await connection.rollback();
         } catch (_) {}
         console.error('Create order error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
+app.post('/api/orders/:id/renew', async (req, res) => {
+    ensureEnv();
+    const connection = await pool.getConnection();
+    try {
+        const { id } = req.params;
+        const body = req.body || {};
+        const orderPayload = body.order || {};
+        const detailsPayload = body.details || null;
+        const targetsPayload = body.targets || null;
+        const userRole = (body.userRole || body.user_role || '').toString().toLowerCase();
+
+        await ensureOrdersExtraColumns();
+        await ensureOrdersRenewalColumns();
+        await ensureOrdersTimingColumns();
+        await ensurePackagesSchema();
+
+        const [baseOrders] = await connection.query(
+            'SELECT * FROM orders WHERE id = ? LIMIT 1',
+            [id]
+        );
+        if (!baseOrders.length) {
+            return res.status(404).json({ error: 'Order asal tidak ditemukan' });
+        }
+        const baseOrder = baseOrders[0];
+
+        const packageId = orderPayload.packageId || orderPayload.package_id || body.packageId || body.package_id || baseOrder.package_id;
+        if (!packageId) {
+            return res.status(400).json({ error: 'packageId wajib diisi' });
+        }
+
+        const serviceType = orderPayload.serviceType || orderPayload.service_type || baseOrder.service_type || null;
+        const baseMetaData = baseOrder.meta_data;
+        const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? baseMetaData ?? null;
+        const metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+
+        const startDate = orderPayload.startDate || orderPayload.start_date || body.startDate || body.start_date || null;
+        const endDate = orderPayload.endDate || orderPayload.end_date || body.endDate || body.end_date || null;
+        const renewalCount = Number(baseOrder.renewal_count || 0) + 1;
+
+        await connection.beginTransaction();
+
+        const startDateSource = startDate ? 'cs_estimate' : 'system';
+        const [orderResult] = await connection.query(
+            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data, parent_order_id, renewal_count, go_live_date, start_date_source)
+             VALUES (?, ?, 'Perpanjang', 1, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+            [baseOrder.client_id, packageId, startDate, endDate, serviceType, metaData, baseOrder.id, renewalCount, startDateSource]
+        );
+        const newOrderId = orderResult.insertId;
+
+        const [baseDetailsRows] = await connection.query(
+            'SELECT description, advantages, uniqueness, promo FROM order_details WHERE order_id = ? LIMIT 1',
+            [baseOrder.id]
+        );
+        const baseDetails = baseDetailsRows[0] || {};
+        const description = detailsPayload && detailsPayload.description !== undefined ? detailsPayload.description : (baseDetails.description ?? null);
+        const advantages = detailsPayload && detailsPayload.advantages !== undefined ? detailsPayload.advantages : (baseDetails.advantages ?? null);
+        const uniqueness = detailsPayload && detailsPayload.uniqueness !== undefined ? detailsPayload.uniqueness : (baseDetails.uniqueness ?? null);
+        const promo = detailsPayload && detailsPayload.promo !== undefined ? detailsPayload.promo : (baseDetails.promo ?? null);
+        if (description || advantages || uniqueness || promo) {
+            await connection.query(
+                'INSERT INTO order_details (order_id, description, advantages, uniqueness, promo) VALUES (?, ?, ?, ?, ?)',
+                [newOrderId, description, advantages, uniqueness, promo]
+            );
+        }
+
+        const [baseTargetsRows] = await connection.query(
+            'SELECT locations, age_range, gender FROM order_targets WHERE order_id = ? LIMIT 1',
+            [baseOrder.id]
+        );
+        const baseTargets = baseTargetsRows[0] || {};
+        const locations = targetsPayload && targetsPayload.locations !== undefined ? targetsPayload.locations : (baseTargets.locations ?? null);
+        const ageRange = targetsPayload && (targetsPayload.ageRange !== undefined || targetsPayload.age_range !== undefined)
+            ? (targetsPayload.ageRange ?? targetsPayload.age_range ?? null)
+            : (baseTargets.age_range ?? null);
+        const gender = targetsPayload && targetsPayload.gender !== undefined ? targetsPayload.gender : (baseTargets.gender ?? null);
+        if (locations || ageRange || gender) {
+            await connection.query(
+                'INSERT INTO order_targets (order_id, locations, age_range, gender) VALUES (?, ?, ?, ?)',
+                [newOrderId, locations, ageRange, gender]
+            );
+        }
+
+        const [assignments] = await connection.query(
+            'SELECT user_id, role, content_type FROM order_assignments WHERE order_id = ?',
+            [baseOrder.id]
+        );
+        for (const a of assignments) {
+            const roleName = String(a.role || '');
+            const contentTypeRaw = String(a.content_type || '').toLowerCase();
+            const ruleType = roleName === 'CS'
+                ? 'extend'
+                : (contentTypeRaw || 'general');
+
+            let amount = 0;
+            const [rulesSpecific] = await connection.query(
+                'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ? LIMIT 1',
+                [packageId, roleName, ruleType]
+            );
+            if (rulesSpecific.length && rulesSpecific[0].amount != null) {
+                amount = Number(rulesSpecific[0].amount);
+            } else {
+                const [rulesGeneral] = await connection.query(
+                    'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ? LIMIT 1',
+                    [packageId, roleName, 'general']
+                );
+                if (rulesGeneral.length && rulesGeneral[0].amount != null) {
+                    amount = Number(rulesGeneral[0].amount);
+                } else {
+                    const [rulesAny] = await connection.query(
+                        'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? LIMIT 1',
+                        [packageId, roleName]
+                    );
+                    if (rulesAny.length && rulesAny[0].amount != null) {
+                        amount = Number(rulesAny[0].amount);
+                    }
+                }
+            }
+
+            await connection.query(
+                `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [newOrderId, a.user_id, roleName, ruleType, amount]
+            );
+
+            const [ledgerRes] = await connection.query(
+                `INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event)
+                 VALUES (?, ?, ?, ?, NULL, "flat", ?, ?, "accrued", "renew_order")`,
+                [newOrderId, a.user_id, roleName, ruleType, amount, amount]
+            );
+            const [txnRes] = await connection.query(
+                'INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)',
+                [newOrderId, amount]
+            );
+            await connection.query(
+                'UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?',
+                [txnRes.insertId, ledgerRes.insertId]
+            );
+        }
+
+        let pkgRows;
+        try {
+            [pkgRows] = await connection.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR') {
+                [pkgRows] = await connection.query('SELECT price_monthly as price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+            } else {
+                throw e;
+            }
+        }
+        const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
+        await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [newOrderId, incomeAmount]);
+
+        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? 'Menunggu' : 'Proses OTP';
+        await connection.query(
+            'INSERT INTO order_contents (order_id, status) VALUES (?, ?)',
+            [newOrderId, initialStatus]
+        );
+
+        await connection.commit();
+        res.json({ success: true, orderId: newOrderId });
+    } catch (e) {
+        try { await connection.rollback(); } catch (_) {}
+        console.error('Renew order error:', e);
         res.status(500).json({ error: 'Internal server error' });
     } finally {
         connection.release();
@@ -2212,7 +2669,19 @@ app.get('/api/finance/orders', async (req, res) => {
             params.push(first, last, first, last, first, last);
         }
 
-        const [orders] = await pool.query(query, params);
+        await ensurePackagesSchema();
+        let orders;
+        try {
+            [orders] = await pool.query(query, params);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR' && query.includes('p.price as package_price')) {
+                const fallbackQuery = query.replace('p.price as package_price', 'p.price_monthly as package_price');
+                [orders] = await pool.query(fallbackQuery, params);
+            } else {
+                throw e;
+            }
+        }
         res.json(orders);
     } catch (e) {
         console.error('Finance orders error:', e);
@@ -2440,12 +2909,25 @@ app.get('/api/orders/:id', async (req, res) => {
         const { id } = req.params;
 
         // 1. Get Order
-        const [orders] = await pool.query(`
+        await ensurePackagesSchema();
+        let orders;
+        const baseQuery = `
             SELECT o.*, p.name as package_name, p.price as package_price
             FROM orders o
             LEFT JOIN packages p ON o.package_id = p.id
             WHERE o.id = ?
-        `, [id]);
+        `;
+        try {
+            [orders] = await pool.query(baseQuery, [id]);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR' && baseQuery.includes('p.price as package_price')) {
+                const fallbackQuery = baseQuery.replace('p.price as package_price', 'p.price_monthly as package_price');
+                [orders] = await pool.query(fallbackQuery, [id]);
+            } else {
+                throw e;
+            }
+        }
 
         if (orders.length === 0) {
             return res.status(404).json({ error: 'Order not found' });

@@ -564,6 +564,13 @@ tailwind.config = {
         <div>
           <h1 id="od-title" class="text-xl md:text-2xl font-semibold tracking-tight">Detail Pesanan</h1>
           <p id="od-subtitle" class="text-secondary/80 text-sm mt-1"></p>
+          <div class="mt-3 flex items-center gap-2">
+            <button id="btn-renew-order" class="px-3 py-1.5 bg-purple-500/10 text-purple-600 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30 rounded-lg text-xs font-bold hover:brightness-110 transition-all flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">autorenew</span>
+              Perpanjang
+            </button>
+            <span id="renewal-info" class="hidden text-xs text-slate-500 dark:text-slate-400"></span>
+          </div>
         </div>
         <div class="flex items-center gap-2 hidden">
           <div class="hidden md:flex items-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full px-3 py-1.5 w-64">
@@ -1053,9 +1060,198 @@ tailwind.config = {
   </div>
   <div id="include-footer"></div>
 </div>
+
+<!-- Renew Modal -->
+<div id="renew-modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeRenewModal()"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl p-4">
+    <div class="glass-panel rounded-2xl p-6 shadow-2xl relative">
+      <button onclick="closeRenewModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Perpanjang Pesanan</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Pilih Paket Baru</label>
+          <select id="renew-package-id" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white"></select>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Start Date (Estimasi CS)</label>
+            <input id="renew-start-date" type="date" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">End Date</label>
+            <input id="renew-end-date" type="date" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white">
+          </div>
+        </div>
+        <p id="renew-package-hint" class="text-xs text-slate-500 dark:text-slate-400"></p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+          Start date ini adalah estimasi. Saat campaign pertama aktif, sistem akan otomatis mengunci tanggal live aktual dari Advertiser.
+        </p>
+        <div class="pt-2 flex justify-end gap-2">
+          <button onclick="closeRenewModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5">Batal</button>
+          <button id="btn-submit-renew" onclick="submitRenewOrder(this)" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all">Simpan Perpanjangan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="js/include.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function(){
+  window.currentOrder = null;
+  window.currentClient = null;
+  window.renewPackages = [];
+
+  function toDateInputValue(d){
+    try {
+      const x = new Date(d);
+      if (isNaN(x.getTime())) return '';
+      return x.toISOString().split('T')[0];
+    } catch(_) {
+      return '';
+    }
+  }
+
+  function shiftDate(startDate, days){
+    const base = new Date(startDate);
+    if (isNaN(base.getTime())) return '';
+    const n = Number(days) || 30;
+    base.setDate(base.getDate() + n);
+    return base.toISOString().split('T')[0];
+  }
+
+  function recalcRenewEndDate(){
+    const select = document.getElementById('renew-package-id');
+    const startEl = document.getElementById('renew-start-date');
+    const endEl = document.getElementById('renew-end-date');
+    if (!select || !startEl || !endEl || !startEl.value) return;
+    const selectedOpt = select.options[select.selectedIndex];
+    const dur = selectedOpt ? parseInt(String(selectedOpt.dataset.duration || '').replace(/[^0-9]/g, ''), 10) : 30;
+    endEl.value = shiftDate(startEl.value, dur || 30);
+  }
+
+  async function loadRenewPackages(selectedPackageId){
+    const select = document.getElementById('renew-package-id');
+    const hint = document.getElementById('renew-package-hint');
+    if (!select) return;
+    try {
+      const res = await fetch('/api/packages');
+      const rows = await res.json();
+      window.renewPackages = Array.isArray(rows) ? rows : [];
+      select.innerHTML = '<option value="">Pilih paket...</option>';
+      window.renewPackages
+        .filter(p => Number(p.active) === 1 || p.active === true || p.active === undefined || p.active === null)
+        .forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} ${p.price != null ? `(Rp ${Number(p.price || 0).toLocaleString('id-ID')})` : ''}`;
+          opt.dataset.duration = p.duration || '';
+          opt.dataset.price = p.price || 0;
+          select.appendChild(opt);
+        });
+      if (selectedPackageId) select.value = String(selectedPackageId);
+      const selectedOpt = select.options[select.selectedIndex];
+      if (selectedOpt && hint) {
+        const dur = selectedOpt.dataset.duration || '-';
+        hint.textContent = `Durasi paket: ${dur}`;
+      }
+    } catch (e) {
+      if (hint) hint.textContent = 'Gagal memuat paket';
+    }
+  }
+
+  window.openRenewModal = async function(){
+    const modal = document.getElementById('renew-modal');
+    const startEl = document.getElementById('renew-start-date');
+    const endEl = document.getElementById('renew-end-date');
+    if (!window.currentOrder || !modal || !startEl || !endEl) return;
+
+    await loadRenewPackages(window.currentOrder.package_id);
+    const today = toDateInputValue(new Date());
+    startEl.value = today;
+    const select = document.getElementById('renew-package-id');
+    const selectedOpt = select ? select.options[select.selectedIndex] : null;
+    const duration = selectedOpt ? parseInt(String(selectedOpt.dataset.duration || '').replace(/[^0-9]/g, ''), 10) : 30;
+    endEl.value = shiftDate(today, duration || 30);
+    modal.classList.remove('hidden');
+  };
+
+  window.closeRenewModal = function(){
+    const modal = document.getElementById('renew-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.submitRenewOrder = async function(btn){
+    if (!window.currentOrder || !window.currentOrder.id) return;
+    const packageId = document.getElementById('renew-package-id').value;
+    const startDate = document.getElementById('renew-start-date').value;
+    const endDate = document.getElementById('renew-end-date').value;
+    if (!packageId) return alert('Pilih paket terlebih dahulu');
+    if (!startDate || !endDate) return alert('Start date dan end date wajib diisi');
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Menyimpan...';
+    try {
+      const userId = localStorage.getItem('user_id') || localStorage.getItem('userId');
+      const userRole = (localStorage.getItem('role') || '').toLowerCase();
+      const payload = {
+        userId,
+        userRole,
+        order: {
+          packageId: Number(packageId),
+          startDate,
+          endDate,
+          serviceType: window.currentOrder.service_type || null
+        }
+      };
+      const res = await fetch(`/api/orders/${encodeURIComponent(window.currentOrder.id)}/renew`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const contentType = String(res.headers.get('content-type') || '').toLowerCase();
+      if (!contentType.includes('application/json')) {
+        const raw = await res.text();
+        const preview = String(raw || '').slice(0, 120).replace(/\s+/g, ' ').trim();
+        throw new Error(`Endpoint renew belum aktif di server (HTTP ${res.status}). Restart server lalu coba lagi. Response: ${preview}`);
+      }
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || `Gagal membuat perpanjangan (HTTP ${res.status})`);
+      window.location.href = `orderdetail.html?id=${encodeURIComponent(json.orderId)}`;
+    } catch (e) {
+      alert(`Gagal perpanjang: ${e.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  };
+
+  const renewBtn = document.getElementById('btn-renew-order');
+  if (renewBtn) {
+    renewBtn.addEventListener('click', function(){
+      openRenewModal();
+    });
+  }
+
+  const renewSelect = document.getElementById('renew-package-id');
+  if (renewSelect) {
+    renewSelect.addEventListener('change', function(){
+      const selectedOpt = renewSelect.options[renewSelect.selectedIndex];
+      const hint = document.getElementById('renew-package-hint');
+      if (selectedOpt && hint) hint.textContent = `Durasi paket: ${selectedOpt.dataset.duration || '-'}`;
+      recalcRenewEndDate();
+    });
+  }
+
+  const renewStartDateEl = document.getElementById('renew-start-date');
+  if (renewStartDateEl) {
+    renewStartDateEl.addEventListener('change', function(){
+      recalcRenewEndDate();
+    });
+  }
   window.switchTab = function(tabName) {
     // Hide all panels
     document.querySelectorAll('.tab-content').forEach(function(el) {
@@ -1183,6 +1379,20 @@ document.addEventListener("DOMContentLoaded", function(){
       var c = data.client || {};
       var d = data.details || {};
       var t = data.targets || {};
+      window.currentOrder = o;
+      window.currentClient = c;
+      const renewalInfoEl = document.getElementById('renewal-info');
+      if (renewalInfoEl) {
+        const count = Number(o.renewal_count || 0);
+        if (o.parent_order_id || count > 0) {
+          renewalInfoEl.classList.remove('hidden');
+          const source = o.start_date_source ? ` • Source: ${o.start_date_source}` : '';
+          const live = o.go_live_date ? ` • Live: ${o.go_live_date}` : '';
+          renewalInfoEl.textContent = `Renewal ke-${count || 1}${o.parent_order_id ? ` • Parent #${o.parent_order_id}` : ''}${live}${source}`;
+        } else {
+          renewalInfoEl.classList.add('hidden');
+        }
+      }
       if (q("od-subtitle")) {
         var sub = [];
         if (c.business_name) sub.push(`<span class="font-bold text-slate-700 dark:text-slate-200">${c.business_name}</span>`);

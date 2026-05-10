@@ -244,6 +244,7 @@ Belum punya akun?
                     localStorage.setItem('user_name', data.user.name);
                     localStorage.setItem('user_email', data.user.email);
                     localStorage.setItem('role', data.user.role);
+                    localStorage.setItem('login_at', new Date().toISOString());
 
                     // Redirect
                     const baseUsed = (result.url || '').replace(/\/api\/login$/, '');
