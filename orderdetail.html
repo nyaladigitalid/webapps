@@ -1230,8 +1230,14 @@ document.addEventListener("DOMContentLoaded", function(){
   };
 
   const renewBtn = document.getElementById('btn-renew-order');
+  const currentRoleForRenew = (localStorage.getItem('role') || '').toLowerCase();
+  const canRenewOrder = currentRoleForRenew === 'cs' || currentRoleForRenew === 'super_admin';
+  if (renewBtn && !canRenewOrder) {
+    renewBtn.classList.add('hidden');
+  }
   if (renewBtn) {
     renewBtn.addEventListener('click', function(){
+      if (!canRenewOrder) return;
       openRenewModal();
     });
   }

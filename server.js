@@ -199,6 +199,27 @@ async function ensureMetaAdsConfigSchema() {
     }
 }
 
+async function ensureCampaignsSchema() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE campaigns ADD COLUMN result_type VARCHAR(60) NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`UPDATE campaigns SET result_type = 'Results' WHERE result_type IS NULL OR result_type = ''`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+        }
+        console.log('Campaigns schema ready');
+    } catch (e) {
+        console.error('Error ensuring campaigns schema:', e);
+    }
+}
+
 async function getMetaAccessToken() {
     await ensureMetaAdsConfigSchema();
     let rows = [];
@@ -274,13 +295,76 @@ async function ensureCommissionLedgerSchema() {
         await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN rate_type VARCHAR(20) NULL`);
         await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN rate_value DECIMAL(15,4) NULL`);
         await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN source_event VARCHAR(60) NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN source_event_key VARCHAR(191) NULL`);
         await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN ref_txn_id INT NULL`);
         await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN posted_at DATETIME NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN approval_status VARCHAR(20) DEFAULT 'pending'`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN approved_by INT NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN approved_at DATETIME NULL`);
+        await tryAdd(`ALTER TABLE commission_ledger ADD COLUMN approval_note TEXT NULL`);
+        try {
+            await p.query(`ALTER TABLE commission_ledger ADD INDEX idx_commission_approval_status (approval_status)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_KEYNAME' && code !== 'ER_NO_SUCH_TABLE') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE commission_ledger ADD UNIQUE KEY uniq_commission_source_event_key (source_event_key)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_KEYNAME' && code !== 'ER_DUP_ENTRY' && code !== 'ER_NO_SUCH_TABLE') throw e;
+        }
 
         console.log('Commission ledger schema ready');
     } catch (e) {
         console.error('Error ensuring commission ledger schema:', e);
     }
+}
+
+async function accrueCommissionLedger(input = {}, conn = null) {
+    const db = conn || pool;
+    const orderId = Number(input.order_id || input.orderId || 0);
+    const userId = Number(input.user_id || input.userId || 0);
+    const role = String(input.role || '');
+    const contentType = String(input.content_type || input.contentType || 'general');
+    const basisAmount = input.basis_amount != null ? Number(input.basis_amount) : null;
+    const rateType = String(input.rate_type || input.rateType || 'flat');
+    const rateValue = input.rate_value != null ? Number(input.rate_value) : Number(input.amount || 0);
+    const amount = Number(input.amount || 0);
+    const sourceEvent = String(input.source_event || input.sourceEvent || 'manual');
+    const sourceEventKey = String(
+        input.source_event_key ||
+        input.sourceEventKey ||
+        `${sourceEvent}:${orderId}:${userId}:${role}:${contentType}`
+    );
+    const status = String(input.status || 'accrued');
+
+    if (!orderId || !userId || !role) return { success: false, skipped: true, reason: 'invalid_input' };
+    await ensureCommissionLedgerSchema();
+
+    try {
+        const [dup] = await db.query(
+            'SELECT id FROM commission_ledger WHERE source_event_key = ? LIMIT 1',
+            [sourceEventKey]
+        );
+        if (dup.length > 0) return { success: true, duplicate: true, id: dup[0].id };
+    } catch (e) {
+        const code = String((e && e.code) || '');
+        if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+        const [dupLegacy] = await db.query(
+            'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = ? AND source_event = ? LIMIT 1',
+            [orderId, userId, role, sourceEvent]
+        );
+        if (dupLegacy.length > 0) return { success: true, duplicate: true, id: dupLegacy[0].id };
+    }
+
+    const [res] = await db.query(
+        `INSERT INTO commission_ledger
+         (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event, source_event_key, approval_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [orderId, userId, role, contentType, basisAmount, rateType, rateValue, amount, status, sourceEvent, sourceEventKey]
+    );
+    return { success: true, duplicate: false, id: res.insertId };
 }
 
 // Create table if not exists
@@ -479,6 +563,7 @@ ensureOrdersExtraColumns();
 ensureOrdersRenewalColumns();
 ensureOrdersTimingColumns();
 ensureMetaAdsConfigSchema();
+ensureCampaignsSchema();
 ensureCommissionLedgerSchema();
 createScalevTable();
 createScalevWebhookEventsTable();
@@ -1595,6 +1680,7 @@ app.post('/api/campaigns/:id/sync', async (req, res) => {
 
 app.post('/api/campaigns/create', async (req, res) => {
     try {
+        await ensureCampaignsSchema();
         const {
             name,
             ad_account_id,
@@ -1686,18 +1772,19 @@ app.post('/api/campaigns/create', async (req, res) => {
                      ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
                     [order_id, advUserId, amount]
                 );
-                const [dup] = await pool.query(
-                    'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "Advertiser" AND source_event = "campaign_created" LIMIT 1',
-                    [order_id, advUserId]
-                );
-                if (dup.length === 0) {
-                    const [ledgerRes] = await pool.query(
-                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "Advertiser", "campaign", NULL, "flat", ?, ?, "accrued", "campaign_created")',
-                        [order_id, advUserId, amount, amount]
-                    );
-                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [order_id, amount]);
-                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
-                }
+                await accrueCommissionLedger({
+                    order_id,
+                    user_id: advUserId,
+                    role: 'Advertiser',
+                    content_type: 'campaign',
+                    basis_amount: null,
+                    rate_type: 'flat',
+                    rate_value: amount,
+                    amount,
+                    status: 'accrued',
+                    source_event: 'campaign_created',
+                    source_event_key: `campaign_created:${order_id}:${advUserId}:campaign`
+                });
             }
         } catch (e) {
             console.error('Advertiser commission on campaign create error:', e);
@@ -1713,6 +1800,7 @@ app.post('/api/campaigns/create', async (req, res) => {
 // Duplicate campaign flow aligned with Apps Script duplicateCampaignFullManual
 app.post('/api/campaigns/duplicate', async (req, res) => {
     try {
+        await ensureCampaignsSchema();
         const {
             addAccountName,
             namaUsaha,
@@ -1900,18 +1988,19 @@ app.post('/api/campaigns/duplicate', async (req, res) => {
                      ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
                     [order_id, advUserId, amount]
                 );
-                const [dup] = await pool.query(
-                    'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "Advertiser" AND source_event = "campaign_created" LIMIT 1',
-                    [order_id, advUserId]
-                );
-                if (dup.length === 0) {
-                    const [ledgerRes] = await pool.query(
-                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "Advertiser", "campaign", NULL, "flat", ?, ?, "accrued", "campaign_created")',
-                        [order_id, advUserId, amount, amount]
-                    );
-                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [order_id, amount]);
-                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
-                }
+                await accrueCommissionLedger({
+                    order_id,
+                    user_id: advUserId,
+                    role: 'Advertiser',
+                    content_type: 'campaign',
+                    basis_amount: null,
+                    rate_type: 'flat',
+                    rate_value: amount,
+                    amount,
+                    status: 'accrued',
+                    source_event: 'campaign_created',
+                    source_event_key: `campaign_created:${order_id}:${advUserId}:campaign`
+                });
             }
         } catch (e) {
             console.error('Advertiser commission on campaign duplicate error:', e);
@@ -2423,12 +2512,15 @@ app.post('/api/orders', async (req, res) => {
                  ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
                 [orderId, csId, statusType, amount]
             );
-            const [ledgerResAdminCS] = await connection.query(
-                'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, ?, ?, NULL, "flat", ?, ?, "accrued", "created_order")',
-                [orderId, csId, 'CS', statusType, amount, amount]
-            );
-            const [txnResAdminCS] = await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [orderId, amount]);
-            await connection.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnResAdminCS.insertId, ledgerResAdminCS.insertId]);
+            await accrueCommissionLedger({
+                order_id: orderId,
+                user_id: csId,
+                role: 'CS',
+                content_type: statusType,
+                amount,
+                source_event: 'created_order',
+                source_event_key: `created_order:${orderId}:${csId}:CS:${statusType}`
+            }, connection);
         } else if (userRole === 'cs') {
             const creatorIdRaw = body.userId || body.user_id;
             const creatorId = creatorIdRaw ? parseInt(creatorIdRaw) : null;
@@ -2450,12 +2542,15 @@ app.post('/api/orders', async (req, res) => {
                     'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CS", ?, ?)',
                     [orderId, creatorId, statusType, amount]
                 );
-                const [ledgerResCS] = await connection.query(
-                    'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, ?, ?, NULL, "flat", ?, ?, "accrued", "created_order")',
-                    [orderId, creatorId, 'CS', statusType, amount, amount]
-                );
-                const [txnResCS] = await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [orderId, amount]);
-                await connection.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnResCS.insertId, ledgerResCS.insertId]);
+                await accrueCommissionLedger({
+                    order_id: orderId,
+                    user_id: creatorId,
+                    role: 'CS',
+                    content_type: statusType,
+                    amount,
+                    source_event: 'created_order',
+                    source_event_key: `created_order:${orderId}:${creatorId}:CS:${statusType}`
+                }, connection);
             }
         } else if (userRole === 'crm') {
             const creatorIdRaw = body.userId || body.user_id;
@@ -2479,12 +2574,15 @@ app.post('/api/orders', async (req, res) => {
                     'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", ?, ?)',
                     [orderId, creatorId, ctype, amount]
                 );
-                const [ledgerRes] = await connection.query(
-                    'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "CRM", ?, NULL, "flat", ?, ?, "accrued", "created_order_crm")',
-                    [orderId, creatorId, ctype, amount, amount]
-                );
-                const [txnRes] = await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [orderId, amount]);
-                await connection.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+                await accrueCommissionLedger({
+                    order_id: orderId,
+                    user_id: creatorId,
+                    role: 'CRM',
+                    content_type: ctype,
+                    amount,
+                    source_event: 'created_order_crm',
+                    source_event_key: `created_order_crm:${orderId}:${creatorId}:CRM:${ctype}`
+                }, connection);
             }
         }
         
@@ -2646,19 +2744,15 @@ app.post('/api/orders/:id/renew', async (req, res) => {
                 [newOrderId, a.user_id, roleName, ruleType, amount]
             );
 
-            const [ledgerRes] = await connection.query(
-                `INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event)
-                 VALUES (?, ?, ?, ?, NULL, "flat", ?, ?, "accrued", "renew_order")`,
-                [newOrderId, a.user_id, roleName, ruleType, amount, amount]
-            );
-            const [txnRes] = await connection.query(
-                'INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)',
-                [newOrderId, amount]
-            );
-            await connection.query(
-                'UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?',
-                [txnRes.insertId, ledgerRes.insertId]
-            );
+            await accrueCommissionLedger({
+                order_id: newOrderId,
+                user_id: a.user_id,
+                role: roleName,
+                content_type: ruleType,
+                amount,
+                source_event: 'renew_order',
+                source_event_key: `renew_order:${newOrderId}:${a.user_id}:${roleName}:${ruleType}`
+            }, connection);
         }
 
         let pkgRows;
@@ -2886,10 +2980,15 @@ app.post('/api/commissions/accrue-from-order', async (req, res) => {
                 if (r2.length > 0 && r2[0].amount != null) ruleAmount = Number(r2[0].amount);
             }
         }
-        await pool.query(`
-            INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event)
-            VALUES (?, ?, ?, ?, NULL, 'flat', ?, ?, 'accrued', 'created_order')
-        `, [order_id, user_id, role, contentType, ruleAmount, ruleAmount]);
+        await accrueCommissionLedger({
+            order_id,
+            user_id,
+            role,
+            content_type: contentType,
+            amount: ruleAmount,
+            source_event: 'created_order',
+            source_event_key: `created_order:${order_id}:${user_id}:${role}:${contentType}`
+        });
         res.json({ success: true });
     } catch (e) {
         console.error('Accrue commission error:', e);
@@ -2899,17 +2998,107 @@ app.post('/api/commissions/accrue-from-order', async (req, res) => {
 
 app.get('/api/commissions/ledger', async (req, res) => {
     try {
-        const { order_id, user_id, status } = req.query || {};
+        const { order_id, user_id, status, approval_status } = req.query || {};
         let sql = `SELECT * FROM commission_ledger WHERE 1=1`;
         const params = [];
         if (order_id) { sql += ' AND order_id = ?'; params.push(order_id); }
         if (user_id) { sql += ' AND user_id = ?'; params.push(user_id); }
         if (status) { sql += ' AND status = ?'; params.push(status); }
+        if (approval_status) { sql += ' AND approval_status = ?'; params.push(approval_status); }
         sql += ' ORDER BY created_at DESC';
         const [rows] = await pool.query(sql, params);
         res.json(rows);
     } catch (e) {
         console.error('Fetch ledger error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/commissions/approvals', async (req, res) => {
+    try {
+        const status = String((req.query && req.query.status) || 'pending');
+        const [rows] = await pool.query(
+            `SELECT cl.*, u.name as user_name, o.client_id
+             FROM commission_ledger cl
+             LEFT JOIN users u ON cl.user_id = u.id
+             LEFT JOIN orders o ON cl.order_id = o.id
+             WHERE cl.status = 'accrued' AND cl.approval_status = ?
+             ORDER BY cl.created_at DESC`,
+            [status]
+        );
+        res.json(rows);
+    } catch (e) {
+        console.error('Commission approval list error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/commissions/:id/approve', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { id } = req.params;
+        const body = req.body || {};
+        const approverId = body.approver_id || body.user_id || null;
+        const note = body.note || null;
+
+        await connection.beginTransaction();
+        const [rows] = await connection.query('SELECT id, status, approval_status FROM commission_ledger WHERE id = ? LIMIT 1', [id]);
+        if (rows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Ledger not found' });
+        }
+        const it = rows[0];
+        if (String(it.status || '').toLowerCase() === 'paid') {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Komisi sudah paid' });
+        }
+        await connection.query(
+            `UPDATE commission_ledger
+             SET approval_status = 'approved',
+                 status = IF(status = 'accrued', 'approved', status),
+                 approved_by = ?,
+                 approved_at = NOW(),
+                 approval_note = ?
+             WHERE id = ?`,
+            [approverId, note, id]
+        );
+        await connection.commit();
+        res.json({ success: true });
+    } catch (e) {
+        try { await connection.rollback(); } catch (_) {}
+        console.error('Approve commission error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
+app.post('/api/commissions/:id/reject', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const body = req.body || {};
+        const note = body.note || null;
+        const reviewerId = body.user_id || null;
+        const [rows] = await pool.query('SELECT id, status FROM commission_ledger WHERE id = ? LIMIT 1', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Ledger not found' });
+        }
+        if (String(rows[0].status || '').toLowerCase() === 'paid') {
+            return res.status(400).json({ error: 'Komisi sudah paid dan tidak bisa reject' });
+        }
+        await pool.query(
+            `UPDATE commission_ledger
+             SET approval_status = 'rejected',
+                 status = 'rejected',
+                 approved_by = ?,
+                 approved_at = NOW(),
+                 approval_note = ?
+             WHERE id = ?`,
+            [reviewerId, note, id]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Reject commission error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -2930,7 +3119,8 @@ app.post('/api/commissions/payouts', async (req, res) => {
         const batchId = batchRes.insertId;
         const [items] = await connection.query(`
             SELECT * FROM commission_ledger
-            WHERE status IN ('accrued','approved')
+            WHERE status = 'approved'
+              AND approval_status = 'approved'
               AND DATE(created_at) BETWEEN ? AND ?
         `, [period_start, period_end]);
         let total = 0;
@@ -2939,7 +3129,7 @@ app.post('/api/commissions/payouts', async (req, res) => {
             total += amount;
             const [txnRes] = await connection.query(`
                 INSERT INTO transactions (order_id, type, amount)
-                VALUES (?, 'commission', ?)
+                VALUES (?, 'commission_pay', ?)
             `, [it.order_id, amount]);
             const txnId = txnRes.insertId;
             await connection.query(`
@@ -3275,15 +3465,15 @@ app.post('/api/orders/:id/content/start', async (req, res) => {
                         );
                     }
                     // Create ledger accrued
-                    const [ledgerRes] = await pool.query(
-                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "CRM", "otp", NULL, "flat", ?, ?, "accrued", "otp_to_content")',
-                        [id, crmUserId, amount, amount]
-                    );
-                    const ledgerId = ledgerRes.insertId;
-                    // Record finance immedately as commission transaction and mark ledger paid
-                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [id, amount]);
-                    const txnId = txnRes.insertId;
-                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnId, ledgerId]);
+                    await accrueCommissionLedger({
+                        order_id: id,
+                        user_id: crmUserId,
+                        role: 'CRM',
+                        content_type: 'otp',
+                        amount,
+                        source_event: 'otp_to_content',
+                        source_event_key: `otp_to_content:${id}:${crmUserId}:CRM:otp`
+                    });
                 }
             }
         } catch (e) {
@@ -3337,12 +3527,15 @@ app.post('/api/orders/:id/content/otp', async (req, res) => {
                         'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", "otp", ?) ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)',
                         [id, crmUserId, amount]
                     );
-                    const [ledgerRes] = await pool.query(
-                        'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "CRM", "otp", NULL, "flat", ?, ?, "accrued", "otp_sent")',
-                        [id, crmUserId, amount, amount]
-                    );
-                    const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [id, amount]);
-                    await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
+                    await accrueCommissionLedger({
+                        order_id: id,
+                        user_id: crmUserId,
+                        role: 'CRM',
+                        content_type: 'otp',
+                        amount,
+                        source_event: 'otp_sent',
+                        source_event_key: `otp_sent:${id}:${crmUserId}:CRM:otp`
+                    });
                 }
                 // Auto-advance process to "Proses Konten" after OTP send by CRM
                 try {
@@ -3447,18 +3640,15 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
                          ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
                         [id, userId, ctype, amount]
                     );
-                    const [dup] = await pool.query(
-                        'SELECT id FROM commission_ledger WHERE order_id = ? AND user_id = ? AND role = "Editor" AND source_event = "content_ready" LIMIT 1',
-                        [id, userId]
-                    );
-                    if (dup.length === 0) {
-                        const [ledgerRes] = await pool.query(
-                            'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, "Editor", ?, NULL, "flat", ?, ?, "accrued", "content_ready")',
-                            [id, userId, ctype, amount, amount]
-                        );
-                        const [txnRes] = await pool.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "commission", ?)', [id, amount]);
-                        await pool.query('UPDATE commission_ledger SET status = "paid", ref_txn_id = ?, posted_at = NOW() WHERE id = ?', [txnRes.insertId, ledgerRes.insertId]);
-                    }
+                    await accrueCommissionLedger({
+                        order_id: id,
+                        user_id: userId,
+                        role: 'Editor',
+                        content_type: ctype,
+                        amount,
+                        source_event: 'content_ready',
+                        source_event_key: `content_ready:${id}:${userId}:Editor:${ctype}`
+                    });
                 }
             }
         } catch (e) {

@@ -245,6 +245,54 @@ body { font-family: 'Inter', sans-serif; }
             </button>
         </div>
     </div>
+    <!-- Finance Approval Komisi -->
+    <div class="glass-card rounded-xl p-6 mt-8">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+            <div>
+                <h3 class="text-xl font-bold text-white">Approval Komisi Keuangan</h3>
+                <p class="text-slate-400 text-sm">Review komisi accrual sebelum dibayarkan.</p>
+            </div>
+            <div class="flex flex-wrap items-end gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Status Approval</label>
+                    <select id="approval-status-filter" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Cari Order/User</label>
+                    <input type="text" id="approval-search" placeholder="#order / nama user" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                </div>
+                <button onclick="loadCommissionApprovals()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">filter_list</span>
+                    Muat Data
+                </button>
+            </div>
+        </div>
+        <div class="overflow-hidden rounded-xl border border-white/10">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white/5">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rule</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Komisi</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Catatan</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="approval-commission-body" class="divide-y divide-white/5">
+                    <tr>
+                        <td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <!-- Accrual History -->
     <div class="glass-card rounded-xl p-6 mt-8">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
@@ -374,7 +422,10 @@ body { font-family: 'Inter', sans-serif; }
         if (payoutBody) loadPayoutBatches();
         const btn = document.getElementById('btn-create-payout');
         if (btn) btn.addEventListener('click', createPayoutBatch);
+        const approvalStatusFilter = document.getElementById('approval-status-filter');
+        if (approvalStatusFilter) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
         loadAccrualHistory();
+        loadCommissionApprovals();
     });
 
     async function loadCommissionReport() {
@@ -444,6 +495,9 @@ body { font-family: 'Inter', sans-serif; }
     let filteredFinanceOrders = [];
     let currentPage = 1;
     const itemsPerPage = 5;
+    const currentFinanceRole = (localStorage.getItem('role') || '').toLowerCase();
+    const currentFinanceUserId = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
+    const canApproveCommission = ['keuangan', 'super_admin', 'superadmin', 'finance'].includes(currentFinanceRole);
 
     async function loadFinanceOrders() {
         const tbody = document.getElementById('finance-orders-body');
@@ -672,6 +726,114 @@ body { font-family: 'Inter', sans-serif; }
             btn.innerHTML = '<span class="material-symbols-outlined text-lg">payments</span> Buat Batch Payout';
         }
     }
+
+    async function loadCommissionApprovals() {
+        const tbody = document.getElementById('approval-commission-body');
+        const status = (document.getElementById('approval-status-filter')?.value || 'pending').toLowerCase();
+        const search = (document.getElementById('approval-search')?.value || '').trim().toLowerCase();
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td></tr>';
+        try {
+            const res = await fetch(`/api/commissions/approvals?status=${encodeURIComponent(status)}`);
+            const rows = await res.json();
+            if (!Array.isArray(rows) || rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data approval</td></tr>';
+                return;
+            }
+            const filtered = rows.filter(r => {
+                if (!search) return true;
+                const byOrder = String(r.order_id || '').toLowerCase().includes(search.replace('#', ''));
+                const byUser = String(r.user_name || '').toLowerCase().includes(search);
+                return byOrder || byUser;
+            });
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data yang cocok dengan pencarian</td></tr>';
+                return;
+            }
+
+            const approvalBadge = (s) => {
+                const v = String(s || 'pending').toLowerCase();
+                if (v === 'approved') return '<span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">approved</span>';
+                if (v === 'rejected') return '<span class="px-2 py-1 rounded text-[10px] font-bold bg-red-500/20 text-red-400">rejected</span>';
+                return '<span class="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">pending</span>';
+            };
+
+            tbody.innerHTML = filtered.map(r => {
+                const dt = r.created_at ? new Date(r.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                const canAction = canApproveCommission && String(r.approval_status || '').toLowerCase() === 'pending' && String(r.status || '').toLowerCase() !== 'paid';
+                return `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="px-6 py-4 text-sm text-slate-300">${dt}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-white">#${r.order_id || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-slate-300">${r.user_name || ('User ' + r.user_id)}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">${r.role || '-'}</span>
+                        <span class="ml-2 px-2 py-1 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">${r.content_type || 'general'}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm">${approvalBadge(r.approval_status)}</td>
+                    <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(Number(r.amount || 0))}</td>
+                    <td class="px-6 py-4 text-xs text-slate-400">${r.approval_note || '-'}</td>
+                    <td class="px-6 py-4 text-right">
+                        ${canAction ? `
+                            <button onclick="approveCommission(${r.id})" class="px-2.5 py-1.5 text-[11px] font-bold rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 mr-2">Approve</button>
+                            <button onclick="rejectCommission(${r.id})" class="px-2.5 py-1.5 text-[11px] font-bold rounded bg-red-500/20 hover:bg-red-500/30 text-red-300">Reject</button>
+                        ` : '<span class="text-slate-500 text-xs">-</span>'}
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-red-400">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    async function approveCommission(id) {
+        if (!canApproveCommission) {
+            alert('Hanya role keuangan/super admin yang bisa approve komisi.');
+            return;
+        }
+        const note = prompt('Catatan approve (opsional):', '') || '';
+        try {
+            const res = await fetch(`/api/commissions/${id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ approver_id: currentFinanceUserId || null, note })
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Gagal approve komisi');
+            await loadCommissionApprovals();
+            await loadAccrualHistory();
+        } catch (e) {
+            alert('Gagal approve: ' + e.message);
+        }
+    }
+
+    async function rejectCommission(id) {
+        if (!canApproveCommission) {
+            alert('Hanya role keuangan/super admin yang bisa reject komisi.');
+            return;
+        }
+        const note = prompt('Alasan reject (wajib):', '') || '';
+        if (!note.trim()) {
+            alert('Alasan reject wajib diisi.');
+            return;
+        }
+        try {
+            const res = await fetch(`/api/commissions/${id}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentFinanceUserId || null, note })
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Gagal reject komisi');
+            await loadCommissionApprovals();
+            await loadAccrualHistory();
+        } catch (e) {
+            alert('Gagal reject: ' + e.message);
+        }
+    }
+
+    window.approveCommission = approveCommission;
+    window.rejectCommission = rejectCommission;
 
     async function viewPayoutItems(batchId) {
         const tbody = document.getElementById('payout-items-body');
