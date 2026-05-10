@@ -3017,15 +3017,20 @@ app.get('/api/commissions/ledger', async (req, res) => {
 app.get('/api/commissions/approvals', async (req, res) => {
     try {
         const status = String((req.query && req.query.status) || 'pending');
-        const [rows] = await pool.query(
-            `SELECT cl.*, u.name as user_name, o.client_id
-             FROM commission_ledger cl
-             LEFT JOIN users u ON cl.user_id = u.id
-             LEFT JOIN orders o ON cl.order_id = o.id
-             WHERE cl.status = 'accrued' AND cl.approval_status = ?
-             ORDER BY cl.created_at DESC`,
-            [status]
-        );
+        let sql = `
+            SELECT cl.*, u.name as user_name, o.client_id
+            FROM commission_ledger cl
+            LEFT JOIN users u ON cl.user_id = u.id
+            LEFT JOIN orders o ON cl.order_id = o.id
+            WHERE cl.status IN ('accrued','approved','rejected')
+        `;
+        const params = [];
+        if (status !== 'all') {
+            sql += ' AND cl.approval_status = ?';
+            params.push(status);
+        }
+        sql += ' ORDER BY cl.created_at DESC';
+        const [rows] = await pool.query(sql, params);
         res.json(rows);
     } catch (e) {
         console.error('Commission approval list error:', e);

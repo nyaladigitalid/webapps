@@ -199,39 +199,18 @@ body { font-family: 'Inter', sans-serif; }
 </div>
       <!-- Summary Row Removed -->
 
-<!-- Payout Komisi -->
-<div id="payout-section" class="hidden glass-card rounded-xl p-6 mt-8">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-        <div>
-            <h3 class="text-xl font-bold text-white">Payout Komisi</h3>
-            <p class="text-slate-400 text-sm">Buat batch pembayaran komisi dan lihat detailnya.</p>
-        </div>
-        <div class="flex flex-wrap items-end gap-3">
-            <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Periode Mulai</label>
-                <input type="date" id="payout-start-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Periode Akhir</label>
-                <input type="date" id="payout-end-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-            </div>
-            <button id="btn-create-payout" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
-                <span class="material-symbols-outlined text-lg">payments</span>
-                Buat Batch Payout
-            </button>
-        </div>
-    </div>
-    <!-- Finance Approval Komisi -->
-    <div class="glass-card rounded-xl p-6 mt-8">
+<!-- Approval Komisi -->
+<div id="commission-approval-section" class="glass-card rounded-xl p-6 mt-8">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <div>
                 <h3 class="text-xl font-bold text-white">Approval Komisi Keuangan</h3>
-                <p class="text-slate-400 text-sm">Review komisi accrual sebelum dibayarkan.</p>
+                <p class="text-slate-400 text-sm">Semua role bisa lihat estimasi komisi; finance/super admin approve untuk finalisasi.</p>
             </div>
             <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1">Status Approval</label>
                     <select id="approval-status-filter" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                        <option value="all">Semua</option>
                         <option value="pending">Pending</option>
                         <option value="approved">Approved</option>
                         <option value="rejected">Rejected</option>
@@ -268,47 +247,6 @@ body { font-family: 'Inter', sans-serif; }
                 </tbody>
             </table>
         </div>
-    </div>
-    <div class="overflow-hidden rounded-xl border border-white/10">
-        <table class="finance-table w-full text-left border-collapse">
-            <thead class="bg-white/5">
-                <tr>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Batch</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Periode</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Total</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="payout-batches-body" class="divide-y divide-white/5">
-                <tr>
-                    <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Memuat batch...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="overflow-hidden rounded-xl border border-white/10 mt-6">
-        <div class="px-6 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
-            <h4 class="text-sm font-bold text-white">Detail Batch</h4>
-            <span id="payout-detail-label" class="text-xs text-slate-400">-</span>
-        </div>
-        <table class="finance-table w-full text-left border-collapse">
-            <thead class="bg-white/5">
-                <tr>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Role</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tipe</th>
-                    <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Komisi</th>
-                </tr>
-            </thead>
-            <tbody id="payout-items-body" class="divide-y divide-white/5">
-                <tr>
-                    <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Pilih batch di atas untuk melihat detail</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
 </div>
     </main>
   </div>
@@ -336,21 +274,9 @@ body { font-family: 'Inter', sans-serif; }
         if(financeEndDate) financeEndDate.value = formatDate(lastDay);
 
         loadFinanceOrders(); // Load main finance table
-        const payoutStart = document.getElementById('payout-start-date');
-        const payoutEnd = document.getElementById('payout-end-date');
-        if (payoutStart) payoutStart.value = formatDate(firstDay);
-        if (payoutEnd) payoutEnd.value = formatDate(lastDay);
-        const payoutBody = document.getElementById('payout-batches-body');
-        const payoutSection = document.getElementById('payout-section');
-        if (payoutSection && canApproveCommission) {
-            payoutSection.classList.remove('hidden');
-        }
-        if (payoutBody && canApproveCommission) loadPayoutBatches();
-        const btn = document.getElementById('btn-create-payout');
-        if (btn && canApproveCommission) btn.addEventListener('click', createPayoutBatch);
         const approvalStatusFilter = document.getElementById('approval-status-filter');
-        if (approvalStatusFilter && canApproveCommission) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
-        if (canApproveCommission) loadCommissionApprovals();
+        if (approvalStatusFilter) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
+        loadCommissionApprovals();
     });
 
     let allFinanceOrders = [];
@@ -535,63 +461,9 @@ body { font-family: 'Inter', sans-serif; }
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
 
-    async function loadPayoutBatches() {
-        const tbody = document.getElementById('payout-batches-body');
-        try {
-            const res = await fetch('/api/commissions/payouts');
-            const data = await res.json();
-            if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Belum ada batch</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(b => {
-                const period = `${b.period_start || '-'} s/d ${b.period_end || '-'}`;
-                const statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold ${b.status==='posted'?'bg-emerald-500/20 text-emerald-400':'bg-slate-500/20 text-slate-300'}">${b.status}</span>`;
-                return `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4 text-sm font-bold text-white">#${b.id}</td>
-                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${period}</td>
-                    <td class="px-6 py-4">${statusBadge}</td>
-                    <td class="px-6 py-4 text-right text-sm font-bold text-primary">${formatRupiah(b.total_amount || 0)}</td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="viewPayoutItems(${b.id})" class="px-3 py-1.5 text-xs font-bold rounded bg-white/5 hover:bg-white/10 text-white transition-colors">Lihat</button>
-                    </td>
-                </tr>
-                `;
-            }).join('');
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-red-400">Error: ${e.message}</td></tr>`;
-        }
-    }
-
-    async function createPayoutBatch() {
-        const start = document.getElementById('payout-start-date').value;
-        const end = document.getElementById('payout-end-date').value;
-        const btn = document.getElementById('btn-create-payout');
-        if (!start || !end) return;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span> Memproses...';
-        try {
-            const res = await fetch('/api/commissions/payouts', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ period_start: start, period_end: end })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            loadPayoutBatches();
-            viewPayoutItems(data.batch_id);
-        } catch (e) {
-            alert('Gagal membuat batch: ' + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined text-lg">payments</span> Buat Batch Payout';
-        }
-    }
-
     async function loadCommissionApprovals() {
         const tbody = document.getElementById('approval-commission-body');
-        const status = (document.getElementById('approval-status-filter')?.value || 'pending').toLowerCase();
+        const status = (document.getElementById('approval-status-filter')?.value || 'all').toLowerCase();
         const search = (document.getElementById('approval-search')?.value || '').trim().toLowerCase();
         tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td></tr>';
         try {
@@ -694,34 +566,6 @@ body { font-family: 'Inter', sans-serif; }
 
     window.approveCommission = approveCommission;
     window.rejectCommission = rejectCommission;
-
-    async function viewPayoutItems(batchId) {
-        const tbody = document.getElementById('payout-items-body');
-        const label = document.getElementById('payout-detail-label');
-        label.textContent = `Batch #${batchId}`;
-        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Memuat detail...</td></tr>';
-        try {
-            const res = await fetch(`/api/commissions/payouts/${batchId}`);
-            const items = await res.json();
-            if (!Array.isArray(items) || items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada item</td></tr>';
-                return;
-            }
-            tbody.innerHTML = items.map(it => {
-                return `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4 text-sm font-medium text-white">#${it.order_id}</td>
-                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${it.user_name || ('User ' + it.user_id)}</td>
-                    <td class="px-6 py-4 text-sm"><span class="px-2 py-1 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400">${it.role}</span></td>
-                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${it.content_type || '-'}</td>
-                    <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(it.amount || 0)}</td>
-                </tr>
-                `;
-            }).join('');
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-red-400">Error: ${e.message}</td></tr>`;
-        }
-    }
 
 </script>
 </body></html>
