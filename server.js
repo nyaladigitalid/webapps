@@ -178,6 +178,47 @@ async function ensureOrdersTimingColumns() {
     }
 }
 
+async function ensureMetaAdsConfigSchema() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE meta_ads_configs ADD COLUMN access_token LONGTEXT`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE meta_ads_configs ADD COLUMN is_active TINYINT(1) DEFAULT 1`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        console.log('Meta ads config schema ready');
+    } catch (e) {
+        console.error('Error ensuring meta ads config schema:', e);
+    }
+}
+
+async function getMetaAccessToken() {
+    await ensureMetaAdsConfigSchema();
+    let rows = [];
+    try {
+        [rows] = await pool.query(
+            "SELECT access_token FROM meta_ads_configs WHERE is_active = 1 AND access_token IS NOT NULL AND access_token <> '' ORDER BY id DESC LIMIT 1"
+        );
+    } catch (e) {
+        const code = String((e && e.code) || '');
+        if (code === 'ER_BAD_FIELD_ERROR') {
+            [rows] = await pool.query(
+                "SELECT access_token FROM meta_ads_configs WHERE access_token IS NOT NULL AND access_token <> '' ORDER BY id DESC LIMIT 1"
+            );
+        } else {
+            throw e;
+        }
+    }
+    return rows.length > 0 ? rows[0].access_token : null;
+}
+
 function parseDurationDays(raw) {
     const s = String(raw || '').trim();
     if (!s) return 30;
@@ -437,6 +478,7 @@ ensurePackagesSchema();
 ensureOrdersExtraColumns();
 ensureOrdersRenewalColumns();
 ensureOrdersTimingColumns();
+ensureMetaAdsConfigSchema();
 ensureCommissionLedgerSchema();
 createScalevTable();
 createScalevWebhookEventsTable();
@@ -1567,8 +1609,7 @@ app.post('/api/campaigns/create', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const [cfg] = await pool.query("SELECT access_token FROM meta_ads_configs WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
-        const token = cfg.length > 0 ? cfg[0].access_token : null;
+        const token = await getMetaAccessToken();
         if (!token) {
             return res.status(400).json({ error: 'Access token is not configured' });
         }
@@ -1687,8 +1728,7 @@ app.post('/api/campaigns/duplicate', async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const [cfg] = await pool.query("SELECT access_token FROM meta_ads_configs WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
-        const token = cfg.length > 0 ? cfg[0].access_token : null;
+        const token = await getMetaAccessToken();
         if (!token) {
             return res.status(400).json({ error: 'Access token is not configured' });
         }
@@ -2034,18 +2074,24 @@ app.get('/api/dashboard/advertiser-stats', async (req, res) => {
 // Meta Ads basic config (stub for UI dropdowns)
 app.get('/api/meta-config', async (_req, res) => {
     try {
+        await ensureMetaAdsConfigSchema();
         const [accounts] = await pool.query('SELECT account_id as id, name FROM ad_accounts ORDER BY name ASC');
         const [fanspages] = await pool.query('SELECT fanspage_id as id, name FROM fanspages ORDER BY name ASC');
         let pixel_id = '';
-        const [cfg] = await pool.query('SELECT pixel_id FROM meta_ads_configs LIMIT 1');
+        let access_token = '';
+        const [cfg] = await pool.query('SELECT pixel_id, access_token FROM meta_ads_configs ORDER BY id DESC LIMIT 1');
         if (cfg.length > 0 && cfg[0].pixel_id) {
             pixel_id = cfg[0].pixel_id;
+        }
+        if (cfg.length > 0 && cfg[0].access_token) {
+            access_token = cfg[0].access_token;
         }
 
         res.json({
             accounts,
             fanspages,
-            pixel_id
+            pixel_id,
+            access_token
         });
     } catch (e) {
         console.error('Meta config fetch error:', e);
@@ -2055,7 +2101,8 @@ app.get('/api/meta-config', async (_req, res) => {
 
 app.post('/api/meta-config', async (req, res) => {
     try {
-        const { accounts, pixel_id } = req.body;
+        const { accounts, pixel_id, access_token } = req.body;
+        await ensureMetaAdsConfigSchema();
         
         const connection = await pool.getConnection();
         try {
@@ -2071,6 +2118,17 @@ app.post('/api/meta-config', async (req, res) => {
                     configId = resCreate.insertId;
                 }
                 await connection.query('UPDATE meta_ads_configs SET pixel_id = ? WHERE id = ?', [pixel_id, configId]);
+            }
+            if (access_token !== undefined) {
+                let configId = 1;
+                const [configs] = await connection.query('SELECT id FROM meta_ads_configs ORDER BY id DESC LIMIT 1');
+                if (configs.length > 0) {
+                    configId = configs[0].id;
+                } else {
+                    const [resCreate] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
+                    configId = resCreate.insertId;
+                }
+                await connection.query('UPDATE meta_ads_configs SET access_token = ? WHERE id = ?', [String(access_token || '').trim(), configId]);
             }
 
             if (Array.isArray(accounts)) {
