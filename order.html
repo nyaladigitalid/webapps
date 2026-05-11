@@ -640,7 +640,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Status Filter
       var s = String(r.status || '').toLowerCase();
       var statusMatch = (currentStatus === 'all') || 
-                        (currentStatus === 'active' && (s === 'active' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten')) ||
+                        (currentStatus === 'active' && (s === 'active' || s === 'aktif' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten')) ||
                         (currentStatus === 'pending' && (s === 'pending' || s === 'draft')) ||
                         (currentStatus === 'completed' && (s === 'completed' || s === 'done' || s === 'selesai'));
       
@@ -649,6 +649,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var searchMatch = !currentSearch || 
                         String(r.id).toLowerCase().includes(searchLower) ||
                         String(r.clientName || '').toLowerCase().includes(searchLower) ||
+                        String(r.businessName || '').toLowerCase().includes(searchLower) ||
                         String(r.packageName || '').toLowerCase().includes(searchLower);
 
       // Date Parsing
