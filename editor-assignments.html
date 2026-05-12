@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="theme-openai" lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Nyala Digital Apps - Assignment Editor</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="js/include.js"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#ef7225",
+            secondary: "#0d3b66",
+            "background-light": "#f5f7f8",
+            "background-dark": "#0b0e14",
+            "sidebar-dark": "#101922"
+          },
+          fontFamily: { display: ["Inter", "sans-serif"] }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .glass-surface {
+      background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .dark .glass-panel {
+      background: rgba(6, 12, 31, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="editor_assignments">
+  <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+    <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+  </div>
+  <div class="relative z-10 min-h-screen flex flex-col">
+    <div id="include-header"></div>
+    <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+      <div id="include-sidebar"></div>
+      <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div class="flex-1 overflow-y-auto space-y-6">
+          <div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Assignment Editor per CS</h1>
+              <p class="text-secondary/80 text-sm mt-1">Atur editor default untuk masing-masing CS. Bisa diubah kapan saja.</p>
+            </div>
+          </div>
+
+          <div class="px-4 md:px-0">
+            <div class="relative w-full md:w-72">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">search</span>
+              <input id="search-input" type="text" placeholder="Cari nama CS..." class="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50">
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-2xl overflow-hidden mx-4 md:mx-0 border border-slate-200 dark:border-white/10">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+                    <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">CS</th>
+                    <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Editor Default</th>
+                    <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Update Terakhir</th>
+                    <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="assignment-body" class="divide-y divide-slate-100 dark:divide-white/5">
+                  <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="include-footer"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const role = String(localStorage.getItem("role") || "").toLowerCase().replace(/\s+/g, "_");
+      if (role !== "super_admin") {
+        window.location.href = "dashboard.html";
+        return;
+      }
+
+      const bodyEl = document.getElementById("assignment-body");
+      const searchInput = document.getElementById("search-input");
+      let csUsers = [];
+      let editorUsers = [];
+      let assignmentByCs = {};
+
+      function fmtDate(d) {
+        if (!d) return "-";
+        const x = new Date(d);
+        if (isNaN(x.getTime())) return "-";
+        return x.toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+
+      function render() {
+        const q = String(searchInput.value || "").toLowerCase().trim();
+        const rows = csUsers.filter((u) => {
+          if (!q) return true;
+          return String(u.name || "").toLowerCase().includes(q) || String(u.email || "").toLowerCase().includes(q);
+        });
+        bodyEl.innerHTML = "";
+        if (!rows.length) {
+          bodyEl.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Data CS tidak ditemukan.</td></tr>';
+          return;
+        }
+
+        rows.forEach((cs) => {
+          const m = assignmentByCs[String(cs.id)] || null;
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors";
+          const optionHtml = ['<option value="">Pilih editor...</option>'].concat(
+            editorUsers.map((ed) => {
+              const selected = m && Number(m.editor_user_id) === Number(ed.id) ? "selected" : "";
+              return '<option value="' + ed.id + '" ' + selected + '>' + (ed.name || "-") + ' (' + (ed.email || "-") + ')</option>';
+            })
+          ).join("");
+          tr.innerHTML = `
+            <td class="px-6 py-4 text-sm">
+              <p class="font-semibold text-slate-900 dark:text-white">${cs.name || "-"}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">${cs.email || "-"}</p>
+            </td>
+            <td class="px-6 py-4">
+              <select class="editor-select w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm">${optionHtml}</select>
+            </td>
+            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${fmtDate(m && m.updated_at)}</td>
+            <td class="px-6 py-4 text-right">
+              <div class="inline-flex items-center gap-2">
+                <button class="btn-save px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary/90">Simpan</button>
+                <button class="btn-clear px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20">Hapus</button>
+              </div>
+            </td>
+          `;
+          const saveBtn = tr.querySelector(".btn-save");
+          const clearBtn = tr.querySelector(".btn-clear");
+          const selectEl = tr.querySelector(".editor-select");
+
+          saveBtn.addEventListener("click", async function () {
+            const editorId = Number(selectEl.value || 0);
+            if (!editorId) {
+              alert("Pilih editor terlebih dahulu.");
+              return;
+            }
+            saveBtn.disabled = true;
+            const oldText = saveBtn.textContent;
+            saveBtn.textContent = "Menyimpan...";
+            try {
+              const res = await fetch("/api/editor-assignments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cs_user_id: cs.id, editor_user_id: editorId })
+              });
+              const json = await res.json();
+              if (!res.ok || json.error) throw new Error(json.error || "Gagal menyimpan assignment");
+              await loadAssignments();
+            } catch (e) {
+              alert(e.message || "Gagal menyimpan assignment");
+            } finally {
+              saveBtn.disabled = false;
+              saveBtn.textContent = oldText;
+            }
+          });
+
+          clearBtn.addEventListener("click", async function () {
+            if (!confirm("Hapus assignment editor untuk CS ini?")) return;
+            clearBtn.disabled = true;
+            try {
+              const res = await fetch("/api/editor-assignments/" + encodeURIComponent(cs.id), { method: "DELETE" });
+              const json = await res.json();
+              if (!res.ok || json.error) throw new Error(json.error || "Gagal hapus assignment");
+              await loadAssignments();
+            } catch (e) {
+              alert(e.message || "Gagal hapus assignment");
+            } finally {
+              clearBtn.disabled = false;
+            }
+          });
+
+          bodyEl.appendChild(tr);
+        });
+      }
+
+      async function loadAssignments() {
+        const res = await fetch("/api/editor-assignments");
+        const rows = await res.json();
+        assignmentByCs = {};
+        (Array.isArray(rows) ? rows : []).forEach((row) => {
+          assignmentByCs[String(row.cs_user_id)] = row;
+        });
+        render();
+      }
+
+      async function init() {
+        try {
+          const usersRes = await fetch("/api/users");
+          const users = await usersRes.json();
+          const userRows = Array.isArray(users) ? users : [];
+          csUsers = userRows.filter((u) => String(u.role || "").toLowerCase() === "cs");
+          editorUsers = userRows.filter((u) => String(u.role || "").toLowerCase().includes("editor"));
+          await loadAssignments();
+        } catch (e) {
+          bodyEl.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data assignment editor.</td></tr>';
+        }
+      }
+
+      searchInput.addEventListener("input", render);
+      init();
+    });
+  </script>
+</body>
+</html>

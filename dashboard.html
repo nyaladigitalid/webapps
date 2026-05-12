@@ -318,7 +318,7 @@
                     </section>
 
                     <!-- CRM Cards (shown for role CRM) -->
-                    <section id="crm-cards" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                    <section id="crm-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
                             <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <span class="material-symbols-outlined text-6xl text-cyan-400">sms</span>
@@ -334,28 +334,15 @@
                         </div>
                         <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
                             <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-indigo-400">person_add</span>
+                                <span class="material-symbols-outlined text-6xl text-orange-400">hourglass_top</span>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Klien Baru Bulan Ini</p>
-                                <h3 id="crm-new-count" class="text-3xl font-bold text-white">0</h3>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Menunggu OTP (Aktif)</p>
+                                <h3 id="crm-waiting-otp-count" class="text-3xl font-bold text-orange-300">0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                                <span class="material-symbols-outlined text-sm">calendar_month</span>
-                                <span>Periode saat ini</span>
-                            </div>
-                        </div>
-                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
-                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-purple-400">autorenew</span>
-                            </div>
-                            <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Perpanjang Bulan Ini</p>
-                                <h3 id="crm-extend-count" class="text-3xl font-bold text-white">0</h3>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                                <span class="material-symbols-outlined text-sm">calendar_month</span>
-                                <span>Periode saat ini</span>
+                                <span class="material-symbols-outlined text-sm">task</span>
+                                <span>Antrian saat ini</span>
                             </div>
                         </div>
                         <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
@@ -1120,6 +1107,11 @@
                 const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
                 const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
                 setText('crm-otp-count', s.otpThisMonth || 0);
+                const waitingRes = await fetch('/api/orders?content_status=menunggu_otp&limit=10000');
+                const waitingJson = await waitingRes.json();
+                const waitingRows = Array.isArray(waitingJson) ? waitingJson : (waitingJson.data || []);
+                const waitingUniqueIds = new Set((Array.isArray(waitingRows) ? waitingRows : []).map(r => String(r && r.id != null ? r.id : '')).filter(Boolean));
+                setText('crm-waiting-otp-count', waitingUniqueIds.size);
                 const cEl = document.getElementById('crm-commission-total');
                 if (cEl) cEl.textContent = fmtCurrency.format(s.commissionThisMonth || 0);
                 setText('crm-new-count', s.newClientsThisMonth || 0);
@@ -1337,17 +1329,24 @@
                 const uid = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
                 let qs = `limit=${limit}`;
                 if (roleNow === 'cs' && uid) qs = `assigned_to=${encodeURIComponent(uid)}&role=CS&limit=${limit}`;
-                else if (roleNow === 'crm') qs = `content_status=otp&limit=${limit}`;
+                else if (roleNow === 'crm') qs = `content_status=menunggu_otp&limit=${limit}`;
                 else if (roleNow === 'advertiser') qs = `content_status=ready&limit=${limit}`;
                 const res = await fetch(`/api/orders?${qs}`);
                 const json = await res.json();
                 const data = Array.isArray(json) ? json : (json.data || []);
+                const dedupMap = new Map();
+                data.forEach((row) => {
+                    const key = String(row && row.id != null ? row.id : '');
+                    if (!key) return;
+                    if (!dedupMap.has(key)) dedupMap.set(key, row);
+                });
+                const uniqueData = Array.from(dedupMap.values());
                 
                 const tbody = document.getElementById('orders-table-body');
                 if (!tbody) return;
                 
                 // Save for filters
-                window.dashAllOrders = data;
+                window.dashAllOrders = uniqueData;
                 applyDashboardFilters(1);
 
             } catch (e) {
@@ -1422,9 +1421,9 @@
                         const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
 
                         tr.innerHTML = `
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-2">
-                                    <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span>
+                                    <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
                                     <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
                                         <option value="">Ubah...</option>
                                     </select>
@@ -1469,7 +1468,7 @@
                                     tr.style.display = 'none';
                                     return;
                                    }
-                                   if (role === 'crm' && !procVal.includes('proses otp')) {
+                                   if (role === 'crm' && !procVal.includes('menunggu otp')) {
                                     tr.style.display = 'none';
                                     return;
                                    }
@@ -1496,14 +1495,15 @@
                                 }
                                 if (statusEl) {
                                   const p = String(st.process || '').toLowerCase();
-                                  let cls = 'bg-slate-500/10 text-slate-300 border border-slate-500/20';
+                                  let cls = 'bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500';
                                   let txt = st.process || 'Menunggu';
-                                  if (p.includes('mulai konten') || p.includes('proses konten')) cls = 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20';
-                                  else if (p.includes('siap iklan')) cls = 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20';
-                                  else if (p.includes('proses iklan')) cls = 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
-                                  else if (p.includes('aktif')) cls = 'bg-green-500/10 text-green-300 border border-green-500/20';
-                                  else if (p.includes('tidak aktif')) cls = 'bg-red-500/10 text-red-300 border border-red-500/20';
-                                  statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + cls;
+                                  if (p.includes('menunggu otp') || p.includes('menunggu')) cls = 'bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-400/50';
+                                  else if (p.includes('mulai konten') || p.includes('proses konten')) cls = 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/50';
+                                  else if (p.includes('siap iklan')) cls = 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-200 dark:border-cyan-400/50';
+                                  else if (p.includes('proses iklan')) cls = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-400/50';
+                                  else if (p.includes('aktif')) cls = 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-400/50';
+                                  else if (p.includes('tidak aktif')) cls = 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-400/50';
+                                  statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none ' + cls;
                                   statusEl.textContent = txt;
                                 }
                                 const sel = document.getElementById('proc-' + order.id);
@@ -1538,14 +1538,15 @@
                                                 const statusEl = document.getElementById('status-' + order.id);
                                                 if (statusEl) {
                                                   const p2 = String(ns.process || '').toLowerCase();
-                                                  let cls = 'bg-slate-500/10 text-slate-300 border border-slate-500/20';
+                                                  let cls = 'bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500';
                                                   let txt = ns.process || 'Menunggu';
-                                                  if (p2.includes('mulai konten') || p2.includes('proses konten')) cls = 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20';
-                                                  else if (p2.includes('siap iklan')) cls = 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20';
-                                                  else if (p2.includes('proses iklan')) cls = 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
-                                                  else if (p2.includes('aktif')) cls = 'bg-green-500/10 text-green-300 border border-green-500/20';
-                                                  else if (p2.includes('tidak aktif')) cls = 'bg-red-500/10 text-red-300 border border-red-500/20';
-                                                  statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ' + cls;
+                                                  if (p2.includes('menunggu otp') || p2.includes('menunggu')) cls = 'bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-400/50';
+                                                  else if (p2.includes('mulai konten') || p2.includes('proses konten')) cls = 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/50';
+                                                  else if (p2.includes('siap iklan')) cls = 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-200 dark:border-cyan-400/50';
+                                                  else if (p2.includes('proses iklan')) cls = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-400/50';
+                                                  else if (p2.includes('aktif')) cls = 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-400/50';
+                                                  else if (p2.includes('tidak aktif')) cls = 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-400/50';
+                                                  statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none ' + cls;
                                                   statusEl.textContent = txt;
                                                 }
                                                 applyDashboardFilters(dashCurrentPage);

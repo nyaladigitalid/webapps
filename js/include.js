@@ -185,24 +185,30 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   const ROLE_MENUS = {
-    super_admin: ["overview","orders","products","commissions","users","finance","team","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
+    super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
     cs: ["overview","orders","commissions","crm"],
     keuangan: ["overview","finance","orders","commissions","clients"],
     advertiser: ["overview","orders","analytics","campaigns"],
-    crm: ["overview","crm","orders","clients"],
+    crm: ["overview","data_crm","orders"],
     editor: ["overview","orders"],
     "team bengkel": ["overview", "orders", "campaigns"]
   };
 
   function applySidebarByRole(role) {
     const allowed = ROLE_MENUS[role.toLowerCase()] || ROLE_MENUS.super_admin;
+    const FORCE_HIDDEN_BY_ROLE = {
+      crm: ["orders", "crm", "clients"]
+    };
+    const forceHidden = FORCE_HIDDEN_BY_ROLE[role.toLowerCase()] || [];
     const links = document.querySelectorAll(".layout-sidebar nav a[data-menu]");
     links.forEach(a => {
       const menu = a.getAttribute("data-menu");
-      if (!allowed.includes(menu)) {
+      if (!allowed.includes(menu) || forceHidden.includes(menu)) {
         a.style.display = "none";
+        a.classList.add("hidden");
       } else {
         a.style.display = "";
+        a.classList.remove("hidden");
       }
     });
   }

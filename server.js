@@ -220,6 +220,26 @@ async function ensureCampaignsSchema() {
     }
 }
 
+async function ensureCsEditorAssignmentsTable() {
+    try {
+        const p = await getPool();
+        await p.query(`
+            CREATE TABLE IF NOT EXISTS cs_editor_assignments (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cs_user_id INT NOT NULL,
+                editor_user_id INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_cs_editor_cs (cs_user_id),
+                KEY idx_cs_editor_editor (editor_user_id)
+            )
+        `);
+        console.log('CS editor assignments table ready');
+    } catch (e) {
+        console.error('Error ensuring cs editor assignments table:', e);
+    }
+}
+
 async function getMetaAccessToken() {
     await ensureMetaAdsConfigSchema();
     let rows = [];
@@ -245,6 +265,16 @@ function parseDurationDays(raw) {
     if (!s) return 30;
     const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
     return Number.isFinite(n) && n > 0 ? n : 30;
+}
+
+function getInitialWaitingStatusByMonth(refDate = new Date()) {
+    try {
+        const d = new Date(refDate);
+        // Bulan Mei = 4 (0-indexed)
+        return d.getMonth() === 4 ? 'Menunggu OTP' : 'Menunggu';
+    } catch (_) {
+        return 'Menunggu';
+    }
 }
 
 async function getOrderDurationDays(orderId) {
@@ -274,6 +304,68 @@ async function applyActualGoLiveDate(orderId, liveDate, durationDays) {
            AND (go_live_date IS NULL OR start_date_source IS NULL OR start_date_source IN ('cs_estimate', 'system', ''))`,
         [d, d, d, days, orderId]
     );
+}
+
+async function resolveCommissionAmount(connection, packageId, roleName, preferredContentType) {
+    let amount = 0;
+    const preferred = String(preferredContentType || '').toLowerCase() || 'general';
+    const role = String(roleName || '');
+    if (!packageId || !role) return amount;
+    const [specific] = await connection.query(
+        'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ? LIMIT 1',
+        [packageId, role, preferred]
+    );
+    if (specific.length && specific[0].amount != null) return Number(specific[0].amount);
+    const [general] = await connection.query(
+        'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ? LIMIT 1',
+        [packageId, role, 'general']
+    );
+    if (general.length && general[0].amount != null) return Number(general[0].amount);
+    const [any] = await connection.query(
+        'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? LIMIT 1',
+        [packageId, role]
+    );
+    if (any.length && any[0].amount != null) return Number(any[0].amount);
+    return amount;
+}
+
+async function getMappedEditorIdForCs(connection, csUserId) {
+    const csId = Number(csUserId || 0);
+    if (!csId) return null;
+    await ensureCsEditorAssignmentsTable();
+    const [rows] = await connection.query(
+        'SELECT editor_user_id FROM cs_editor_assignments WHERE cs_user_id = ? LIMIT 1',
+        [csId]
+    );
+    if (!rows.length) return null;
+    const editorId = Number(rows[0].editor_user_id || 0);
+    return editorId || null;
+}
+
+async function upsertMappedEditorAssignmentForOrder(connection, { orderId, packageId, orderStatus, csUserId }) {
+    const csId = Number(csUserId || 0);
+    const oid = Number(orderId || 0);
+    if (!csId || !oid) return null;
+    const editorId = await getMappedEditorIdForCs(connection, csId);
+    if (!editorId) return null;
+    const contentType = String(orderStatus || '').toLowerCase() === 'perpanjang' ? 'extend' : 'general';
+    const amount = await resolveCommissionAmount(connection, packageId, 'Editor', contentType);
+    const [existing] = await connection.query(
+        'SELECT id FROM order_assignments WHERE order_id = ? AND role = "Editor" LIMIT 1',
+        [oid]
+    );
+    if (existing.length > 0) {
+        await connection.query(
+            'UPDATE order_assignments SET user_id = ?, content_type = ?, commission_amount = ? WHERE id = ?',
+            [editorId, contentType, amount, existing[0].id]
+        );
+    } else {
+        await connection.query(
+            'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "Editor", ?, ?)',
+            [oid, editorId, contentType, amount]
+        );
+    }
+    return editorId;
 }
 
 async function ensureCommissionLedgerSchema() {
@@ -565,6 +657,7 @@ ensureOrdersTimingColumns();
 ensureMetaAdsConfigSchema();
 ensureCampaignsSchema();
 ensureCommissionLedgerSchema();
+ensureCsEditorAssignmentsTable();
 createScalevTable();
 createScalevWebhookEventsTable();
 createScalevLeadsTable();
@@ -1391,6 +1484,93 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 });
 
+app.get('/api/editor-assignments', async (req, res) => {
+    try {
+        await ensureCsEditorAssignmentsTable();
+        const [rows] = await pool.query(
+            `SELECT cea.cs_user_id,
+                    cea.editor_user_id,
+                    cea.updated_at,
+                    cs.name AS cs_name,
+                    cs.email AS cs_email,
+                    ed.name AS editor_name,
+                    ed.email AS editor_email
+             FROM cs_editor_assignments cea
+             LEFT JOIN users cs ON cs.id = cea.cs_user_id
+             LEFT JOIN users ed ON ed.id = cea.editor_user_id
+             ORDER BY cs.name ASC, cea.updated_at DESC`
+        );
+        res.json(rows);
+    } catch (e) {
+        console.error('Editor assignments list error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/editor-assignments', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const csUserId = Number(req.body && (req.body.cs_user_id || req.body.csUserId || 0));
+        const editorUserId = Number(req.body && (req.body.editor_user_id || req.body.editorUserId || 0));
+        if (!csUserId || !editorUserId) {
+            return res.status(400).json({ error: 'cs_user_id dan editor_user_id wajib diisi' });
+        }
+        await ensureCsEditorAssignmentsTable();
+
+        const [csRows] = await connection.query('SELECT id, role FROM users WHERE id = ? LIMIT 1', [csUserId]);
+        if (!csRows.length || String(csRows[0].role || '').toLowerCase() !== 'cs') {
+            return res.status(400).json({ error: 'User CS tidak valid' });
+        }
+        const [editorRows] = await connection.query('SELECT id, role FROM users WHERE id = ? LIMIT 1', [editorUserId]);
+        if (!editorRows.length || !String(editorRows[0].role || '').toLowerCase().includes('editor')) {
+            return res.status(400).json({ error: 'User Editor tidak valid' });
+        }
+
+        await connection.beginTransaction();
+        await connection.query(
+            `INSERT INTO cs_editor_assignments (cs_user_id, editor_user_id)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE editor_user_id = VALUES(editor_user_id), updated_at = CURRENT_TIMESTAMP`,
+            [csUserId, editorUserId]
+        );
+
+        // Sinkronkan assignment editor existing untuk semua order milik CS ini,
+        // agar dashboard editor lama tidak lagi menampilkan task tersebut.
+        const [syncResult] = await connection.query(
+            `UPDATE order_assignments oa_editor
+             JOIN order_assignments oa_cs
+               ON oa_cs.order_id = oa_editor.order_id
+              AND oa_cs.role = 'CS'
+             SET oa_editor.user_id = ?
+             WHERE oa_cs.user_id = ?
+               AND oa_editor.role LIKE '%Editor%'`,
+            [editorUserId, csUserId]
+        );
+
+        await connection.commit();
+        res.json({ success: true, synced_editor_assignments: syncResult.affectedRows || 0 });
+    } catch (e) {
+        try { await connection.rollback(); } catch (_) {}
+        console.error('Editor assignment upsert error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+
+app.delete('/api/editor-assignments/:csUserId', async (req, res) => {
+    try {
+        const csUserId = Number(req.params && req.params.csUserId);
+        if (!csUserId) return res.status(400).json({ error: 'csUserId tidak valid' });
+        await ensureCsEditorAssignmentsTable();
+        await pool.query('DELETE FROM cs_editor_assignments WHERE cs_user_id = ?', [csUserId]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Editor assignment delete error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Clients Endpoint
 app.get('/api/clients', async (req, res) => {
     try {
@@ -2051,7 +2231,7 @@ app.get('/api/orders/:id/combined-status', async (req, res) => {
     try {
         const { id } = req.params;
         // Base order
-        const [orders] = await pool.query('SELECT status, client_id FROM orders WHERE id = ?', [id]);
+        const [orders] = await pool.query('SELECT status, client_id, created_at FROM orders WHERE id = ?', [id]);
         if (orders.length === 0) return res.status(404).json({ error: 'Order not found' });
         const order = orders[0];
         const typeRaw = (order.status || '').toLowerCase();
@@ -2061,7 +2241,11 @@ app.get('/api/orders/:id/combined-status', async (req, res) => {
         let process = 'Menunggu';
         if (contents.length > 0 && contents[0].status) {
             const cs = (contents[0].status || '').toLowerCase();
-            if (cs.includes('mulai konten')) process = 'Mulai Konten';
+            const orderCreated = order && order.created_at ? new Date(order.created_at) : null;
+            const isMayOrder = orderCreated && !isNaN(orderCreated.getTime()) && orderCreated.getMonth() === 4;
+            if (cs === 'menunggu') process = isMayOrder ? 'Menunggu OTP' : 'Menunggu';
+            else if (cs === 'menunggu otp' || cs.includes('menunggu otp')) process = 'Menunggu OTP';
+            else if (cs.includes('mulai konten')) process = 'Mulai Konten';
             else if (cs.includes('proses konten')) process = 'Proses Konten';
             else if (cs.includes('siap iklan')) process = 'Siap Iklan';
             else process = contents[0].status;
@@ -2094,7 +2278,7 @@ app.get('/api/dashboard/editor-stats', async (req, res) => {
             FROM orders o
             JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Editor' AND oa.user_id = ?
             JOIN order_contents oc ON oc.order_id = o.id
-            WHERE LOWER(oc.status) = 'menunggu'
+            WHERE LOWER(oc.status) LIKE 'menunggu%'
         `, [userId]);
         const [processing] = await pool.query(`
             SELECT COUNT(DISTINCT o.id) as count
@@ -2292,11 +2476,17 @@ app.get('/api/orders', async (req, res) => {
             let target = '';
             if (cs === 'otp') target = 'Proses OTP';
             else if (cs === 'menunggu') target = 'Menunggu';
+            else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = '__MENUNGGU_OTP_OR_LEGACY__';
             else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
             else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
             if (target) {
-                whereClauses.push(`LOWER(oc.status) LIKE LOWER(?)`);
-                params.push(`%${target}%`);
+                if (target === '__MENUNGGU_OTP_OR_LEGACY__') {
+                    whereClauses.push(`(LOWER(oc.status) LIKE LOWER(?) OR LOWER(oc.status) = 'menunggu')`);
+                    params.push('%Menunggu OTP%');
+                } else {
+                    whereClauses.push(`LOWER(oc.status) LIKE LOWER(?)`);
+                    params.push(`%${target}%`);
+                }
             }
         }
 
@@ -2346,11 +2536,17 @@ app.get('/api/orders', async (req, res) => {
             let target = '';
             if (cs === 'otp') target = 'Proses OTP';
             else if (cs === 'menunggu') target = 'Menunggu';
+            else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = '__MENUNGGU_OTP_OR_LEGACY__';
             else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
             else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
             if (target) {
-                countWhere.push(`LOWER(oc.status) LIKE LOWER(?)`);
-                countParams.push(`%${target}%`);
+                if (target === '__MENUNGGU_OTP_OR_LEGACY__') {
+                    countWhere.push(`(LOWER(oc.status) LIKE LOWER(?) OR LOWER(oc.status) = 'menunggu')`);
+                    countParams.push('%Menunggu OTP%');
+                } else {
+                    countWhere.push(`LOWER(oc.status) LIKE LOWER(?)`);
+                    countParams.push(`%${target}%`);
+                }
             }
         }
 
@@ -2376,6 +2572,68 @@ app.get('/api/orders', async (req, res) => {
         });
     } catch (e) {
         console.error('Orders fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/orders/crm-data', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const offset = (page - 1) * limit;
+
+        const baseWhere = `
+            WHERE o.created_at < DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+              AND COALESCE(o.repeat_order, 0) = 0
+              AND LOWER(COALESCE(o.status, '')) NOT IN ('perpanjang', 'extend', 'repeat')
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM orders o2
+                    WHERE o2.parent_order_id = o.id
+              )
+        `;
+
+        let query = `
+            SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp,
+                   p.name as package_name, p.price as package_price
+            FROM orders o
+            LEFT JOIN clients c ON o.client_id = c.id
+            LEFT JOIN packages p ON o.package_id = p.id
+            ${baseWhere}
+            ORDER BY o.created_at DESC
+            LIMIT ? OFFSET ?
+        `;
+
+        let rows;
+        try {
+            [rows] = await pool.query(query, [limit, offset]);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR' && query.includes('p.price as package_price')) {
+                query = query.replace('p.price as package_price', 'p.price_monthly as package_price');
+                [rows] = await pool.query(query, [limit, offset]);
+            } else {
+                throw e;
+            }
+        }
+
+        const [countRows] = await pool.query(
+            `SELECT COUNT(*) as total
+             FROM orders o
+             ${baseWhere}`
+        );
+
+        res.json({
+            data: rows,
+            meta: {
+                page,
+                limit,
+                total: countRows[0].total,
+                totalPages: Math.ceil(countRows[0].total / limit)
+            }
+        });
+    } catch (e) {
+        console.error('CRM data orders fetch error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -2487,6 +2745,7 @@ app.post('/api/orders', async (req, res) => {
         }
 
         const csId = orderPayload.csId || orderPayload.cs_id || null;
+        let csAssigneeId = null;
         if (userRole === 'super_admin' && csId) {
             let amount = 0;
             const statusType = (status || '').toLowerCase() === 'perpanjang' ? 'extend' : 'new';
@@ -2513,6 +2772,7 @@ app.post('/api/orders', async (req, res) => {
                  ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
                 [orderId, csId, statusType, amount]
             );
+            csAssigneeId = Number(csId || 0) || null;
             await accrueCommissionLedger({
                 order_id: orderId,
                 user_id: csId,
@@ -2543,6 +2803,7 @@ app.post('/api/orders', async (req, res) => {
                     'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CS", ?, ?)',
                     [orderId, creatorId, statusType, amount]
                 );
+                csAssigneeId = Number(creatorId || 0) || null;
                 await accrueCommissionLedger({
                     order_id: orderId,
                     user_id: creatorId,
@@ -2586,6 +2847,14 @@ app.post('/api/orders', async (req, res) => {
                 }, connection);
             }
         }
+        if (csAssigneeId) {
+            await upsertMappedEditorAssignmentForOrder(connection, {
+                orderId,
+                packageId,
+                orderStatus: status,
+                csUserId: csAssigneeId
+            });
+        }
         
         await ensurePackagesSchema();
         let pkgRows;
@@ -2602,7 +2871,7 @@ app.post('/api/orders', async (req, res) => {
         const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
         await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [orderId, incomeAmount]);
 
-        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? 'Menunggu' : 'Proses OTP';
+        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
         await connection.query(
             'INSERT INTO order_contents (order_id, status) VALUES (?, ?)',
             [orderId, initialStatus]
@@ -2654,7 +2923,30 @@ app.post('/api/orders/:id/renew', async (req, res) => {
         const serviceType = orderPayload.serviceType || orderPayload.service_type || baseOrder.service_type || null;
         const baseMetaData = baseOrder.meta_data;
         const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? baseMetaData ?? null;
-        const metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+        const createNewVideo = Boolean(orderPayload.createNewVideo ?? orderPayload.create_new_video ?? body.createNewVideo ?? body.create_new_video ?? false);
+        const renewNoteRaw = orderPayload.renewNote ?? orderPayload.renew_note ?? body.renewNote ?? body.renew_note ?? '';
+        const renewNote = String(renewNoteRaw || '').trim();
+        let metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+        if (createNewVideo || renewNote) {
+            let metaObj = {};
+            if (metaDataRaw && typeof metaDataRaw === 'object') {
+                metaObj = { ...metaDataRaw };
+            } else if (typeof metaDataRaw === 'string' && metaDataRaw.trim()) {
+                try {
+                    metaObj = JSON.parse(metaDataRaw);
+                } catch (_) {
+                    metaObj = { legacy_meta: metaDataRaw };
+                }
+            }
+            const prevRenewal = (metaObj && typeof metaObj.renewal === 'object' && metaObj.renewal !== null) ? metaObj.renewal : {};
+            metaObj.renewal = {
+                ...prevRenewal,
+                create_new_video: createNewVideo,
+                note: renewNote || null,
+                updated_at: new Date().toISOString()
+            };
+            metaData = JSON.stringify(metaObj);
+        }
 
         const startDate = orderPayload.startDate || orderPayload.start_date || body.startDate || body.start_date || null;
         const endDate = orderPayload.endDate || orderPayload.end_date || body.endDate || body.end_date || null;
@@ -2707,53 +2999,43 @@ app.post('/api/orders/:id/renew', async (req, res) => {
             'SELECT user_id, role, content_type FROM order_assignments WHERE order_id = ?',
             [baseOrder.id]
         );
+        const csAssignment = assignments.find((a) => String(a.role || '').toLowerCase() === 'cs');
+        const mappedEditorId = csAssignment ? await getMappedEditorIdForCs(connection, csAssignment.user_id) : null;
         for (const a of assignments) {
             const roleName = String(a.role || '');
             const contentTypeRaw = String(a.content_type || '').toLowerCase();
             const ruleType = roleName === 'CS'
                 ? 'extend'
                 : (contentTypeRaw || 'general');
+            const assignedUserId = (mappedEditorId && String(roleName).toLowerCase().includes('editor'))
+                ? Number(mappedEditorId)
+                : Number(a.user_id);
 
-            let amount = 0;
-            const [rulesSpecific] = await connection.query(
-                'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ? LIMIT 1',
-                [packageId, roleName, ruleType]
-            );
-            if (rulesSpecific.length && rulesSpecific[0].amount != null) {
-                amount = Number(rulesSpecific[0].amount);
-            } else {
-                const [rulesGeneral] = await connection.query(
-                    'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ? LIMIT 1',
-                    [packageId, roleName, 'general']
-                );
-                if (rulesGeneral.length && rulesGeneral[0].amount != null) {
-                    amount = Number(rulesGeneral[0].amount);
-                } else {
-                    const [rulesAny] = await connection.query(
-                        'SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? LIMIT 1',
-                        [packageId, roleName]
-                    );
-                    if (rulesAny.length && rulesAny[0].amount != null) {
-                        amount = Number(rulesAny[0].amount);
-                    }
-                }
-            }
+            const amount = await resolveCommissionAmount(connection, packageId, roleName, ruleType);
 
             await connection.query(
                 `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
                  VALUES (?, ?, ?, ?, ?)`,
-                [newOrderId, a.user_id, roleName, ruleType, amount]
+                [newOrderId, assignedUserId, roleName, ruleType, amount]
             );
 
             await accrueCommissionLedger({
                 order_id: newOrderId,
-                user_id: a.user_id,
+                user_id: assignedUserId,
                 role: roleName,
                 content_type: ruleType,
                 amount,
                 source_event: 'renew_order',
-                source_event_key: `renew_order:${newOrderId}:${a.user_id}:${roleName}:${ruleType}`
+                source_event_key: `renew_order:${newOrderId}:${assignedUserId}:${roleName}:${ruleType}`
             }, connection);
+        }
+        if (csAssignment && csAssignment.user_id) {
+            await upsertMappedEditorAssignmentForOrder(connection, {
+                orderId: newOrderId,
+                packageId,
+                orderStatus: 'Perpanjang',
+                csUserId: csAssignment.user_id
+            });
         }
 
         let pkgRows;
@@ -2770,7 +3052,7 @@ app.post('/api/orders/:id/renew', async (req, res) => {
         const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
         await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [newOrderId, incomeAmount]);
 
-        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? 'Menunggu' : 'Proses OTP';
+        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
         await connection.query(
             'INSERT INTO order_contents (order_id, status) VALUES (?, ?)',
             [newOrderId, initialStatus]
@@ -3561,6 +3843,40 @@ app.post('/api/orders/:id/content/otp', async (req, res) => {
         res.json({ success: true });
     } catch (e) {
         console.error('Set OTP error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/content/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const body = req.body || {};
+        const nextStatus = String(body.status || '').trim();
+        const allowedStatuses = new Set([
+            'Menunggu OTP',
+            'Proses OTP',
+            'OTP Diterima',
+            'Proses CRM',
+            'Pending Klien',
+            'No Response',
+            'Proses Konten',
+            'Siap Iklan'
+        ]);
+
+        if (!allowedStatuses.has(nextStatus)) {
+            return res.status(400).json({ error: 'Status tidak valid' });
+        }
+
+        const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
+        if (existing.length > 0) {
+            await pool.query('UPDATE order_contents SET status = ? WHERE order_id = ?', [nextStatus, id]);
+        } else {
+            await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, ?)', [id, nextStatus]);
+        }
+
+        res.json({ success: true, status: nextStatus });
+    } catch (e) {
+        console.error('Set content status error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

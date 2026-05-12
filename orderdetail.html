@@ -184,6 +184,128 @@ async function loadContentStatus(orderId) {
     }
 }
 
+function getDetailSource() {
+    const params = new URLSearchParams(window.location.search);
+    return String(params.get('src') || '').toLowerCase();
+}
+
+function isCrmRole(roleValue) {
+    const rk = String(roleValue || '').toLowerCase().replace(/\s+/g, '_');
+    return rk === 'crm' || rk === 'customer_service_crm' || rk.indexOf('crm') !== -1;
+}
+
+function getCrmActionButtons(statusRaw) {
+    const status = String(statusRaw || '').toLowerCase();
+    const buttons = [];
+    if (status.includes('menunggu otp') || status === 'menunggu') {
+        buttons.push({ label: 'Mulai Proses CRM', status: 'Proses CRM', style: 'primary', icon: 'play_arrow' });
+        buttons.push({ label: 'Pending Klien', status: 'Pending Klien', style: 'muted', icon: 'schedule' });
+        buttons.push({ label: 'No Response', status: 'No Response', style: 'danger', icon: 'sms_failed' });
+        return buttons;
+    }
+    if (status.includes('proses crm')) {
+        buttons.push({ label: 'Pending Klien', status: 'Pending Klien', style: 'muted', icon: 'schedule' });
+        buttons.push({ label: 'Lanjut ke Konten', status: 'Proses Konten', style: 'success', icon: 'movie_edit' });
+        buttons.push({ label: 'No Response', status: 'No Response', style: 'danger', icon: 'sms_failed' });
+        return buttons;
+    }
+    if (status.includes('pending klien')) {
+        buttons.push({ label: 'Mulai Proses CRM', status: 'Proses CRM', style: 'primary', icon: 'play_arrow' });
+        buttons.push({ label: 'Lanjut ke Konten', status: 'Proses Konten', style: 'success', icon: 'movie_edit' });
+        buttons.push({ label: 'No Response', status: 'No Response', style: 'danger', icon: 'sms_failed' });
+        return buttons;
+    }
+    if (status.includes('no response')) {
+        buttons.push({ label: 'Mulai Proses CRM', status: 'Proses CRM', style: 'primary', icon: 'play_arrow' });
+        buttons.push({ label: 'Pending Klien', status: 'Pending Klien', style: 'muted', icon: 'schedule' });
+        return buttons;
+    }
+    if (status.includes('proses konten') || status.includes('siap iklan')) {
+        return buttons;
+    }
+    buttons.push({ label: 'Mulai Proses CRM', status: 'Proses CRM', style: 'primary', icon: 'play_arrow' });
+    buttons.push({ label: 'Pending Klien', status: 'Pending Klien', style: 'muted', icon: 'schedule' });
+    buttons.push({ label: 'No Response', status: 'No Response', style: 'danger', icon: 'sms_failed' });
+    return buttons;
+}
+
+async function updateCrmProcessStatus(orderId, nextStatus) {
+    if (!orderId || !nextStatus) return;
+    try {
+        const res = await fetch(`/api/orders/${orderId}/content/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: nextStatus })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Gagal update status');
+        }
+        await renderCrmActionArea(orderId);
+        loadContentStatus(orderId);
+    } catch (e) {
+        alert('Gagal update status CRM: ' + e.message);
+    }
+}
+
+async function renderCrmActionArea(orderId) {
+    const roleSafe = (getRole() || '').toLowerCase().replace(/\s+/g, '_');
+    const detailSrc = getDetailSource();
+    const box = document.getElementById('crm-action-box');
+    const allowCrmActions = isCrmRole(roleSafe) || detailSrc === 'data_crm';
+    if (!box || !allowCrmActions) return;
+
+    try {
+        const response = await fetch(`/api/orders/${orderId}/content`);
+        const data = await response.json();
+        const currentStatus = String((data && data.status) || 'Menunggu OTP');
+        const buttons = getCrmActionButtons(currentStatus);
+        const styleMap = {
+            primary: 'bg-primary text-white border-primary/40 hover:brightness-110',
+            success: 'bg-success text-white border-success/40 hover:brightness-110',
+            danger: 'bg-danger text-white border-danger/40 hover:brightness-110',
+            muted: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100 dark:border-white/20 dark:hover:bg-white/20'
+        };
+        const buttonsHtml = buttons.map(function (btn) {
+            const classes = styleMap[btn.style] || styleMap.muted;
+            return `
+                <button type="button" onclick="updateCrmProcessStatus(${orderId}, '${btn.status.replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${classes}">
+                    <span class="material-symbols-outlined text-sm">${btn.icon}</span>${btn.label}
+                </button>
+            `;
+        }).join('');
+
+        box.classList.remove('hidden');
+        box.innerHTML = `
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Aksi CRM</p>
+            <div class="flex flex-wrap gap-2">${buttonsHtml || '<span class="text-xs text-slate-500">Tidak ada aksi lanjutan.</span>'}</div>
+        `;
+    } catch (e) {
+        console.error('Render CRM action error:', e);
+        // Fallback: tetap tampilkan aksi dasar agar alur CRM tidak terblokir saat endpoint status bermasalah.
+        const fallbackButtons = getCrmActionButtons('Menunggu OTP');
+        const styleMap = {
+            primary: 'bg-primary text-white border-primary/40 hover:brightness-110',
+            success: 'bg-success text-white border-success/40 hover:brightness-110',
+            danger: 'bg-danger text-white border-danger/40 hover:brightness-110',
+            muted: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100 dark:border-white/20 dark:hover:bg-white/20'
+        };
+        const fallbackHtml = fallbackButtons.map(function (btn) {
+            const classes = styleMap[btn.style] || styleMap.muted;
+            return `
+                <button type="button" onclick="updateCrmProcessStatus(${orderId}, '${btn.status.replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${classes}">
+                    <span class="material-symbols-outlined text-sm">${btn.icon}</span>${btn.label}
+                </button>
+            `;
+        }).join('');
+        box.classList.remove('hidden');
+        box.innerHTML = `
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Aksi CRM</p>
+            <div class="flex flex-wrap gap-2">${fallbackHtml}</div>
+        `;
+    }
+}
+
 function addContentRow() {
     const tbody = document.getElementById('content-links-body');
     const emptyMsg = document.getElementById('empty-msg');
@@ -571,6 +693,7 @@ tailwind.config = {
             </button>
             <span id="renewal-info" class="hidden text-xs text-slate-500 dark:text-slate-400"></span>
           </div>
+          <p id="renewal-extra-info" class="hidden mt-1 text-xs text-slate-500 dark:text-slate-400"></p>
         </div>
         <div class="flex items-center gap-2 hidden">
           <div class="hidden md:flex items-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full px-3 py-1.5 w-64">
@@ -624,6 +747,7 @@ tailwind.config = {
                       KIRIM PESAN
                     </button>
                   </div>
+                  <div id="crm-action-box" class="hidden mt-3"></div>
                 </div>
                 <div>
                   <p class="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Nama Usaha</p>
@@ -1085,6 +1209,14 @@ tailwind.config = {
             <input id="renew-end-date" type="date" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white">
           </div>
         </div>
+        <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <input id="renew-create-new-video" type="checkbox" class="rounded border-slate-300 text-primary focus:ring-primary/40">
+          <span>Buat video baru</span>
+        </label>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Catatan Tambahan</label>
+          <textarea id="renew-note" rows="3" placeholder="Contoh: perlu konsep video baru untuk promo bulan depan" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white"></textarea>
+        </div>
         <p id="renew-package-hint" class="text-xs text-slate-500 dark:text-slate-400"></p>
         <p class="text-[11px] text-slate-500 dark:text-slate-400">
           Start date ini adalah estimasi. Saat campaign pertama aktif, sistem akan otomatis mengunci tanggal live aktual dari Advertiser.
@@ -1166,6 +1298,8 @@ document.addEventListener("DOMContentLoaded", function(){
     const modal = document.getElementById('renew-modal');
     const startEl = document.getElementById('renew-start-date');
     const endEl = document.getElementById('renew-end-date');
+    const createVideoEl = document.getElementById('renew-create-new-video');
+    const renewNoteEl = document.getElementById('renew-note');
     if (!window.currentOrder || !modal || !startEl || !endEl) return;
 
     await loadRenewPackages(window.currentOrder.package_id);
@@ -1175,6 +1309,8 @@ document.addEventListener("DOMContentLoaded", function(){
     const selectedOpt = select ? select.options[select.selectedIndex] : null;
     const duration = selectedOpt ? parseInt(String(selectedOpt.dataset.duration || '').replace(/[^0-9]/g, ''), 10) : 30;
     endEl.value = shiftDate(today, duration || 30);
+    if (createVideoEl) createVideoEl.checked = false;
+    if (renewNoteEl) renewNoteEl.value = '';
     modal.classList.remove('hidden');
   };
 
@@ -1188,6 +1324,8 @@ document.addEventListener("DOMContentLoaded", function(){
     const packageId = document.getElementById('renew-package-id').value;
     const startDate = document.getElementById('renew-start-date').value;
     const endDate = document.getElementById('renew-end-date').value;
+    const createNewVideo = !!(document.getElementById('renew-create-new-video') && document.getElementById('renew-create-new-video').checked);
+    const renewNote = String((document.getElementById('renew-note') && document.getElementById('renew-note').value) || '').trim();
     if (!packageId) return alert('Pilih paket terlebih dahulu');
     if (!startDate || !endDate) return alert('Start date dan end date wajib diisi');
 
@@ -1204,7 +1342,9 @@ document.addEventListener("DOMContentLoaded", function(){
           packageId: Number(packageId),
           startDate,
           endDate,
-          serviceType: window.currentOrder.service_type || null
+          serviceType: window.currentOrder.service_type || null,
+          createNewVideo,
+          renewNote
         }
       };
       const res = await fetch(`/api/orders/${encodeURIComponent(window.currentOrder.id)}/renew`, {
@@ -1388,6 +1528,7 @@ document.addEventListener("DOMContentLoaded", function(){
       window.currentOrder = o;
       window.currentClient = c;
       const renewalInfoEl = document.getElementById('renewal-info');
+      const renewalExtraInfoEl = document.getElementById('renewal-extra-info');
       if (renewalInfoEl) {
         const count = Number(o.renewal_count || 0);
         if (o.parent_order_id || count > 0) {
@@ -1397,6 +1538,28 @@ document.addEventListener("DOMContentLoaded", function(){
           renewalInfoEl.textContent = `Renewal ke-${count || 1}${o.parent_order_id ? ` • Parent #${o.parent_order_id}` : ''}${live}${source}`;
         } else {
           renewalInfoEl.classList.add('hidden');
+        }
+      }
+      if (renewalExtraInfoEl) {
+        let metaRaw = o.meta_data;
+        let metaObj = {};
+        if (metaRaw && typeof metaRaw === 'object') {
+          metaObj = metaRaw;
+        } else if (typeof metaRaw === 'string' && metaRaw.trim()) {
+          try { metaObj = JSON.parse(metaRaw); } catch (_) { metaObj = {}; }
+        }
+        const renewalMeta = (metaObj && typeof metaObj.renewal === 'object' && metaObj.renewal !== null) ? metaObj.renewal : null;
+        const note = renewalMeta && renewalMeta.note ? String(renewalMeta.note).trim() : '';
+        const createNewVideo = !!(renewalMeta && renewalMeta.create_new_video);
+        const infoParts = [];
+        if (createNewVideo) infoParts.push('Buat video baru: Ya');
+        if (note) infoParts.push(`Catatan: ${note}`);
+        if (infoParts.length > 0) {
+          renewalExtraInfoEl.textContent = infoParts.join(' • ');
+          renewalExtraInfoEl.classList.remove('hidden');
+        } else {
+          renewalExtraInfoEl.classList.add('hidden');
+          renewalExtraInfoEl.textContent = '';
         }
       }
       if (q("od-subtitle")) {
@@ -1484,25 +1647,49 @@ document.addEventListener("DOMContentLoaded", function(){
         var editBtn = document.getElementById('btn-edit-client');
         if (editBtn) editBtn.style.display = 'none';
       }
-      if (roleSafe === 'crm') {
+      if (isCrmRole(roleSafe) || getDetailSource() === 'data_crm') {
         var waBtn = document.getElementById('btn-wa-send');
+        var fallbackOrderId = (o && o.id) ? o.id : getId();
+        var crmBox = document.getElementById('crm-action-box');
+        if (crmBox && fallbackOrderId) {
+          crmBox.classList.remove('hidden');
+          crmBox.innerHTML = `
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Aksi CRM</p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" onclick="updateCrmProcessStatus(${fallbackOrderId}, 'Proses CRM')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all bg-primary text-white border-primary/40 hover:brightness-110">
+                <span class="material-symbols-outlined text-sm">play_arrow</span>Mulai Proses CRM
+              </button>
+              <button type="button" onclick="updateCrmProcessStatus(${fallbackOrderId}, 'Pending Klien')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-100 dark:border-white/20 dark:hover:bg-white/20">
+                <span class="material-symbols-outlined text-sm">schedule</span>Pending Klien
+              </button>
+              <button type="button" onclick="updateCrmProcessStatus(${fallbackOrderId}, 'No Response')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all bg-danger text-white border-danger/40 hover:brightness-110">
+                <span class="material-symbols-outlined text-sm">sms_failed</span>No Response
+              </button>
+            </div>
+          `;
+        }
         if (waBtn) {
+          var detailSrc = getDetailSource();
           waBtn.querySelector('span.material-symbols-outlined').textContent = 'chat';
-          waBtn.innerHTML = '<span class="material-symbols-outlined text-sm">chat</span> KIRIM PROSES OTP';
+          waBtn.innerHTML = detailSrc === 'data_crm'
+            ? '<span class="material-symbols-outlined text-sm">chat</span> KONTAK KLIEN'
+            : '<span class="material-symbols-outlined text-sm">chat</span> KIRIM OTP';
           waBtn.onclick = async function(){
             try {
               var phone = (c.whatsapp || '').replace(/[^\d]/g,'');
               var msg = "Halo kaka,..\nSaya admin nyala digital, yg kemarin kakak sudah order ke cs kami, saya mau buat iklan untuk kaka tapi perlu daftarkan dulu no WA nya\n\nMohon konfirmasi kak, apakah WA nya sudah tipe bisnis?";
               var url = "https://wa.me/" + encodeURIComponent(phone) + "?text=" + encodeURIComponent(msg);
               window.open(url, "_blank");
-              if (o && o.id) {
+              if (o && o.id && detailSrc !== 'data_crm') {
                 var uid = localStorage.getItem('user_id') || localStorage.getItem('userId');
                 await fetch('/api/orders/' + encodeURIComponent(o.id) + '/content/otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid }) });
                 loadContentStatus(o.id);
+                renderCrmActionArea(o.id);
               }
             } catch(e) {}
           };
         }
+        if (o && o.id) renderCrmActionArea(o.id);
       }
       if (q("brief-objectives")) q("brief-objectives").textContent = d && d.description ? d.description : "";
       if (q("brief-notes")) q("brief-notes").textContent = o && o.notes ? o.notes : (d && d.promo ? d.promo : "");
