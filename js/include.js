@@ -361,6 +361,30 @@ document.addEventListener("DOMContentLoaded", async function () {
     style.textContent = `
       .layout-sidebar{display:flex;}
       .sidebar-hidden .layout-sidebar{display:none;}
+      #sidebar-backdrop{display:none;}
+      .sidebar-open #sidebar-backdrop{display:block;}
+      @media (max-width: 768px){
+        #include-sidebar{width:0 !important;flex:0 0 0 !important;}
+        .layout-sidebar{
+          position:fixed !important;
+          left:0 !important;
+          top:0 !important;
+          bottom:0 !important;
+          width:min(84vw, 320px) !important;
+          transform:translateX(-110%) !important;
+          transition:transform .18s ease !important;
+          border-radius:0 !important;
+          z-index:80 !important;
+        }
+        .sidebar-hidden .layout-sidebar{display:flex;}
+        .sidebar-open .layout-sidebar{transform:translateX(0) !important;}
+        #sidebar-backdrop{
+          position:fixed !important;
+          inset:0 !important;
+          background:rgba(15,23,42,0.45) !important;
+          z-index:70 !important;
+        }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -580,7 +604,37 @@ document.addEventListener("DOMContentLoaded", async function () {
         padding-left: var(--oa-gutter-l) !important;
         padding-right: var(--oa-gutter-r) !important;
       }
-      html.theme-openai #sidebar-toggle{display:none !important}
+      html.theme-openai #sidebar-toggle{display:inline-flex !important}
+
+      html.theme-openai #sidebar-backdrop{display:none;}
+      html.theme-openai body.sidebar-open #sidebar-backdrop{display:block;}
+
+      @media (max-width: 768px){
+        html.theme-openai body > .relative.z-10 > .flex-1.max-w-7xl.mx-auto.w-full{
+          padding-left: var(--oa-gutter-l) !important;
+          padding-right: var(--oa-gutter-l) !important;
+        }
+        html.theme-openai #include-header > header .max-w-7xl.mx-auto.px-6{
+          padding-left: var(--oa-gutter-l) !important;
+          padding-right: var(--oa-gutter-l) !important;
+        }
+        html.theme-openai .layout-sidebar{
+          width:min(84vw, 320px) !important;
+          transform:translateX(-110%) !important;
+          transition:transform .18s ease !important;
+          z-index:80 !important;
+        }
+        html.theme-openai body.sidebar-open .layout-sidebar{transform:translateX(0) !important;}
+        html.theme-openai #sidebar-backdrop{
+          position:fixed !important;
+          left:0 !important;
+          right:0 !important;
+          top:var(--oa-header-h) !important;
+          bottom:0 !important;
+          background:rgba(15,23,42,0.45) !important;
+          z-index:70 !important;
+        }
+      }
 
       html.theme-openai .layout-sidebar nav a{
         color:var(--oa-muted) !important;
@@ -652,8 +706,48 @@ document.addEventListener("DOMContentLoaded", async function () {
     const toggle = document.getElementById("sidebar-toggle");
     const sidebar = document.querySelector(".layout-sidebar");
     if (toggle && sidebar) {
+      function isMobile() {
+        try { return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches); } catch (_) { return false; }
+      }
+      function ensureBackdrop() {
+        if (document.getElementById("sidebar-backdrop")) return;
+        const el = document.createElement("div");
+        el.id = "sidebar-backdrop";
+        el.addEventListener("click", function () {
+          document.body.classList.remove("sidebar-open");
+        });
+        document.body.appendChild(el);
+      }
+      function setIcon(open) {
+        const icon = toggle.querySelector(".material-symbols-outlined");
+        if (!icon) return;
+        icon.textContent = open ? "close" : "menu";
+      }
+      function closeMobile() {
+        document.body.classList.remove("sidebar-open");
+        setIcon(false);
+      }
+      ensureBackdrop();
+      setIcon(false);
       toggle.addEventListener("click", function () {
+        if (isMobile()) {
+          const next = !document.body.classList.contains("sidebar-open");
+          document.body.classList.toggle("sidebar-open", next);
+          setIcon(next);
+          return;
+        }
         document.body.classList.toggle("sidebar-hidden");
+      });
+      window.addEventListener("resize", function () {
+        if (!isMobile()) {
+          document.body.classList.remove("sidebar-open");
+          setIcon(false);
+        }
+      });
+      Array.from(document.querySelectorAll(".layout-sidebar nav a")).forEach(function (a) {
+        a.addEventListener("click", function () {
+          if (isMobile()) closeMobile();
+        });
       });
     }
   }
@@ -711,4 +805,5 @@ document.addEventListener("DOMContentLoaded", async function () {
   initLogout();
   applyPagePermissions(role);
   document.body.classList.remove("sidebar-hidden");
+  document.body.classList.remove("sidebar-open");
 }); 

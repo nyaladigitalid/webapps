@@ -406,12 +406,13 @@
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
+                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-10"></th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-white/5" id="orders-table-body">
-                                        <tr><td colspan="9" class="text-center py-4 text-slate-500">Memuat...</td></tr>
+                                        <tr><td colspan="10" class="text-center py-4 text-slate-500">Memuat...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1410,7 +1411,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (pageItems.length === 0) {
-                     tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>';
+                     tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>';
                 } else {
                     pageItems.forEach(order => {
                         const tr = document.createElement('tr');
@@ -1418,6 +1419,9 @@
                         const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
                         const pkg = order.package_name || '-';
                         const clientWa = order.client_whatsapp || '-';
+                        const csName = String(order.cs_name || '').trim();
+                        const csMeta = String(order.cs_phone || order.cs_email || '').trim();
+                        const csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
                         const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
 
                         tr.innerHTML = `
@@ -1443,6 +1447,7 @@
                             <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
                             <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
                             <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
+                            <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
                             <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
                             <td class="px-6 py-4 text-right"><a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a></td>
                         `;

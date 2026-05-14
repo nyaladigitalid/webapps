@@ -1357,10 +1357,27 @@ app.get('/api/users', async (req, res) => {
             const [users] = await pool.query(sql, params);
             return res.json(users);
         } catch (e) {
-            if (String(e && e.code) === 'ER_BAD_FIELD_ERROR') {
-                const fallbackSql = sql.replace(', phone', '');
-                const [users] = await pool.query(fallbackSql, params);
-                return res.json(users);
+            const code = String((e && e.code) || '');
+            if (code === 'ER_BAD_FIELD_ERROR') {
+                try {
+                    const fallbackSql1 = sql.replace(', phone', '');
+                    const [users1] = await pool.query(fallbackSql1, params);
+                    return res.json(users1);
+                } catch (e2) {
+                    const code2 = String((e2 && e2.code) || '');
+                    if (code2 !== 'ER_BAD_FIELD_ERROR') throw e2;
+                    try {
+                        const fallbackSql2 = sql.replace(', phone', '').replace(', created_at', '');
+                        const [users2] = await pool.query(fallbackSql2, params);
+                        return res.json(users2);
+                    } catch (e3) {
+                        const code3 = String((e3 && e3.code) || '');
+                        if (code3 !== 'ER_BAD_FIELD_ERROR') throw e3;
+                        const fallbackSql3 = 'SELECT id, name, email, role FROM users' + (qRole ? ' WHERE LOWER(role) = LOWER(?)' : '');
+                        const [users3] = await pool.query(fallbackSql3, params);
+                        return res.json(users3);
+                    }
+                }
             }
             throw e;
         }
@@ -2450,11 +2467,19 @@ app.get('/api/orders', async (req, res) => {
         const roleFilter = String(role || '').toLowerCase();
 
         let query = `
-            SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp, 
-            p.name as package_name, p.price as package_price
+            SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp,
+                   p.name as package_name, p.price as package_price,
+                   csu.name as cs_name, csu.email as cs_email, csu.phone as cs_phone
             FROM orders o
             LEFT JOIN clients c ON o.client_id = c.id
             LEFT JOIN packages p ON o.package_id = p.id
+            LEFT JOIN (
+                SELECT order_id, MAX(user_id) AS cs_user_id
+                FROM order_assignments
+                WHERE role = 'CS'
+                GROUP BY order_id
+            ) oa_cs ON oa_cs.order_id = o.id
+            LEFT JOIN users csu ON csu.id = oa_cs.cs_user_id
         `;
         
         const params = [];
@@ -2595,10 +2620,18 @@ app.get('/api/orders/crm-data', async (req, res) => {
 
         let query = `
             SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp,
-                   p.name as package_name, p.price as package_price
+                   p.name as package_name, p.price as package_price,
+                   csu.name as cs_name, csu.email as cs_email, csu.phone as cs_phone
             FROM orders o
             LEFT JOIN clients c ON o.client_id = c.id
             LEFT JOIN packages p ON o.package_id = p.id
+            LEFT JOIN (
+                SELECT order_id, MAX(user_id) AS cs_user_id
+                FROM order_assignments
+                WHERE role = 'CS'
+                GROUP BY order_id
+            ) oa_cs ON oa_cs.order_id = o.id
+            LEFT JOIN users csu ON csu.id = oa_cs.cs_user_id
             ${baseWhere}
             ORDER BY o.created_at DESC
             LIMIT ? OFFSET ?
@@ -3982,6 +4015,10 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
         console.error('Submit content error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'Not found' });
 });
 
 // Start Server

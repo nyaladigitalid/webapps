@@ -165,6 +165,7 @@ body {
               <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status</th>
               <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">End Date</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">No WhatsApp</th>
+<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Informasi CS</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Sisa</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-10"></th>
 </tr>
@@ -514,6 +515,9 @@ document.addEventListener("DOMContentLoaded", function () {
       var pkg = r.packageName || '-';
       var createdDate = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
       var clientWa = r.clientWhatsapp || '-';
+      var csName = String(r.csName || '').trim();
+      var csMeta = String(r.csPhone || r.csEmail || '').trim();
+      var csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
       var tr = document.createElement('tr');
       tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group cursor-pointer border-b border-slate-100 dark:border-white/5 last:border-0";
       tr.innerHTML = ''
@@ -534,6 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
         + '<td class="px-6 py-4 text-sm text-slate-600 dark:text-white/80">' + ((r.metaData && r.metaData.ads_end_date) ? r.metaData.ads_end_date : '-') + '</td>'
         + '<td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-600 dark:text-white/80"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">'
         + clientWa + '</span></div></td>'
+        + '<td class="px-6 py-4"><div class="text-sm font-medium text-slate-600 dark:text-white/80">' + csDisplay + '</div></td>'
         + '<td class="px-6 py-4"><span class="text-xs font-bold text-slate-600 dark:text-white/80">'
         + (days || '-') + '</span></td>'
         + '<td class="px-6 py-4 text-right"><button class="text-slate-400 hover:text-slate-600 dark:text-[#90aecb] dark:hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></button></td>';
@@ -872,6 +877,9 @@ document.addEventListener("DOMContentLoaded", function () {
                clientName: o.client_name,
                businessName: o.business_name,
                clientWhatsapp: (o.client_whatsapp || o.clientWhatsapp || o.whatsapp || ''), 
+               csName: (o.cs_name || o.csName || ''),
+               csEmail: (o.cs_email || o.csEmail || ''),
+               csPhone: (o.cs_phone || o.csPhone || ''),
                packageName: o.package_name,
                duration: o.duration,
                days_remaining: o.days_remaining,

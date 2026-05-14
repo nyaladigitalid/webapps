@@ -67,6 +67,8 @@
             </div>
           </div>
 
+          <div id="load-error" class="hidden mx-4 md:mx-0 px-4 py-3 rounded-xl bg-red-500/10 text-red-600 text-sm border border-red-500/20"></div>
+
           <div class="glass-panel rounded-2xl overflow-hidden mx-4 md:mx-0 border border-slate-200 dark:border-white/10">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse">
@@ -102,9 +104,39 @@
 
       const bodyEl = document.getElementById("assignment-body");
       const searchInput = document.getElementById("search-input");
+      const loadErrorEl = document.getElementById("load-error");
       let csUsers = [];
       let editorUsers = [];
       let assignmentByCs = {};
+
+      function setLoadError(msg) {
+        if (!loadErrorEl) return;
+        const m = String(msg || "").trim();
+        if (!m) {
+          loadErrorEl.classList.add("hidden");
+          loadErrorEl.textContent = "";
+          return;
+        }
+        loadErrorEl.textContent = m;
+        loadErrorEl.classList.remove("hidden");
+      }
+
+      async function fetchJson(url, options) {
+        const res = await fetch(url, Object.assign({ cache: "no-store" }, options || {}));
+        const text = await res.text();
+        let json = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch (e) {
+          if (!res.ok) throw new Error("HTTP " + res.status + " (" + res.statusText + ")");
+          throw new Error("Response bukan JSON (HTTP " + res.status + ")");
+        }
+        if (!res.ok) {
+          const msg = json && json.error ? json.error : ("HTTP " + res.status + " (" + res.statusText + ")");
+          throw new Error(msg);
+        }
+        return json;
+      }
 
       function fmtDate(d) {
         if (!d) return "-";
@@ -207,8 +239,7 @@
       }
 
       async function loadAssignments() {
-        const res = await fetch("/api/editor-assignments");
-        const rows = await res.json();
+        const rows = await fetchJson("/api/editor-assignments?v=" + Date.now());
         assignmentByCs = {};
         (Array.isArray(rows) ? rows : []).forEach((row) => {
           assignmentByCs[String(row.cs_user_id)] = row;
@@ -218,13 +249,20 @@
 
       async function init() {
         try {
-          const usersRes = await fetch("/api/users");
-          const users = await usersRes.json();
+          setLoadError("");
+          const users = await fetchJson("/api/users?v=" + Date.now());
           const userRows = Array.isArray(users) ? users : [];
           csUsers = userRows.filter((u) => String(u.role || "").toLowerCase() === "cs");
           editorUsers = userRows.filter((u) => String(u.role || "").toLowerCase().includes("editor"));
-          await loadAssignments();
+          try {
+            await loadAssignments();
+          } catch (e) {
+            assignmentByCs = {};
+            setLoadError("Assignment editor belum bisa dimuat: " + (e && e.message ? e.message : "Unknown error"));
+            render();
+          }
         } catch (e) {
+          setLoadError(e && e.message ? e.message : "Gagal memuat data");
           bodyEl.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data assignment editor.</td></tr>';
         }
       }
