@@ -4082,6 +4082,15 @@ app.post('/api/openai-proxy', async (req, res) => {
     }
 });
 
+app.get('/api/openai-proxy/health', async (req, res) => {
+    try {
+        const hasKey = !!String(process.env.OPENAI_API_KEY || '').trim();
+        res.json({ ok: true, hasKey });
+    } catch (e) {
+        res.status(500).json({ ok: false });
+    }
+});
+
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
