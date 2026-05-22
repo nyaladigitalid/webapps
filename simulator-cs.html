@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html class="theme-openai" lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Nyala Digital Apps - Simulator Latihan CS</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <script src="js/include.js"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#ef7225",
+            secondary: "#0d3b66",
+            "background-light": "#f5f7f8",
+            "background-dark": "#0b0e14",
+            "sidebar-dark": "#101922"
+          },
+          fontFamily: { display: ["Inter", "sans-serif"] }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .glass-surface {
+      background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+    .dark .glass-panel {
+      background: rgba(6, 12, 31, 0.94);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    @keyframes dotpulse {
+      0% { opacity: .2; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-2px); }
+      60% { opacity: .2; transform: translateY(0); }
+      100% { opacity: .2; transform: translateY(0); }
+    }
+    .typing-dot { width:6px; height:6px; border-radius:9999px; background: rgba(100,116,139,0.9); display:inline-block; animation: dotpulse 1.1s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: .15s; }
+    .typing-dot:nth-child(3) { animation-delay: .3s; }
+
+    .wa-chat-bg{
+      background-color:#efeae2;
+      background-image:
+        radial-gradient(rgba(0,0,0,0.035) 1px, transparent 1px),
+        radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+      background-position: 0 0, 12px 12px;
+      background-size: 24px 24px;
+    }
+    .dark .wa-chat-bg{
+      background-color:#0b141a;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+    }
+    .wa-bubble{
+      position:relative;
+      padding:10px 12px;
+      border-radius:14px;
+      max-width:85%;
+      box-shadow:0 1px 0 rgba(0,0,0,0.04);
+    }
+    .wa-in{
+      background:#ffffff;
+      color:#111827;
+      border-top-left-radius:6px;
+    }
+    .dark .wa-in{
+      background:#1f2937;
+      color:#f9fafb;
+    }
+    .wa-out{
+      background:#dcf8c6;
+      color:#0f172a;
+      border-top-right-radius:6px;
+    }
+    .dark .wa-out{
+      background:#005c4b;
+      color:#ecfeff;
+    }
+    .wa-in:before{
+      content:"";
+      position:absolute;
+      left:-7px;
+      top:0;
+      width:0;height:0;
+      border-top:10px solid transparent;
+      border-right:8px solid #ffffff;
+      border-bottom:0 solid transparent;
+    }
+    .dark .wa-in:before{ border-right-color:#1f2937; }
+    .wa-out:before{
+      content:"";
+      position:absolute;
+      right:-7px;
+      top:0;
+      width:0;height:0;
+      border-top:10px solid transparent;
+      border-left:8px solid #dcf8c6;
+      border-bottom:0 solid transparent;
+    }
+    .dark .wa-out:before{ border-left-color:#005c4b; }
+    .wa-meta{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:6px;
+      margin-top:6px;
+      opacity:0.78;
+      font-size:11px;
+      line-height:1;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .wa-system{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:9999px;
+      font-size:12px;
+      color:#475569;
+      background:rgba(255,255,255,0.7);
+      border:1px solid rgba(15,23,42,0.08);
+    }
+    .dark .wa-system{
+      color:#cbd5e1;
+      background:rgba(31,41,55,0.75);
+      border-color:rgba(255,255,255,0.08);
+    }
+  </style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="simulator_cs">
+  <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+    <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+  </div>
+  <div class="relative z-10 min-h-screen flex flex-col">
+    <div id="include-header"></div>
+    <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+      <div id="include-sidebar"></div>
+      <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div class="flex-1 overflow-y-auto space-y-6">
+          <div id="page-title" class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Simulator Latihan CS</h1>
+              <p class="text-secondary/80 text-sm mt-1">Latih skill closing dengan klien AI — dapatkan penilaian real-time setiap balasan</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-new-session-top" class="hidden md:inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-lg">add</span>
+                Sesi Baru
+              </button>
+            </div>
+          </div>
+
+          <div id="start-screen" class="glass-panel rounded-2xl p-6 border border-slate-200 dark:border-white/10 mx-4 md:mx-0">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div class="lg:col-span-2 space-y-4">
+                <div class="flex items-start gap-3">
+                  <div class="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined">smart_toy</span>
+                  </div>
+                  <div>
+                    <p class="text-base font-semibold text-slate-900 dark:text-white">Cara kerja</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Pilih persona klien secara acak, lalu balas seperti CS. Setiap balasan dinilai, lalu klien AI merespons. Akhiri sesi untuk melihat ringkasan evaluasi.</p>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <p class="text-xs font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Tipe persona klien</p>
+                  <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-700 dark:text-slate-200">
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-slate-500">person</span>Baru pertama mau coba iklan</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-slate-500">shield</span>Pernah ketipu agensi</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-slate-500">trending_down</span>Boncos iklan sendiri</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-slate-500">sms_failed</span>Leads tidak convert</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-slate-500">rocket_launch</span>Mau scaling</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-slate-500">sell</span>Price hunter</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div class="rounded-2xl border border-slate-200 dark:border-white/10 p-4 bg-white/50 dark:bg-white/5">
+                  <p class="text-xs font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Konfigurasi</p>
+                  <div class="mt-3 space-y-3">
+                    <div>
+                      <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Model</label>
+                      <select id="model-select" class="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm">
+                        <option value="gpt-4o-mini">gpt-4o-mini</option>
+                        <option value="gpt-4o">gpt-4o</option>
+                      </select>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400">security</span>
+                        <div>
+                          <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Proxy Server</p>
+                          <p class="text-xs text-slate-500 dark:text-slate-400">Menggunakan /api/openai-proxy</p>
+                        </div>
+                      </div>
+                      <span id="proxy-status" class="text-[11px] px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10">Cek...</span>
+                    </div>
+                    <button id="btn-start" class="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
+                      <span class="material-symbols-outlined text-lg">play_arrow</span>
+                      Mulai Sesi
+                    </button>
+                    <p id="start-error" class="hidden text-xs text-red-600"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="session-screen" class="hidden space-y-4 mx-4 md:mx-0">
+            <div class="hidden md:grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="glass-panel rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Skor rata-rata</p>
+                <p id="stat-avg" class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">-</p>
+              </div>
+              <div class="glass-panel rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Skor terbaik</p>
+                <p id="stat-best" class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">-</p>
+              </div>
+              <div class="glass-panel rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Jumlah balasan</p>
+                <p id="stat-count" class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">0</p>
+              </div>
+              <div class="glass-panel rounded-2xl p-4 border border-slate-200 dark:border-white/10">
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Tahap saat ini</p>
+                <p id="stat-stage" class="mt-1 text-base font-bold text-slate-900 dark:text-white">Identifikasi</p>
+              </div>
+            </div>
+
+            <div class="hidden md:block glass-panel rounded-2xl p-5 border border-slate-200 dark:border-white/10">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-start gap-3">
+                  <div class="size-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+                    <span class="material-symbols-outlined">badge</span>
+                  </div>
+                  <div>
+                    <p id="persona-name" class="text-base font-semibold text-slate-900 dark:text-white">-</p>
+                    <p id="persona-desc" class="text-sm text-slate-600 dark:text-slate-300 mt-1">-</p>
+                  </div>
+                </div>
+                <span id="persona-type" class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10">-</span>
+              </div>
+            </div>
+
+            <div id="chat-panel" class="glass-panel rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col" style="height: min(74vh, 680px);">
+              <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200/70 dark:border-white/10 bg-white/70 dark:bg-white/5">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="size-10 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 flex items-center justify-center font-extrabold">
+                    <span id="chat-peer-initials">K</span>
+                  </div>
+                  <div class="min-w-0">
+                    <p id="chat-peer-name" class="text-sm font-extrabold text-slate-900 dark:text-white truncate">Klien</p>
+                    <p id="chat-peer-status" class="text-[11px] text-slate-500 dark:text-slate-400 truncate">online</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-300">
+                  <button type="button" class="size-9 rounded-full bg-white/70 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 inline-flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[18px]">search</span>
+                  </button>
+                  <button type="button" class="size-9 rounded-full bg-white/70 dark:bg-white/5 border border-slate-200/70 dark:border-white/10 inline-flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                  </button>
+                </div>
+              </div>
+              <div id="chat-scroll" class="flex-1 overflow-y-auto p-4 space-y-2 wa-chat-bg">
+              </div>
+              <div class="border-t border-slate-200/70 dark:border-white/10 p-3 bg-white/70 dark:bg-white/5">
+                <div class="flex items-end gap-2">
+                  <div class="flex-1 flex items-end gap-2 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-full px-3 py-2">
+                    <button type="button" class="text-slate-500 dark:text-slate-300">
+                      <span class="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
+                    </button>
+                    <textarea id="chat-input" rows="1" class="flex-1 bg-transparent border-0 focus:ring-0 p-0 text-sm leading-relaxed resize-none" placeholder="Ketik pesan..."></textarea>
+                    <button type="button" class="text-slate-500 dark:text-slate-300">
+                      <span class="material-symbols-outlined text-[20px]">attach_file</span>
+                    </button>
+                  </div>
+                  <button id="btn-send" class="shrink-0 size-11 inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold transition-all shadow-lg shadow-emerald-600/20">
+                    <span class="material-symbols-outlined text-[20px]">send</span>
+                  </button>
+                </div>
+                <div class="mt-2 flex justify-center">
+                  <div class="wa-system">
+                    <span class="material-symbols-outlined text-[16px]">school</span>
+                    <span>Mode latihan: kirim jawaban → keluar nilai. Klik “Pakai & Lanjut” untuk balasan klien.</span>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button id="btn-end" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined text-lg">summarize</span>
+                    Akhiri & Lihat Ringkasan
+                  </button>
+                  <button id="btn-new-session" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined text-lg">restart_alt</span>
+                    Sesi Baru
+                  </button>
+                </div>
+                <p id="session-error" class="hidden mt-2 text-xs text-red-600"></p>
+              </div>
+            </div>
+
+            <div id="summary-card" class="hidden glass-panel rounded-2xl p-6 border border-slate-200 dark:border-white/10">
+              <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div>
+                  <p class="text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Ringkasan</p>
+                  <p id="summary-verdict" class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white">-</p>
+                  <p id="summary-overall" class="mt-2 text-sm text-slate-600 dark:text-slate-300">-</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 dark:border-white/10 px-4 py-3 bg-white/60 dark:bg-white/5">
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Skor rata-rata</p>
+                  <p id="summary-avg" class="mt-1 text-3xl font-extrabold text-primary">-</p>
+                </div>
+              </div>
+              <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                  <p class="text-sm font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">check_circle</span>Kekuatan</p>
+                  <ul id="summary-strengths" class="mt-2 space-y-2 text-sm text-emerald-900 dark:text-emerald-100"></ul>
+                </div>
+                <div class="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+                  <p class="text-sm font-bold text-red-700 dark:text-red-300 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">trending_up</span>Perlu diperbaiki</p>
+                  <ul id="summary-improvements" class="mt-2 space-y-2 text-sm text-red-900 dark:text-red-100"></ul>
+                </div>
+              </div>
+              <div class="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+                <p class="text-sm font-bold text-amber-800 dark:text-amber-200 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">lightbulb</span>Tips utama</p>
+                <p id="summary-tip" class="mt-2 text-sm text-amber-900 dark:text-amber-100"></p>
+              </div>
+              <div class="mt-6">
+                <button id="btn-try-again" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
+                  <span class="material-symbols-outlined text-lg">play_arrow</span>
+                  Coba Sesi Baru
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div id="include-footer"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const PERSONAS = [
+        { name: "Pak Rudi, kontraktor renovasi", desc: "Baru pertama kali mau coba iklan online. Skeptis tapi penasaran. Tidak paham teknis.", type: "Pertama kali iklan", fear: "Takut ribet, tidak paham cara kerja iklan online", opening: "Chat pertama ke agensi, penasaran tapi agak ragu" },
+        { name: "Bu Sari, jasa bangun rumah", desc: "Pernah pakai agensi lain 3 bulan lalu. Bayar jutaan, leads nihil, agensi susah dihubungi. Masih trauma.", type: "Pernah ketipu agensi", fear: "Sangat waspada, butuh bukti nyata sebelum percaya", opening: "Datang dengan sikap skeptis karena pengalaman buruk sebelumnya" },
+        { name: "Pak Ferdi, kontraktor cat & plester", desc: "Sudah 2 bulan pasang Meta Ads sendiri. Budget Rp800rb habis, leads yang masuk cuma tanya harga lalu diam. Boncos dan frustrasi.", type: "Boncos iklan sendiri", fear: "Sudah keluar uang tapi tidak ada hasil. Khawatir pakai jasa pun hasilnya sama saja.", opening: "Frustrasi soal iklan sendiri yang boncos dan leads tidak berkualitas" },
+        { name: "Bu Wati, jasa kanopi aluminium", desc: "Dapat leads lumayan dari iklan tapi yang serius order sangat sedikit. Kebanyakan tanya harga lalu menghilang.", type: "Leads tidak convert", fear: "Buang waktu balas chat tidak serius. Tidak tahu cara filter leads berkualitas.", opening: "Curhat soal leads banyak tapi tidak ada yang closing" },
+        { name: "Mas Hendra, kontraktor interior", desc: "Bisnis sudah jalan 3 tahun, proyek terus ada dari referral. Mau scale tapi belum yakin iklan digital worth it.", type: "Mau scaling", fear: "Ragu apakah iklan digital cocok untuk bisnis jasa bernilai besar", opening: "Penasaran tapi belum yakin, banyak tanya sebelum memutuskan" },
+        { name: "Pak Doni, jasa renovasi dapur", desc: "Lihat iklan NyalaDigital di Facebook. Langsung tanya harga tanpa mau dengar penjelasan dulu.", type: "Price hunter", fear: "Cari yang paling murah, belum paham value iklan yang baik", opening: "Langsung tanya harga tanpa mau dengarkan penjelasan" }
+      ];
+
+      const startScreen = document.getElementById("start-screen");
+      const sessionScreen = document.getElementById("session-screen");
+      const summaryCard = document.getElementById("summary-card");
+      const pageTitle = document.getElementById("page-title");
+      const chatPanel = document.getElementById("chat-panel");
+      const chatScroll = document.getElementById("chat-scroll");
+      const chatInput = document.getElementById("chat-input");
+      const btnSend = document.getElementById("btn-send");
+      const btnStart = document.getElementById("btn-start");
+      const btnEnd = document.getElementById("btn-end");
+      const btnNewSession = document.getElementById("btn-new-session");
+      const btnNewSessionTop = document.getElementById("btn-new-session-top");
+      const btnTryAgain = document.getElementById("btn-try-again");
+      const modelSelect = document.getElementById("model-select");
+      const proxyStatusEl = document.getElementById("proxy-status");
+      const startErrorEl = document.getElementById("start-error");
+      const sessionErrorEl = document.getElementById("session-error");
+
+      const statAvg = document.getElementById("stat-avg");
+      const statBest = document.getElementById("stat-best");
+      const statCount = document.getElementById("stat-count");
+      const statStage = document.getElementById("stat-stage");
+
+      const personaName = document.getElementById("persona-name");
+      const personaDesc = document.getElementById("persona-desc");
+      const personaType = document.getElementById("persona-type");
+      const chatPeerInitials = document.getElementById("chat-peer-initials");
+      const chatPeerName = document.getElementById("chat-peer-name");
+      const chatPeerStatus = document.getElementById("chat-peer-status");
+
+      const summaryAvg = document.getElementById("summary-avg");
+      const summaryVerdict = document.getElementById("summary-verdict");
+      const summaryOverall = document.getElementById("summary-overall");
+      const summaryStrengths = document.getElementById("summary-strengths");
+      const summaryImprovements = document.getElementById("summary-improvements");
+      const summaryTip = document.getElementById("summary-tip");
+
+      let persona = null;
+      let history = [];
+      let scores = [];
+      let best = null;
+      let stage = "Identifikasi";
+      let busy = false;
+      let ended = false;
+      let turnKey = 0;
+      let attempts = [];
+      let attemptSeq = 0;
+      let turnLocked = false;
+
+      function fmtTime(d) {
+        try {
+          const x = d instanceof Date ? d : new Date();
+          const hh = String(x.getHours()).padStart(2, "0");
+          const mm = String(x.getMinutes()).padStart(2, "0");
+          return hh + ":" + mm;
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function initialsFromName(n) {
+        const s = String(n || "").trim();
+        if (!s) return "K";
+        const parts = s.split(/\s+/g).filter(Boolean);
+        const a = parts[0] ? parts[0][0] : "K";
+        const b = parts.length > 1 ? parts[1][0] : "";
+        return (a + b).toUpperCase();
+      }
+
+      function setStartError(msg) {
+        const m = String(msg || "").trim();
+        if (!m) {
+          startErrorEl.classList.add("hidden");
+          startErrorEl.textContent = "";
+          return;
+        }
+        startErrorEl.textContent = m;
+        startErrorEl.classList.remove("hidden");
+      }
+      function setSessionError(msg) {
+        const m = String(msg || "").trim();
+        if (!m) {
+          sessionErrorEl.classList.add("hidden");
+          sessionErrorEl.textContent = "";
+          return;
+        }
+        sessionErrorEl.textContent = m;
+        sessionErrorEl.classList.remove("hidden");
+      }
+
+      function escapeHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function scoreBadge(score, feedback) {
+        const n = Number(score || 0);
+        let cls = "bg-amber-500/10 text-amber-700 border-amber-500/20";
+        if (n >= 80) cls = "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
+        else if (n < 60) cls = "bg-red-500/10 text-red-700 border-red-500/20";
+        return '<div class="mt-1 inline-flex items-center gap-2 text-[11px] px-2 py-1 rounded-full border ' + cls + '">' +
+          '<span class="font-extrabold">' + n + '/100</span>' +
+          '<span class="opacity-90">' + escapeHtml(feedback || "") + '</span>' +
+          '</div>';
+      }
+
+      function appendBubble(role, text, scoreData) {
+        const isClient = role === "client";
+        const line = document.createElement("div");
+        line.className = "flex " + (isClient ? "justify-start" : "justify-end");
+        const bubble = document.createElement("div");
+        bubble.className = "wa-bubble " + (isClient ? "wa-in" : "wa-out");
+
+        const content = document.createElement("div");
+        content.className = "text-sm whitespace-pre-wrap leading-relaxed";
+        content.innerHTML = escapeHtml(text);
+        bubble.appendChild(content);
+
+        const meta = document.createElement("div");
+        meta.className = "wa-meta";
+        meta.innerHTML = '<span>' + escapeHtml(fmtTime(new Date())) + "</span>" +
+          (isClient ? "" : '<span class="material-symbols-outlined text-[16px]" style="line-height:1">done_all</span>');
+        bubble.appendChild(meta);
+
+        line.appendChild(bubble);
+        chatScroll.appendChild(line);
+
+        if (!isClient && scoreData) {
+          const scoreLine = document.createElement("div");
+          scoreLine.className = "flex justify-end";
+          scoreLine.innerHTML = scoreBadge(scoreData.score, scoreData.feedback);
+          chatScroll.appendChild(scoreLine);
+        }
+
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      }
+
+      function startNewTurn() {
+        turnKey += 1;
+        attempts = [];
+        attemptSeq = 0;
+        turnLocked = false;
+      }
+
+      function isAwaitingCs() {
+        return history.length > 0 && history[history.length - 1].role === "client";
+      }
+
+      function appendAttemptBubble(text, scoreData, attemptId, source) {
+        const line = document.createElement("div");
+        line.className = "flex justify-end";
+        const bubble = document.createElement("div");
+        bubble.className = "wa-bubble wa-out";
+        const src = String(source || "").trim();
+        if (src === "example") {
+          const badgeWrap = document.createElement("div");
+          badgeWrap.className = "mb-1";
+          badgeWrap.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/70 dark:bg-white/10 border border-white/60 dark:border-white/10">' +
+            '<span class="material-symbols-outlined text-[14px]">auto_awesome</span>Contoh Jawaban</span>';
+          bubble.appendChild(badgeWrap);
+        }
+        const content = document.createElement("div");
+        content.className = "text-sm whitespace-pre-wrap leading-relaxed";
+        content.innerHTML = escapeHtml(text);
+        bubble.appendChild(content);
+        const metaTime = document.createElement("div");
+        metaTime.className = "wa-meta";
+        metaTime.innerHTML = '<span>' + escapeHtml(fmtTime(new Date())) + '</span><span class="material-symbols-outlined text-[16px]" style="line-height:1">done_all</span>';
+        bubble.appendChild(metaTime);
+        line.appendChild(bubble);
+        chatScroll.appendChild(line);
+
+        const scoreWrap = document.createElement("div");
+        scoreWrap.className = "flex justify-end items-center gap-2 flex-wrap";
+        scoreWrap.innerHTML = scoreBadge(scoreData.score, scoreData.feedback);
+        chatScroll.appendChild(scoreWrap);
+
+        const actions = document.createElement("div");
+        actions.className = "flex flex-wrap justify-end gap-2";
+        actions.dataset.attemptId = String(attemptId);
+        actions.innerHTML =
+          '<button type="button" class="btn-retry w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">Coba Jawaban Lain</button>' +
+          '<button type="button" class="btn-better w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">Contoh Jawaban</button>' +
+          '<button type="button" class="btn-use w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-primary hover:bg-primary/90 transition-colors">Pakai & Lanjut</button>';
+        chatScroll.appendChild(actions);
+
+        const retryBtn = actions.querySelector(".btn-retry");
+        const betterBtn = actions.querySelector(".btn-better");
+        const useBtn = actions.querySelector(".btn-use");
+        if (retryBtn) {
+          retryBtn.addEventListener("click", function () {
+            chatInput.focus();
+          });
+        }
+        if (betterBtn) {
+          betterBtn.addEventListener("click", function () {
+            generateBetterAttempt(attemptId);
+          });
+        }
+        if (useBtn) {
+          useBtn.addEventListener("click", function () {
+            useAttempt(attemptId);
+          });
+        }
+
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      }
+
+      function appendTyping() {
+        const wrap = document.createElement("div");
+        wrap.id = "typing-indicator";
+        wrap.className = "flex justify-start";
+        wrap.innerHTML = '<div class="wa-bubble wa-in inline-flex items-center gap-2" style="padding:10px 12px;">' +
+          '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>' +
+          "</div>";
+        chatScroll.appendChild(wrap);
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      }
+
+      function removeTyping() {
+        const el = document.getElementById("typing-indicator");
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      }
+
+      function updateStats() {
+        const count = scores.length;
+        const avg = count ? Math.round(scores.reduce((a, b) => a + b, 0) / count) : null;
+        statCount.textContent = String(count);
+        statAvg.textContent = avg == null ? "-" : String(avg);
+        statBest.textContent = best == null ? "-" : String(best);
+        statStage.textContent = stage || "Identifikasi";
+      }
+
+      function buildClientSystemPrompt(p, hist) {
+        const lines = (hist || []).map(function (h) {
+          const who = h.role === "client" ? p.name : "CS";
+          return who + ": " + h.content;
+        }).join("\n");
+        return "Kamu adalah simulator klien untuk pelatihan CS NyalaDigital, agensi iklan Meta khusus kontraktor.\n\n" +
+          "PRODUK NYALADIGITAL:\n" +
+          "- Paket Rp375.000 terima beres: video konten profesional, setup akun iklan Meta, iklan langsung ke WhatsApp, laporan harian, konsultasi advertiser, garansi leads, website kontraktor gratis, bonus template chat WhatsApp\n" +
+          "- Tim 13 orang (5 advertiser, 2 editor konten, 4 CS, 2 admin laporan)\n" +
+          "- Garansi: kalau leads tidak tercapai, iklan diperpanjang 2 hari gratis\n" +
+          "- Proses: bisnis check dulu → produksi konten → setup iklan → tayang → laporan harian → evaluasi\n\n" +
+          "PERSONA KAMU: " + p.name + "\n" +
+          "LATAR BELAKANG: " + p.desc + "\n" +
+          "TIPE: " + p.type + "\n" +
+          "KEKHAWATIRAN UTAMA: " + p.fear + "\n" +
+          "KONTEKS OPENING: " + p.opening + "\n\n" +
+          "ATURAN BERMAIN PERSONA — WAJIB DIIKUTI:\n" +
+          "1. Bicara natural seperti orang WhatsApp sungguhan — singkat, santai, informal\n" +
+          "2. Tunjukkan kekhawatiran BERTAHAP, jangan buka semua sekaligus\n" +
+          "3. Kalau CS langsung sebut harga atau jualan → jadi lebih dingin, jawab singkat\n" +
+          "4. Kalau CS tanya close question yang tepat → mulai terbuka, cerita lebih detail\n" +
+          "5. Kalau CS deliver value relevan dengan masalahmu → tunjukkan ketertarikan\n" +
+          "6. Sesekali balik tanya atau minta klarifikasi\n" +
+          "7. JANGAN langsung setuju beli — harus ada proses keraguan dulu\n" +
+          "8. Maksimal 2-3 kalimat per balasan\n" +
+          "9. JANGAN sebut bahwa kamu AI atau simulator\n" +
+          "10. Untuk tipe boncos: ungkap frustrasi dulu, baru bisa terbuka soal solusi\n\n" +
+          "HISTORI CHAT:\n" + lines;
+      }
+
+      function buildInterestedClientSystemPrompt(p, hist) {
+        return buildClientSystemPrompt(p, hist) +
+          "\n\nMODE KHUSUS (WAJIB): CS barusan memberikan jawaban paling ideal dan kamu jadi tertarik.\n" +
+          "1) Tunjukkan ketertarikan (positif) tanpa berlebihan\n" +
+          "2) Minta langkah berikutnya yang konkret (contoh: cara mulai, data yang dibutuhkan, jadwal call, proses konten)\n" +
+          "3) Maksimal 2 kalimat, gaya WhatsApp\n" +
+          "4) Jangan menolak atau meragukan pada mode ini";
+      }
+
+      function buildScoringPrompt(p, hist, csMsg) {
+        const lines = (hist || []).slice(-6).map(function (h) {
+          const who = h.role === "client" ? p.name : "CS";
+          return who + ": " + h.content;
+        }).join("\n");
+        return "Kamu adalah penilai ahli sales CS NyalaDigital, agensi iklan Meta untuk kontraktor.\n\n" +
+          "PRINSIP SALES YANG DINILAI:\n" +
+          "1. Value harus lebih tinggi dari harga — jangan sebut harga terlalu cepat\n" +
+          "2. Identifikasi masalah dulu pakai close question sebelum kasih solusi\n" +
+          "3. Deliver value yang relevan dengan kekhawatiran spesifik klien\n" +
+          "4. Hindari bahasa negatif: nggak, jangan, maaf, tapi, hanya, tidak bisa\n" +
+          "5. Setiap pesan diakhiri pertanyaan untuk jaga obrolan tetap hidup\n" +
+          "6. Jangan kirim PDF/pricelist/promo di awal\n" +
+          "7. Welcome message harus sederhana — perkenalan + 1 pertanyaan saja\n" +
+          "8. Bonus dan promo disimpan sebagai amunisi closing, bukan diumbar di awal\n\n" +
+          "PRODUK: Paket Rp375.000 — video iklan, setup akun, iklan ke WhatsApp, laporan harian, garansi leads, website gratis, template chat.\n\n" +
+          "PERSONA KLIEN: " + p.name + " — " + p.desc + "\n" +
+          "TIPE: " + p.type + "\n" +
+          "KEKHAWATIRAN: " + p.fear + "\n\n" +
+          "HISTORI CHAT (6 terakhir):\n" + lines + "\n\n" +
+          "BALASAN CS YANG DINILAI: \"" + String(csMsg || "").replace(/\"/g, "'") + "\"\n\n" +
+          "Nilai 0-100. Jawab HANYA dengan JSON berikut, tanpa teks lain:\n" +
+          "{\"score\":85,\"feedback\":\"Satu kalimat feedback spesifik dan actionable\",\"stage\":\"Identifikasi / Gali Masalah / Deliver Value / Negosiasi / Closing\"}";
+      }
+
+      function buildBetterAnswerPrompt(p, hist, lastClientMsg, lastAttemptText, lastScoreData) {
+        const stageHint = lastScoreData && lastScoreData.stage ? String(lastScoreData.stage) : "";
+        const feedbackHint = lastScoreData && lastScoreData.feedback ? String(lastScoreData.feedback) : "";
+        const historyTail = (hist || []).slice(-6).map(function (h) {
+          const who = h.role === "client" ? p.name : "CS";
+          return who + ": " + h.content;
+        }).join("\n");
+        return "Kamu adalah pelatih sales CS NyalaDigital. Tugas kamu: tuliskan 1 contoh balasan CS yang lebih baik untuk pesan klien terakhir.\n\n" +
+          "KONTEKS PRODUK NYALADIGITAL:\n" +
+          "- Paket Rp375.000 terima beres: video konten profesional, setup akun iklan Meta, iklan langsung ke WhatsApp, laporan harian, konsultasi advertiser, garansi leads, website kontraktor gratis, bonus template chat WhatsApp\n" +
+          "- Garansi: kalau leads tidak tercapai, iklan diperpanjang 2 hari gratis\n\n" +
+          "ATURAN BALASAN CS (WAJIB):\n" +
+          "1) Bahasa WhatsApp: singkat, natural, 1-2 kalimat\n" +
+          "2) Jangan sebut harga duluan kecuali klien tanya harga secara eksplisit\n" +
+          "3) Fokus identifikasi masalah dulu dengan pertanyaan yang tepat\n" +
+          "4) Deliver value yang relevan, jangan menjelaskan terlalu panjang\n" +
+          "5) Akhiri dengan 1 pertanyaan untuk lanjutkan chat\n" +
+          "6) Hindari kata negatif berlebihan (jangan, nggak, tapi, maaf) dan jangan defensif\n" +
+          "7) Jangan sebut bahwa kamu AI/simulator\n\n" +
+          "PERSONA: " + p.name + " — " + p.desc + "\n" +
+          "TIPE: " + p.type + "\n" +
+          "KEKHAWATIRAN: " + p.fear + "\n\n" +
+          "HISTORI CHAT (6 terakhir):\n" + historyTail + "\n\n" +
+          "PESAN KLIEN TERAKHIR: \"" + String(lastClientMsg || "").replace(/\"/g, "'") + "\"\n\n" +
+          "JAWABAN CS SEBELUMNYA: \"" + String(lastAttemptText || "").replace(/\"/g, "'") + "\"\n" +
+          (feedbackHint ? ("FEEDBACK PENILAI: " + feedbackHint + "\n") : "") +
+          (stageHint ? ("TAHAP PENILAI: " + stageHint + "\n") : "") +
+          "\nJawab HANYA dengan teks balasan CS yang lebih baik. Tanpa JSON, tanpa label, tanpa bullet.";
+      }
+
+      function buildSummaryPrompt(p, hist, avgScore) {
+        const chatText = (hist || []).map(function (h) {
+          const who = h.role === "client" ? p.name : "CS";
+          return who + ": " + h.content;
+        }).join("\n");
+        return "Kamu adalah pelatih sales senior NyalaDigital. Buat evaluasi sesi roleplay CS.\n\n" +
+          "Persona klien: " + p.name + " (" + p.desc + "). Tipe: " + p.type + ".\n\n" +
+          "CHAT LENGKAP:\n" + chatText + "\n\n" +
+          "Skor rata-rata: " + avgScore + "/100\n\n" +
+          "Jawab HANYA dengan JSON berikut, tanpa teks lain:\n" +
+          "{\"overall\":\"Penilaian singkat 1 kalimat\",\"strengths\":[\"kekuatan spesifik 1\",\"kekuatan spesifik 2\"],\"improvements\":[\"perbaikan spesifik 1\",\"perbaikan spesifik 2\"],\"tip\":\"Tips paling penting untuk sesi berikutnya\",\"verdict\":\"Lulus / Perlu Latihan Lagi / Belum Siap\"}";
+      }
+
+      async function callProxy(systemPrompt, userMessage, maxTokens) {
+        const model = String(modelSelect.value || "gpt-4o-mini");
+        const res = await fetch("/api/openai-proxy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: model,
+            systemPrompt: systemPrompt,
+            userMessage: userMessage,
+            maxTokens: maxTokens || 300
+          })
+        });
+        const text = await res.text();
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch (e) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          throw new Error("Response bukan JSON");
+        }
+        if (!res.ok) throw new Error((json && json.error) ? json.error : ("HTTP " + res.status));
+        const content = json && (json.content || (json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content));
+        return String(content || "");
+      }
+
+      function parseJsonLoose(raw, fallback) {
+        const s = String(raw || "").trim();
+        const cleaned = s.replace(/```json/g, "```").replace(/```/g, "").trim();
+        try { return JSON.parse(cleaned); } catch (e) { return fallback; }
+      }
+
+      function resetUi() {
+        chatScroll.innerHTML = "";
+        summaryCard.classList.add("hidden");
+        setSessionError("");
+        updateStats();
+      }
+
+      function isMobile() {
+        try { return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches); } catch (_) { return false; }
+      }
+
+      function setPageTitleVisible(visible) {
+        if (!pageTitle) return;
+        if (!isMobile()) {
+          pageTitle.style.display = "";
+          return;
+        }
+        pageTitle.style.display = visible ? "" : "none";
+      }
+
+      function updateChatPanelHeight() {
+        if (!chatPanel) return;
+        if (!isMobile()) {
+          chatPanel.style.height = "";
+          return;
+        }
+        try {
+          const vv = window.visualViewport;
+          const viewportH = vv && vv.height ? vv.height : window.innerHeight;
+          const headerEl = document.querySelector("#include-header header");
+          const headerH = headerEl ? headerEl.getBoundingClientRect().height : 0;
+          const bottomPad = 14;
+          const topPad = 12;
+          const avail = Math.max(360, Math.floor(viewportH - headerH - topPad - bottomPad));
+          chatPanel.style.height = avail + "px";
+        } catch (_) {}
+      }
+
+      function showStart() {
+        startScreen.classList.remove("hidden");
+        sessionScreen.classList.add("hidden");
+        summaryCard.classList.add("hidden");
+        setStartError("");
+        if (btnNewSessionTop) btnNewSessionTop.classList.add("hidden");
+        setPageTitleVisible(true);
+        updateChatPanelHeight();
+      }
+
+      function showSession() {
+        startScreen.classList.add("hidden");
+        sessionScreen.classList.remove("hidden");
+        if (btnNewSessionTop) btnNewSessionTop.classList.remove("hidden");
+        setPageTitleVisible(false);
+        updateChatPanelHeight();
+      }
+
+      async function checkProxy() {
+        try {
+          proxyStatusEl.textContent = "Cek...";
+          proxyStatusEl.className = "text-[11px] px-2 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10";
+          const r = await fetch("/api/openai-proxy", { method: "OPTIONS" });
+          if (r && (r.status === 204 || r.status === 200 || r.status === 404)) {
+            proxyStatusEl.textContent = "Siap";
+            proxyStatusEl.className = "text-[11px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20";
+          } else {
+            proxyStatusEl.textContent = "Cek server";
+            proxyStatusEl.className = "text-[11px] px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 border border-amber-500/20";
+          }
+        } catch (e) {
+          proxyStatusEl.textContent = "Tidak siap";
+          proxyStatusEl.className = "text-[11px] px-2 py-1 rounded-full bg-red-500/10 text-red-700 border border-red-500/20";
+        }
+      }
+
+      async function startSession() {
+        if (busy) return;
+        busy = true;
+        ended = false;
+        setStartError("");
+        try {
+          persona = PERSONAS[Math.floor(Math.random() * PERSONAS.length)];
+          history = [];
+          scores = [];
+          best = null;
+          stage = "Identifikasi";
+          personaName.textContent = persona.name;
+          personaDesc.textContent = persona.desc;
+          personaType.textContent = persona.type;
+          if (chatPeerName) chatPeerName.textContent = persona.name;
+          if (chatPeerStatus) chatPeerStatus.textContent = "online";
+          if (chatPeerInitials) chatPeerInitials.textContent = initialsFromName(persona.name);
+          resetUi();
+          showSession();
+          appendTyping();
+          const opening = await callProxy(
+            "Kamu klien: " + persona.name + ". " + persona.desc + ". Kekhawatiran: " + persona.fear + ". Kirim pesan PERTAMA yang natural ke CS NyalaDigital. 1-2 kalimat saja, bahasa Indonesia santai seperti WhatsApp. JANGAN sebut harga. Hanya teks pesannya saja tanpa label apapun.",
+            "mulai",
+            180
+          );
+          removeTyping();
+          history.push({ role: "client", content: opening });
+          appendBubble("client", opening);
+          startNewTurn();
+          updateStats();
+          chatInput.focus();
+        } catch (e) {
+          removeTyping();
+          setStartError((e && e.message) ? e.message : "Gagal memulai sesi");
+          showStart();
+        } finally {
+          busy = false;
+        }
+      }
+
+      async function submitAttempt() {
+        const txt = String(chatInput.value || "").trim();
+        if (!txt) return;
+        chatInput.value = "";
+        await submitAttemptText(txt, "manual");
+      }
+
+      async function submitAttemptText(txt, source) {
+        if (busy || ended) return;
+        if (turnLocked) return;
+        if (!isAwaitingCs()) {
+          setSessionError("Menunggu pesan dari klien dulu.");
+          return;
+        }
+        const text = String(txt || "").trim();
+        if (!text) return;
+        busy = true;
+        setSessionError("");
+        try {
+          const scoreFallback = { score: 65, feedback: "Lanjutkan identifikasi kebutuhan.", stage: "Identifikasi" };
+          const scoreRaw = await callProxy("Kamu penilai sales.", buildScoringPrompt(persona, history, text), 220);
+          const scoreData = parseJsonLoose(scoreRaw, scoreFallback);
+
+          const attemptId = String(turnKey) + "-" + String(++attemptSeq);
+          attempts.push({ id: attemptId, turnKey: turnKey, text: text, score: Number(scoreData.score || 0), scoreData: scoreData, source: String(source || "") });
+
+          scores.push(Number(scoreData.score || 0));
+          best = best == null ? Number(scoreData.score || 0) : Math.max(best, Number(scoreData.score || 0));
+          stage = String(scoreData.stage || stage || "Identifikasi");
+          updateStats();
+          appendAttemptBubble(text, scoreData, attemptId, source);
+          return attemptId;
+        } catch (e) {
+          setSessionError((e && e.message) ? e.message : "Gagal menilai jawaban");
+          return null;
+        } finally {
+          busy = false;
+        }
+      }
+
+      function lockAttemptActions() {
+        Array.from(chatScroll.querySelectorAll(".btn-use")).forEach(function (b) {
+          b.setAttribute("disabled", "disabled");
+          b.classList.add("opacity-50", "cursor-not-allowed");
+        });
+        Array.from(chatScroll.querySelectorAll(".btn-retry")).forEach(function (b) {
+          b.setAttribute("disabled", "disabled");
+          b.classList.add("opacity-50", "cursor-not-allowed");
+        });
+        Array.from(chatScroll.querySelectorAll(".btn-better")).forEach(function (b) {
+          b.setAttribute("disabled", "disabled");
+          b.classList.add("opacity-50", "cursor-not-allowed");
+        });
+      }
+
+      function unlockAttemptActions() {
+        Array.from(chatScroll.querySelectorAll(".btn-use")).forEach(function (b) {
+          b.removeAttribute("disabled");
+          b.classList.remove("opacity-50", "cursor-not-allowed");
+        });
+        Array.from(chatScroll.querySelectorAll(".btn-retry")).forEach(function (b) {
+          b.removeAttribute("disabled");
+          b.classList.remove("opacity-50", "cursor-not-allowed");
+        });
+        Array.from(chatScroll.querySelectorAll(".btn-better")).forEach(function (b) {
+          b.removeAttribute("disabled");
+          b.classList.remove("opacity-50", "cursor-not-allowed");
+        });
+      }
+
+      function markChosenAttempt(attemptId) {
+        const actions = chatScroll.querySelector('div[data-attempt-id="' + String(attemptId) + '"]');
+        if (!actions) return;
+        const bubbleWrap = actions.previousElementSibling && actions.previousElementSibling.previousElementSibling
+          ? actions.previousElementSibling.previousElementSibling
+          : null;
+        if (bubbleWrap && bubbleWrap.querySelector) {
+          const bubble = bubbleWrap.querySelector("div");
+          if (bubble) bubble.classList.add("ring-2", "ring-primary/40");
+        }
+      }
+
+      async function useAttempt(attemptId, opts) {
+        if (busy || ended) return;
+        if (turnLocked) return;
+        if (!isAwaitingCs()) return;
+        const found = attempts.find(function (a) { return String(a.id) === String(attemptId); });
+        if (!found) return;
+        const forceInterested = !!(opts && opts.forceInterested);
+        busy = true;
+        turnLocked = true;
+        setSessionError("");
+        lockAttemptActions();
+        markChosenAttempt(attemptId);
+        try {
+          const csText = String(found.text || "").trim();
+          if (!csText) return;
+          history.push({ role: "cs", content: csText });
+          appendTyping();
+          const clientSystem = forceInterested
+            ? buildInterestedClientSystemPrompt(persona, history)
+            : buildClientSystemPrompt(persona, history);
+          const clientReply = await callProxy(clientSystem, csText, 220);
+          removeTyping();
+          history.push({ role: "client", content: clientReply });
+          appendBubble("client", clientReply);
+          startNewTurn();
+          updateStats();
+        } catch (e) {
+          removeTyping();
+          turnLocked = false;
+          unlockAttemptActions();
+          setSessionError((e && e.message) ? e.message : "Gagal mendapatkan balasan klien");
+        } finally {
+          busy = false;
+        }
+      }
+
+      async function generateBetterAttempt(attemptId) {
+        if (busy || ended) return;
+        if (turnLocked) return;
+        if (!isAwaitingCs()) return;
+        const found = attempts.find(function (a) { return String(a.id) === String(attemptId); });
+        if (!found) return;
+        busy = true;
+        setSessionError("");
+        try {
+          const lastClientMsg = history.length > 0 ? String(history[history.length - 1].content || "") : "";
+          const prompt = buildBetterAnswerPrompt(persona, history, lastClientMsg, found.text, found.scoreData || {});
+          const betterTextRaw = await callProxy("Kamu pelatih CS.", prompt, 220);
+          const betterText = String(betterTextRaw || "").replace(/```/g, "").trim();
+          busy = false;
+          const newAttemptId = await submitAttemptText(betterText, "example");
+          if (newAttemptId) {
+            await useAttempt(newAttemptId, { forceInterested: true });
+          }
+        } catch (e) {
+          busy = false;
+          setSessionError((e && e.message) ? e.message : "Gagal membuat contoh jawaban");
+        }
+      }
+
+      function verdictFromAvg(avg) {
+        const n = Number(avg || 0);
+        if (n >= 80) return "Lulus";
+        if (n >= 60) return "Perlu Latihan Lagi";
+        return "Belum Siap";
+      }
+
+      async function endSession() {
+        if (busy || ended) return;
+        if (!scores.length) {
+          setSessionError("Belum ada balasan yang dinilai.");
+          return;
+        }
+        busy = true;
+        setSessionError("");
+        try {
+          ended = true;
+          const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+          summaryAvg.textContent = String(avg);
+          summaryCard.classList.remove("hidden");
+          summaryVerdict.textContent = verdictFromAvg(avg);
+          summaryOverall.textContent = "Memproses ringkasan...";
+          summaryStrengths.innerHTML = "";
+          summaryImprovements.innerHTML = "";
+          summaryTip.textContent = "";
+          const raw = await callProxy("Kamu pelatih sales senior.", buildSummaryPrompt(persona, history, avg), 450);
+          const fallback = {
+            overall: "Sesi selesai. Evaluasi belum bisa dibuat.",
+            strengths: ["Jaga alur tanya-jawab tetap hidup", "Gunakan pertanyaan yang lebih spesifik"],
+            improvements: ["Gali masalah lebih dalam sebelum menawarkan solusi", "Tutup setiap pesan dengan pertanyaan"],
+            tip: "Fokus pada 1 masalah utama klien, lalu sambungkan ke value paket.",
+            verdict: verdictFromAvg(avg)
+          };
+          const data = parseJsonLoose(raw, fallback);
+          summaryVerdict.textContent = String(data.verdict || verdictFromAvg(avg));
+          summaryOverall.textContent = String(data.overall || "-");
+          summaryTip.textContent = String(data.tip || "-");
+          const sList = Array.isArray(data.strengths) ? data.strengths : [];
+          const iList = Array.isArray(data.improvements) ? data.improvements : [];
+          summaryStrengths.innerHTML = sList.slice(0, 6).map(function (x) {
+            return '<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[18px] mt-0.5">check</span><span>' + escapeHtml(x) + "</span></li>";
+          }).join("");
+          summaryImprovements.innerHTML = iList.slice(0, 6).map(function (x) {
+            return '<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[18px] mt-0.5">north_east</span><span>' + escapeHtml(x) + "</span></li>";
+          }).join("");
+          chatScroll.scrollTop = chatScroll.scrollHeight;
+        } catch (e) {
+          setSessionError((e && e.message) ? e.message : "Gagal membuat ringkasan");
+        } finally {
+          busy = false;
+        }
+      }
+
+      function newSession() {
+        persona = null;
+        history = [];
+        scores = [];
+        best = null;
+        stage = "Identifikasi";
+        ended = false;
+        busy = false;
+        showStart();
+      }
+
+      btnStart.addEventListener("click", startSession);
+      btnSend.addEventListener("click", submitAttempt);
+      btnEnd.addEventListener("click", endSession);
+      btnNewSession.addEventListener("click", function () { newSession(); });
+      if (btnNewSessionTop) btnNewSessionTop.addEventListener("click", function () { newSession(); });
+      btnTryAgain.addEventListener("click", function () { newSession(); });
+
+      chatInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          submitAttempt();
+        }
+      });
+
+      chatInput.addEventListener("input", function () {
+        try {
+          chatInput.style.height = "auto";
+          const h = Math.min(chatInput.scrollHeight, 120);
+          chatInput.style.height = h + "px";
+        } catch (_) {}
+      });
+
+      try {
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", updateChatPanelHeight);
+          window.visualViewport.addEventListener("scroll", updateChatPanelHeight);
+        } else {
+          window.addEventListener("resize", updateChatPanelHeight);
+        }
+      } catch (_) {}
+
+      checkProxy();
+      showStart();
+    });
+  </script>
+</body>
+</html>

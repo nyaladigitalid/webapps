@@ -185,8 +185,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   const ROLE_MENUS = {
-    super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator"],
-    cs: ["overview","orders","commissions","crm"],
+    super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator","simulator_cs"],
+    cs: ["overview","orders","commissions","crm","simulator_cs"],
     keuangan: ["overview","finance","orders","commissions","clients"],
     advertiser: ["overview","orders","analytics","campaigns"],
     crm: ["overview","data_crm","orders"],
@@ -364,11 +364,28 @@ document.addEventListener("DOMContentLoaded", async function () {
       #sidebar-backdrop{display:none;}
       .sidebar-open #sidebar-backdrop{display:block;}
       @media (max-width: 768px){
+        body > .relative.z-10.min-h-screen.flex.flex-col > .flex-1.max-w-7xl.mx-auto.w-full.px-6.py-6.flex.gap-5{
+          flex-direction: column !important;
+          padding-left: 12px !important;
+          padding-right: 12px !important;
+          padding-top: 14px !important;
+          padding-bottom: 14px !important;
+          gap: 12px !important;
+        }
+        #include-sidebar{width:0 !important;flex:0 0 0 !important;}
+        main{overflow: visible !important; max-height: none !important;}
+        main > .flex-1.overflow-y-auto{overflow: visible !important;}
+        .glass-panel table th{font-size:11px !important;}
+        .glass-panel table td{font-size:12px !important;}
+        .glass-panel table th,
+        .glass-panel table td{padding:10px 12px !important;}
+      }
+      @media (max-width: 768px){
         #include-sidebar{width:0 !important;flex:0 0 0 !important;}
         .layout-sidebar{
           position:fixed !important;
           left:0 !important;
-          top:0 !important;
+          top:64px !important;
           bottom:0 !important;
           width:min(84vw, 320px) !important;
           transform:translateX(-110%) !important;
@@ -380,10 +397,14 @@ document.addEventListener("DOMContentLoaded", async function () {
         .sidebar-open .layout-sidebar{transform:translateX(0) !important;}
         #sidebar-backdrop{
           position:fixed !important;
-          inset:0 !important;
+          left:0 !important;
+          right:0 !important;
+          top:64px !important;
+          bottom:0 !important;
           background:rgba(15,23,42,0.45) !important;
           z-index:70 !important;
         }
+        body.sidebar-open{overflow:hidden !important;}
       }
     `;
     document.head.appendChild(style);
@@ -618,6 +639,10 @@ document.addEventListener("DOMContentLoaded", async function () {
           padding-left: var(--oa-gutter-l) !important;
           padding-right: var(--oa-gutter-l) !important;
         }
+        html.theme-openai body{overflow:auto !important;}
+        html.theme-openai main{overflow:visible !important; max-height:none !important;}
+        html.theme-openai main > .flex-1.overflow-y-auto{overflow:visible !important;}
+        html.theme-openai body.sidebar-open{overflow:hidden !important;}
         html.theme-openai .layout-sidebar{
           width:min(84vw, 320px) !important;
           transform:translateX(-110%) !important;
@@ -709,12 +734,37 @@ document.addEventListener("DOMContentLoaded", async function () {
       function isMobile() {
         try { return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches); } catch (_) { return false; }
       }
+      function lockBodyScroll() {
+        try {
+          const y = window.scrollY || document.documentElement.scrollTop || 0;
+          document.body.dataset.scrollY = String(y);
+          document.body.style.position = "fixed";
+          document.body.style.top = "-" + y + "px";
+          document.body.style.left = "0";
+          document.body.style.right = "0";
+          document.body.style.width = "100%";
+        } catch (_) {}
+      }
+      function unlockBodyScroll() {
+        try {
+          const y = parseInt(document.body.dataset.scrollY || "0", 10) || 0;
+          document.body.style.position = "";
+          document.body.style.top = "";
+          document.body.style.left = "";
+          document.body.style.right = "";
+          document.body.style.width = "";
+          delete document.body.dataset.scrollY;
+          window.scrollTo(0, y);
+        } catch (_) {}
+      }
       function ensureBackdrop() {
         if (document.getElementById("sidebar-backdrop")) return;
         const el = document.createElement("div");
         el.id = "sidebar-backdrop";
         el.addEventListener("click", function () {
           document.body.classList.remove("sidebar-open");
+          unlockBodyScroll();
+          setIcon(false);
         });
         document.body.appendChild(el);
       }
@@ -726,6 +776,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       function closeMobile() {
         document.body.classList.remove("sidebar-open");
         setIcon(false);
+        unlockBodyScroll();
       }
       ensureBackdrop();
       setIcon(false);
@@ -734,6 +785,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           const next = !document.body.classList.contains("sidebar-open");
           document.body.classList.toggle("sidebar-open", next);
           setIcon(next);
+          if (next) lockBodyScroll(); else unlockBodyScroll();
           return;
         }
         document.body.classList.toggle("sidebar-hidden");
@@ -742,7 +794,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (!isMobile()) {
           document.body.classList.remove("sidebar-open");
           setIcon(false);
+          unlockBodyScroll();
         }
+      });
+      window.addEventListener("keydown", function (e) {
+        if (e && e.key === "Escape" && document.body.classList.contains("sidebar-open")) closeMobile();
       });
       Array.from(document.querySelectorAll(".layout-sidebar nav a")).forEach(function (a) {
         a.addEventListener("click", function () {

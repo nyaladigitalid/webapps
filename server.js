@@ -5,6 +5,7 @@ dotenv.config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
+const https = require('https');
 // const cors = require('cors'); // Cors not installed in package.json
 
 // Initialize Express
@@ -4013,6 +4014,70 @@ app.post('/api/orders/:id/content/submit', async (req, res) => {
         res.json({ success: true });
     } catch (e) {
         console.error('Submit content error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/openai-proxy', async (req, res) => {
+    try {
+        const apiKey = String(process.env.OPENAI_API_KEY || '').trim();
+        if (!apiKey) {
+            return res.status(500).json({ error: 'OPENAI_API_KEY belum diset di server' });
+        }
+
+        const body = req.body || {};
+        const model = String(body.model || 'gpt-4o-mini').trim() || 'gpt-4o-mini';
+        const systemPrompt = String(body.systemPrompt || '').trim();
+        const userMessage = String(body.userMessage || '').trim();
+        const maxTokens = Number(body.maxTokens || 500);
+        if (!systemPrompt || !userMessage) {
+            return res.status(400).json({ error: 'systemPrompt dan userMessage wajib diisi' });
+        }
+
+        const payload = JSON.stringify({
+            model,
+            max_tokens: Number.isFinite(maxTokens) ? maxTokens : 500,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage }
+            ]
+        });
+
+        const requestOptions = {
+            method: 'POST',
+            hostname: 'api.openai.com',
+            path: '/v1/chat/completions',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const upstream = await new Promise((resolve, reject) => {
+            const r = https.request(requestOptions, (resp) => {
+                let data = '';
+                resp.on('data', (chunk) => { data += chunk; });
+                resp.on('end', () => resolve({ status: resp.statusCode || 500, body: data }));
+            });
+            r.on('error', reject);
+            r.write(payload);
+            r.end();
+        });
+
+        let parsed = null;
+        try { parsed = upstream.body ? JSON.parse(upstream.body) : null; } catch (_) {}
+        if (upstream.status < 200 || upstream.status >= 300) {
+            const msg = parsed && parsed.error && parsed.error.message ? parsed.error.message : 'Upstream error';
+            return res.status(502).json({ error: msg });
+        }
+
+        const content = parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].message
+            ? parsed.choices[0].message.content
+            : '';
+        res.json({ content, raw: parsed });
+    } catch (e) {
+        console.error('OpenAI proxy error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
