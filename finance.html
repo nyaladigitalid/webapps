@@ -79,9 +79,727 @@ body { font-family: 'Inter', sans-serif; }
 .dark .finance-table tbody tr:hover td {
   background-color: rgba(255, 255, 255, 0.04);
 }
+.finance-tabs-wrap {
+  background: transparent;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+.finance-tab-btn {
+  color: #475569;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.finance-tab-btn .material-symbols-outlined {
+  color: #64748b;
+}
+.finance-tab-btn.is-active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+}
+.finance-tab-btn.is-active .material-symbols-outlined,
+.finance-tab-btn.is-active .finance-tab-badge {
+  color: #ffffff;
+}
+.finance-tab-btn:hover:not(.is-active) {
+  background: rgba(15, 23, 42, 0.04);
+}
+.finance-tab-badge {
+  line-height: 1;
+}
+.finance-section-plain {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.dark .finance-tabs-wrap {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.dark .finance-tab-btn {
+  color: #cbd5e1;
+}
+.dark .finance-tab-btn .material-symbols-outlined {
+  color: #94a3b8;
+}
+.dark .finance-tab-btn:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+html.theme-openai body.finance-clean {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+html.theme-openai body.finance-clean .glass-surface {
+  background: none !important;
+}
+html.theme-openai body.finance-clean main {
+  gap: 10px !important;
+  padding-right: 16px !important;
+}
+html.theme-openai body.finance-clean .max-w-7xl.mx-auto.w-full.px-6.py-6 {
+  padding-top: 8px !important;
+  padding-bottom: 10px !important;
+}
+html.theme-openai body.finance-clean .finance-page-header {
+  margin-top: 40px !important;
+  margin-bottom: 14px !important;
+}
+html.theme-openai body.finance-clean h2,
+html.theme-openai body.finance-clean h3,
+html.theme-openai body.finance-clean .text-white,
+html.theme-openai body.finance-clean .text-white\/90 {
+  color: #0f172a !important;
+}
+html.theme-openai body.finance-clean .finance-page-title {
+  font-size: 24px !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.03em !important;
+}
+html.theme-openai body.finance-clean .finance-page-subtitle {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  margin-top: 4px !important;
+}
+html.theme-openai body.finance-clean h3 {
+  font-size: 16px !important;
+  line-height: 1.25 !important;
+}
+html.theme-openai body.finance-clean .text-slate-400,
+html.theme-openai body.finance-clean .text-slate-500,
+html.theme-openai body.finance-clean .text-secondary\/80 {
+  color: #64748b !important;
+}
+html.theme-openai body.finance-clean .glass-card,
+html.theme-openai body.finance-clean .glass-panel,
+html.theme-openai body.finance-clean .metric-card {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.theme-openai body.finance-clean .metric-card {
+  padding: 13px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-grid {
+  gap: 12px !important;
+}
+html.theme-openai body.finance-clean .finance-summary-breakdown {
+  margin-top: 26px !important;
+}
+html.theme-openai body.finance-clean .finance-commission-kpi-grid {
+  margin-bottom: 8px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-card {
+  padding: 12px 13px !important;
+  border-radius: 14px !important;
+  gap: 4px !important;
+  position: relative !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-head {
+  margin-bottom: 0 !important;
+  display: block !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-label {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  display: block !important;
+  padding-right: 38px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-value {
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.02em !important;
+  margin-top: 2px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-foot {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  gap: 3px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-icon {
+  width: 26px !important;
+  height: 26px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: 12px !important;
+  right: 14px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-icon .material-symbols-outlined {
+  font-size: 15px !important;
+}
+html.theme-openai body.finance-clean .finance-kpi-badge {
+  font-size: 10px !important;
+  line-height: 1 !important;
+  padding: 4px 7px !important;
+  position: absolute !important;
+  top: 12px !important;
+  right: 14px !important;
+}
+html.theme-openai body.finance-clean .finance-tabs-wrap {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  gap: 3px !important;
+}
+html.theme-openai body.finance-clean .finance-tab-btn {
+  color: #334155 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  padding: 8px 11px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+}
+html.theme-openai body.finance-clean .finance-tab-btn .material-symbols-outlined {
+  color: #64748b !important;
+  font-size: 15px !important;
+}
+html.theme-openai body.finance-clean .finance-tab-badge {
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  line-height: 1.1 !important;
+}
+html.theme-openai body.finance-clean .finance-tabs-block {
+  margin-bottom: 12px !important;
+}
+html.theme-openai body.finance-clean .finance-tab-btn.is-active {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border-color: #111827 !important;
+  box-shadow: none !important;
+}
+html.theme-openai body.finance-clean .finance-tab-btn.is-active .material-symbols-outlined,
+html.theme-openai body.finance-clean .finance-tab-btn.is-active .finance-tab-badge {
+  color: #ffffff !important;
+}
+html.theme-openai body.finance-clean .finance-tab-btn:hover:not(.is-active) {
+  background: #f8fafc !important;
+}
+html.theme-openai body.finance-clean .finance-section-plain {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+html.theme-openai body.finance-clean .grid {
+  gap: 10px !important;
+}
+html.theme-openai body.finance-clean .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 10px !important;
+}
+html.theme-openai body.finance-clean .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 8px !important;
+}
+html.theme-openai body.finance-clean input,
+html.theme-openai body.finance-clean select,
+html.theme-openai body.finance-clean textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #d1d5db !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  border-radius: 10px !important;
+}
+html.theme-openai body.finance-clean input::placeholder,
+html.theme-openai body.finance-clean textarea::placeholder {
+  color: #94a3b8 !important;
+}
+html.theme-openai body.finance-clean label {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+html.theme-openai body.finance-clean .finance-summary-controls {
+  gap: 10px !important;
+}
+html.theme-openai body.finance-clean .finance-summary-controls .material-symbols-outlined {
+  font-size: 16px !important;
+}
+html.theme-openai body.finance-clean .finance-filter-btn {
+  height: 36px !important;
+  width: 36px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  row-gap: 8px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-filter-group,
+html.theme-openai body.finance-clean .finance-approval-selected-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-group {
+  padding-left: 10px !important;
+  border-left: 1px solid #e5e7eb !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-count {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 36px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+}
+html.theme-openai body.finance-clean .finance-approval-field {
+  min-width: 0 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-field select {
+  min-width: 112px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-field input {
+  min-width: 168px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-filter-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 36px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  background: #ef7225 !important;
+  color: #ffffff !important;
+  border: 1px solid #ef7225 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-filter-btn:hover {
+  background: #de6419 !important;
+  border-color: #de6419 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 36px !important;
+  padding: 0 11px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  border: 1px solid transparent !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn-approve {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn-approve:hover:not(:disabled) {
+  background: #d1fae5 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn-payout {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border-color: #bbf7d0 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn-payout:hover:not(:disabled) {
+  background: #dcfce7 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn-reject {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn-reject:hover:not(:disabled) {
+  background: #fee2e2 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-selected-btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox-col {
+  width: 42px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox {
+  width: 14px !important;
+  height: 14px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+  display: inline-grid !important;
+  place-content: center !important;
+  line-height: 0 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox::before {
+  content: "" !important;
+  width: 7px !important;
+  height: 4px !important;
+  border-left: 2px solid #0f172a !important;
+  border-bottom: 2px solid #0f172a !important;
+  transform: rotate(-45deg) scale(0) !important;
+  transform-origin: center !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox:checked {
+  background: #ffffff !important;
+  border-color: #0f172a !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox:checked::before {
+  transform: rotate(-45deg) scale(1) !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox:focus-visible {
+  outline: 2px solid rgba(239, 114, 37, 0.45) !important;
+  outline-offset: 2px !important;
+}
+html.theme-openai body.finance-clean .finance-approval-checkbox:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.45 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table th {
+  padding: 8px 10px !important;
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.06em !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table td {
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  vertical-align: middle !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-approval-note {
+  max-width: 84px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 9999px !important;
+  padding: 3px 8px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-chip-role {
+  background: #e0e7ff !important;
+  color: #4338ca !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-chip-type {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-chip-approved {
+  background: #d1fae5 !important;
+  color: #047857 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-chip-rejected {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+html.theme-openai body.finance-clean .finance-approval-table .finance-chip-pending {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-actions {
+  display: inline-flex !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  flex-wrap: nowrap !important;
+}
+html.theme-openai body.finance-clean .finance-approval-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 64px !important;
+  padding: 5px 9px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  border: 1px solid transparent !important;
+}
+html.theme-openai body.finance-clean .finance-approval-btn-approve {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-btn-approve:hover {
+  background: #d1fae5 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-btn-reject {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+html.theme-openai body.finance-clean .finance-approval-btn-reject:hover {
+  background: #fee2e2 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 10px 12px !important;
+  border-top: 1px solid #e5e7eb !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+html.theme-openai body.finance-clean .finance-approval-footer strong {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+@media (max-width: 1024px) {
+  html.theme-openai body.finance-clean .finance-approval-toolbar {
+    justify-content: flex-start !important;
+  }
+  html.theme-openai body.finance-clean .finance-approval-selected-group {
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+  html.theme-openai body.finance-clean .finance-approval-footer {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}
+html.theme-openai body.finance-clean table {
+  background: #ffffff !important;
+}
+html.theme-openai body.finance-clean table thead,
+html.theme-openai body.finance-clean table thead tr,
+html.theme-openai body.finance-clean table thead th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+html.theme-openai body.finance-clean table th,
+html.theme-openai body.finance-clean table td {
+  padding: 10px 12px !important;
+}
+html.theme-openai body.finance-clean .finance-summary-table th {
+  padding: 8px 10px !important;
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.06em !important;
+}
+html.theme-openai body.finance-clean .finance-summary-table td {
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+html.theme-openai body.finance-clean .finance-cash-table {
+  table-layout: fixed !important;
+}
+html.theme-openai body.finance-clean .finance-cash-table th:nth-child(1),
+html.theme-openai body.finance-clean .finance-cash-table td:nth-child(1) {
+  width: 148px !important;
+}
+html.theme-openai body.finance-clean .finance-cash-table th:nth-child(3),
+html.theme-openai body.finance-clean .finance-cash-table td:nth-child(3) {
+  width: 164px !important;
+}
+html.theme-openai body.finance-clean .finance-cash-table th:nth-child(4),
+html.theme-openai body.finance-clean .finance-cash-table td:nth-child(4),
+html.theme-openai body.finance-clean .finance-cash-table th:nth-child(5),
+html.theme-openai body.finance-clean .finance-cash-table td:nth-child(5) {
+  width: 120px !important;
+}
+html.theme-openai body.finance-clean .finance-cash-table th:nth-child(6),
+html.theme-openai body.finance-clean .finance-cash-table td:nth-child(6) {
+  width: 72px !important;
+}
+html.theme-openai body.finance-clean .finance-cash-date {
+  white-space: nowrap !important;
+}
+html.theme-openai body.finance-clean .finance-cash-description {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  line-height: 1.4 !important;
+}
+html.theme-openai body.finance-clean .finance-summary-table .finance-main-row td {
+  white-space: nowrap !important;
+}
+html.theme-openai body.finance-clean .finance-summary-table .finance-main-row td:first-child {
+  white-space: normal !important;
+}
+html.theme-openai body.finance-clean .finance-summary-value {
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
+html.theme-openai body.finance-clean .finance-detail-toggle {
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  border-radius: 8px !important;
+}
+html.theme-openai body.finance-clean .finance-detail-toggle .material-symbols-outlined {
+  font-size: 14px !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination {
+  padding: 8px 10px !important;
+  min-height: auto !important;
+  gap: 8px !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination #finance-pagination-info {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination button {
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  min-height: auto !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination #btn-prev {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination #btn-prev:hover:not(:disabled) {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination #btn-next {
+  background: #ef7225 !important;
+  color: #ffffff !important;
+  border: 1px solid #ef7225 !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination #btn-next:hover:not(:disabled) {
+  background: #de6419 !important;
+  border-color: #de6419 !important;
+}
+html.theme-openai body.finance-clean #approval-next {
+  background: #ef7225 !important;
+  color: #ffffff !important;
+  border: 1px solid #ef7225 !important;
+}
+html.theme-openai body.finance-clean #approval-next:hover:not(:disabled) {
+  background: #de6419 !important;
+  border-color: #de6419 !important;
+}
+html.theme-openai body.finance-clean #cash-prev {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+html.theme-openai body.finance-clean #cash-prev:hover:not(:disabled) {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+html.theme-openai body.finance-clean #cash-next {
+  background: #ef7225 !important;
+  color: #ffffff !important;
+  border: 1px solid #ef7225 !important;
+}
+html.theme-openai body.finance-clean #cash-next:hover:not(:disabled) {
+  background: #de6419 !important;
+  border-color: #de6419 !important;
+}
+html.theme-openai body.finance-clean #cash-btn-add-income,
+html.theme-openai body.finance-clean #cash-btn-add-expense {
+  background: #ef7225 !important;
+  color: #ffffff !important;
+  border: 1px solid #ef7225 !important;
+}
+html.theme-openai body.finance-clean #cash-btn-add-income:hover,
+html.theme-openai body.finance-clean #cash-btn-add-expense:hover {
+  background: #de6419 !important;
+  border-color: #de6419 !important;
+  color: #ffffff !important;
+}
+html.theme-openai body.finance-clean #cash-btn-add-income .material-symbols-outlined,
+html.theme-openai body.finance-clean #cash-btn-add-expense .material-symbols-outlined,
+html.theme-openai body.finance-clean .cash-delete-transaction,
+html.theme-openai body.finance-clean .cash-delete-transaction .material-symbols-outlined {
+  color: #ffffff !important;
+}
+html.theme-openai body.finance-clean .cash-delete-transaction {
+  background: #ef4444 !important;
+  border: 1px solid #ef4444 !important;
+}
+html.theme-openai body.finance-clean .cash-delete-transaction:hover {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+html.theme-openai body.finance-clean .finance-summary-pagination #btn-prev:disabled,
+html.theme-openai body.finance-clean .finance-summary-pagination #btn-next:disabled {
+  opacity: 0.45 !important;
+}
+html.theme-openai body.finance-clean #cash-prev:disabled,
+html.theme-openai body.finance-clean #cash-next:disabled {
+  opacity: 0.45 !important;
+}
+html.theme-openai body.finance-clean .finance-table tbody td {
+  color: #0f172a !important;
+}
+html.theme-openai body.finance-clean .finance-table tbody tr:hover td {
+  background: #fafafa !important;
+}
+html.theme-openai body.finance-clean .bg-white\/5 {
+  background: #ffffff !important;
+}
+html.theme-openai body.finance-clean .border-white\/10,
+html.theme-openai body.finance-clean .border-white\/5 {
+  border-color: #e5e7eb !important;
+}
+html.theme-openai body.finance-clean .bg-white\/2 {
+  background: #f8fafc !important;
+}
+html.theme-openai body.finance-clean .text-emerald-400 {
+  color: #059669 !important;
+}
+html.theme-openai body.finance-clean .text-red-400 {
+  color: #dc2626 !important;
+}
+html.theme-openai body.finance-clean .text-amber-300,
+html.theme-openai body.finance-clean .text-amber-400 {
+  color: #d97706 !important;
+}
+html.theme-openai body.finance-clean #commission-payout-section,
+html.theme-openai body.finance-clean #commission-approval-section,
+html.theme-openai body.finance-clean #commission-ledger-section {
+  margin-top: 0 !important;
+}
+html.theme-openai body.finance-clean .rounded-xl.border.border-white\/10.bg-white\/5.p-4 {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+html.theme-openai body.finance-clean .finance-order-detail-row td {
+  background: #fcfcfd !important;
+}
+html.theme-openai body.finance-clean .finance-order-detail-card {
+  background: #f8fafc !important;
+  border: 1px solid #e5e7eb !important;
+  padding: 12px !important;
+  border-radius: 12px !important;
+}
+html.theme-openai body.finance-clean .finance-order-detail-metric {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  padding: 10px !important;
+  border-radius: 10px !important;
+}
+html.theme-openai body.finance-clean .finance-order-detail-card .text-sm.font-bold {
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+}
+html.theme-openai body.finance-clean .finance-order-detail-card .text-xs,
+html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
 </style>
 </head>
-<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="finance">
+<body class="finance-clean bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="finance">
 <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
   <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
 </div>
@@ -90,64 +808,81 @@ body { font-family: 'Inter', sans-serif; }
   <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
     <div id="include-sidebar"></div>
     <main class="flex-1 flex flex-col min-w-0">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <div class="finance-page-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <div>
-          <h2 class="text-2xl md:text-3xl font-black tracking-tight">Keuangan &amp; Billing</h2>
-          <p class="text-secondary/80 text-sm mt-1">Ringkasan arus kas, spend, dan payroll.</p>
+          <h2 class="finance-page-title text-2xl md:text-3xl font-black tracking-tight">Keuangan &amp; Billing</h2>
+          <p class="finance-page-subtitle text-secondary/80 text-sm mt-1">Ringkasan arus kas, spend, komisi, dan profit per order.</p>
         </div>
       </div>
-      <div class="space-y-8">
+      <div class="finance-tabs-block mb-4">
+        <div class="finance-tabs-wrap rounded-2xl p-1.5 flex gap-1.5 overflow-x-auto">
+          <button type="button" data-finance-tab-btn="summary" class="finance-tab-btn shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]">dashboard</span>
+            Ringkasan
+          </button>
+          <button type="button" data-finance-tab-btn="commission" class="finance-tab-btn shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+            Komisi
+            <span id="finance-approval-badge" class="finance-tab-badge hidden rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-300">0</span>
+            <span id="finance-payout-badge" class="finance-tab-badge hidden rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-300">0</span>
+          </button>
+          <button type="button" data-finance-tab-btn="cash" class="finance-tab-btn shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+            Buku Kas
+          </button>
+        </div>
+      </div>
+      <div class="space-y-5">
+<section id="finance-tab-summary" data-finance-tab-panel="summary" class="space-y-5">
 <!-- KPI Section -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-<div class="metric-card p-6 rounded-xl flex flex-col gap-2">
-<div class="flex justify-between items-start">
-<span class="text-slate-400 text-sm font-medium">Pemasukan</span>
-<div class="p-2 rounded-lg">
+<div class="finance-kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+<div class="finance-kpi-head flex justify-between items-start gap-3">
+<span class="finance-kpi-label text-slate-400 text-sm font-medium">Pemasukan</span>
+<div class="finance-kpi-icon rounded-lg">
 <span class="material-symbols-outlined text-[#ef7225]">trending_up</span>
 </div>
 </div>
-<h3 id="kpi-revenue" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
-<p class="text-emerald-400 text-xs font-medium flex items-center gap-1">
-<span class="material-symbols-outlined text-[14px]">arrow_upward</span> +0% vs last month
-                        </p>
+<h3 id="kpi-revenue" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+<p class="finance-kpi-foot text-slate-400 text-xs font-medium">Total pemasukan order terfilter</p>
 </div>
-<div class="metric-card p-6 rounded-xl flex flex-col gap-2">
-<div class="flex justify-between items-start">
-<span class="text-slate-400 text-sm font-medium">Ad Spend</span>
-<div class="p-2 rounded-lg bg-orange-500/10 text-orange-500">
+<div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+<div class="finance-kpi-head flex justify-between items-start gap-3">
+<span class="finance-kpi-label text-slate-400 text-sm font-medium">Spend Iklan</span>
+<div class="finance-kpi-icon rounded-lg bg-orange-500/10 text-orange-500">
 <span class="material-symbols-outlined">ad_units</span>
 </div>
 </div>
-<h3 id="kpi-ad-spend" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
-<p class="text-slate-400 text-xs font-medium">Meta Ads &amp; Google Ads</p>
+<h3 id="kpi-ad-spend" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+<p class="finance-kpi-foot text-slate-400 text-xs font-medium">Biaya iklan aktual per order</p>
 </div>
-<div class="metric-card p-6 rounded-xl flex flex-col gap-2">
-<div class="flex justify-between items-start">
-<span class="text-slate-400 text-sm font-medium">Operasional</span>
-<div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+<div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+<div class="finance-kpi-head flex justify-between items-start gap-3">
+<span class="finance-kpi-label text-slate-400 text-sm font-medium">Komisi</span>
+<div class="finance-kpi-icon rounded-lg bg-indigo-500/10 text-indigo-500">
 <span class="material-symbols-outlined">receipt_long</span>
 </div>
 </div>
-<h3 id="kpi-operational" class="text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
-<p class="text-slate-400 text-xs font-medium">SaaS &amp; Infrastructure</p>
+<h3 id="kpi-operational" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+<p class="finance-kpi-foot text-slate-400 text-xs font-medium">Komisi CS dan tim terkait</p>
 </div>
-<div class="metric-card p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden group">
+<div class="finance-kpi-card metric-card rounded-xl flex flex-col relative overflow-hidden group">
 <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-<div class="flex justify-between items-start">
-<span class="text-slate-400 text-sm font-medium">Laba Bersih</span>
-<div class="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+<div class="finance-kpi-head flex justify-between items-start gap-3">
+<span class="finance-kpi-label text-slate-400 text-sm font-medium">Net Profit</span>
+<div id="kpi-net-profit-badge" class="finance-kpi-badge bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                                 +0%
                             </div>
 </div>
-<h3 id="kpi-net-profit" class="text-2xl font-bold text-emerald-400">Rp 0</h3>
-<p class="text-slate-400 text-xs font-medium">Profit margin: 0%</p>
+<h3 id="kpi-net-profit" class="finance-kpi-value text-2xl font-bold text-emerald-400">Rp 0</h3>
+<p id="kpi-net-profit-margin" class="finance-kpi-foot text-slate-400 text-xs font-medium">Margin bersih: 0%</p>
 </div>
 </div>
 <!-- Analytics Chart Removed -->
       <!-- Detailed Breakdown -->
-<div class="space-y-4">
+<div class="finance-summary-breakdown space-y-3">
     <!-- Controls -->
-    <div class="flex flex-col md:flex-row gap-4 justify-between items-end">
+    <div class="finance-summary-controls flex flex-col md:flex-row gap-4 justify-between items-end">
         <div class="flex-1 w-full md:w-auto">
              <label class="block text-xs font-medium text-slate-400 mb-1">Search Order</label>
              <div class="relative">
@@ -164,32 +899,34 @@ body { font-family: 'Inter', sans-serif; }
                 <label class="block text-xs font-medium text-slate-400 mb-1">To</label>
                 <input type="date" id="finance-end-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
              </div>
-             <button onclick="applyFilters()" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
+             <button onclick="applyFilters()" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
                 <span class="material-symbols-outlined text-lg">filter_list</span>
              </button>
         </div>
     </div>
 
 <div class="glass-card rounded-xl overflow-hidden">
-<table class="finance-table w-full text-left border-collapse">
+<table class="finance-table finance-summary-table w-full text-left border-collapse">
 <thead>
 <tr class="border-b border-white/10 bg-white/2">
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">No Order</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order Name</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Masuk (Revenue)</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Est. Keluar</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Real Spend</th>
-<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Profit</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Masuk</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Spend Iklan</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Komisi</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Profit</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Net Profit</th>
 <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Action</th>
 </tr>
 </thead>
 <tbody id="finance-orders-body" class="divide-y divide-white/5">
 <tr>
-<td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td>
+<td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td>
 </tr>
 </tbody>
 </table>
 <!-- Pagination -->
-<div class="px-6 py-4 border-t border-white/5 flex items-center justify-between bg-white/2">
+<div class="finance-summary-pagination px-6 py-4 border-t border-white/5 flex items-center justify-between bg-white/2">
     <span id="finance-pagination-info" class="text-xs text-slate-400 font-medium">Showing 0 of 0 orders</span>
     <div class="flex gap-2">
         <button id="btn-prev" onclick="changePage(-1)" class="px-3 py-1 bg-white/5 rounded border border-white/10 text-xs font-bold text-slate-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Prev</button>
@@ -198,40 +935,136 @@ body { font-family: 'Inter', sans-serif; }
 </div>
 </div>
       <!-- Summary Row Removed -->
+</section>
 
 <!-- Approval Komisi -->
-<div id="commission-approval-section" class="glass-card rounded-xl p-6 mt-8">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-            <div>
-                <h3 class="text-xl font-bold text-white">Approval Komisi Keuangan</h3>
-                <p class="text-slate-400 text-sm">Semua role bisa lihat estimasi komisi; finance/super admin approve untuk finalisasi.</p>
+<section id="finance-tab-commission" data-finance-tab-panel="commission" class="hidden space-y-5">
+<div id="commission-summary-section" class="finance-section-plain">
+        <div class="finance-commission-kpi-grid finance-kpi-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+                <div class="finance-kpi-head flex justify-between items-start gap-3">
+                    <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Pending</span>
+                    <div class="finance-kpi-icon rounded-lg bg-amber-500/10 text-amber-500">
+                        <span class="material-symbols-outlined">schedule</span>
+                    </div>
+                </div>
+                <h3 id="total-pending" class="finance-kpi-value text-2xl font-bold text-amber-500">Rp 0</h3>
+                <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Komisi yang masih menunggu approval</p>
             </div>
-            <div class="flex flex-wrap items-end gap-3">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Status Approval</label>
-                    <select id="approval-status-filter" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-                        <option value="all">Semua</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
+            <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+                <div class="finance-kpi-head flex justify-between items-start gap-3">
+                    <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Approved</span>
+                    <div class="finance-kpi-icon rounded-lg bg-emerald-500/10 text-emerald-500">
+                        <span class="material-symbols-outlined">task_alt</span>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Cari Order/User</label>
-                    <input type="text" id="approval-search" placeholder="#order / nama user" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                <h3 id="total-approved" class="finance-kpi-value text-2xl font-bold text-emerald-500">Rp 0</h3>
+                <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Komisi siap masuk proses payout</p>
+            </div>
+            <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+                <div class="finance-kpi-head flex justify-between items-start gap-3">
+                    <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Komisi CS</span>
+                    <div class="finance-kpi-icon rounded-lg bg-indigo-500/10 text-indigo-500">
+                        <span class="material-symbols-outlined">support_agent</span>
+                    </div>
                 </div>
-                <button onclick="loadCommissionApprovals()" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">filter_list</span>
-                    Muat Data
-                </button>
+                <h3 id="total-cs" class="finance-kpi-value text-2xl font-bold text-indigo-500">Rp 0</h3>
+                <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Akumulasi komisi role CS</p>
+            </div>
+            <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+                <div class="finance-kpi-head flex justify-between items-start gap-3">
+                    <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Advertiser</span>
+                    <div class="finance-kpi-icon rounded-lg bg-violet-500/10 text-violet-500">
+                        <span class="material-symbols-outlined">ads_click</span>
+                    </div>
+                </div>
+                <h3 id="total-advertiser" class="finance-kpi-value text-2xl font-bold text-violet-500">Rp 0</h3>
+                <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Akumulasi komisi role Advertiser</p>
+            </div>
+            <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+                <div class="finance-kpi-head flex justify-between items-start gap-3">
+                    <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Editor</span>
+                    <div class="finance-kpi-icon rounded-lg bg-sky-500/10 text-sky-500">
+                        <span class="material-symbols-outlined">edit_square</span>
+                    </div>
+                </div>
+                <h3 id="total-editor" class="finance-kpi-value text-2xl font-bold text-sky-500">Rp 0</h3>
+                <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Akumulasi komisi role Editor</p>
+            </div>
+        </div>
+</div>
+<div id="commission-approval-section" class="finance-section-plain">
+        <div class="finance-summary-controls flex flex-col md:flex-row gap-4 justify-between items-end mb-4">
+            <div class="flex-1 w-full md:w-auto">
+                <label class="block text-xs font-medium text-slate-400 mb-1">Search Order</label>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm">search</span>
+                    <input type="text" id="approval-search" placeholder="#order / nama user" class="pl-9 bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary w-full md:w-64">
+                </div>
+            </div>
+            <div class="finance-approval-toolbar flex flex-wrap items-end gap-3 w-full md:w-auto">
+                <div class="finance-approval-filter-group">
+                    <div class="finance-approval-field">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">User</label>
+                        <select id="approval-user-filter" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                            <option value="all">Semua User</option>
+                        </select>
+                    </div>
+                    <div class="finance-approval-field">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Periode</label>
+                        <select id="approval-period-select" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                            <option value="this_month">Bulan Ini</option>
+                            <option value="last_month">Bulan Lalu</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div id="approval-custom-dates" class="hidden flex flex-wrap gap-2 items-end">
+                        <div class="finance-approval-field">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Dari</label>
+                            <input id="approval-start-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+                        </div>
+                        <div class="finance-approval-field">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Sampai</label>
+                            <input id="approval-end-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+                        </div>
+                    </div>
+                    <div class="finance-approval-field">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Status Approval</label>
+                        <select id="approval-status-filter" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                            <option value="all">Semua</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                    <button id="approval-apply-filters" type="button" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
+                        <span class="material-symbols-outlined text-lg">filter_list</span>
+                    </button>
+                </div>
+                <div class="finance-approval-selected-group">
+                    <span id="approval-selected-count" class="finance-approval-selected-count">0 dipilih</span>
+                    <button id="approval-approve-selected-btn" type="button" class="finance-approval-selected-btn finance-approval-selected-btn-approve">
+                        <span class="material-symbols-outlined text-[16px]">done_all</span>
+                        Approve
+                    </button>
+                    <button id="approval-reject-selected-btn" type="button" class="finance-approval-selected-btn finance-approval-selected-btn-reject">
+                        <span class="material-symbols-outlined text-[16px]">block</span>
+                        Reject
+                    </button>
+                </div>
             </div>
         </div>
         <div class="overflow-hidden rounded-xl border border-white/10">
-            <table class="finance-table w-full text-left border-collapse">
+            <table class="finance-table finance-approval-table w-full text-left border-collapse">
                 <thead class="bg-white/5">
                     <tr>
+                        <th class="finance-approval-checkbox-col px-6 py-4 text-center">
+                            <input id="approval-select-all" type="checkbox" class="finance-approval-checkbox" />
+                        </th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">No Order</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order Name</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Tanggal</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Order</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">User</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rule</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
@@ -242,17 +1075,208 @@ body { font-family: 'Inter', sans-serif; }
                 </thead>
                 <tbody id="approval-commission-body" class="divide-y divide-white/5">
                     <tr>
-                        <td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td>
+                        <td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td>
                     </tr>
                 </tbody>
             </table>
+            <div class="finance-approval-footer">
+                <span id="approval-footer-info" class="text-xs text-slate-400 font-medium">Menampilkan 0 - 0 dari 0 data</span>
+                <div class="flex items-center gap-3">
+                    <span id="approval-footer-selected" class="text-xs text-slate-400 font-medium">Dipilih 0 data</span>
+                    <div class="flex gap-2">
+                        <button id="approval-prev" type="button" class="px-3 py-1 bg-white/5 rounded border border-white/10 text-xs font-bold text-slate-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Prev</button>
+                        <button id="approval-next" type="button" class="px-3 py-1 rounded text-xs font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                    </div>
+                </div>
+            </div>
         </div>
 </div>
+</section>
+
+<section id="finance-tab-cash" data-finance-tab-panel="cash" class="hidden space-y-5">
+  <div class="finance-kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Pemasukan</span>
+        <div class="finance-kpi-icon rounded-lg bg-emerald-500/10 text-emerald-500">
+          <span class="material-symbols-outlined">trending_up</span>
+        </div>
+      </div>
+      <h3 id="cash-kpi-income" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Total pemasukan periode</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Pengeluaran</span>
+        <div class="finance-kpi-icon rounded-lg bg-red-500/10 text-red-500">
+          <span class="material-symbols-outlined">trending_down</span>
+        </div>
+      </div>
+      <h3 id="cash-kpi-expense" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Total pengeluaran periode</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Saldo</span>
+        <div class="finance-kpi-icon rounded-lg bg-slate-500/10 text-slate-300">
+          <span class="material-symbols-outlined">account_balance_wallet</span>
+        </div>
+      </div>
+      <h3 id="cash-kpi-balance" class="finance-kpi-value text-2xl font-bold text-emerald-400">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Pemasukan dikurangi pengeluaran</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Kewajiban Komisi</span>
+        <div class="finance-kpi-icon rounded-lg bg-amber-500/10 text-amber-500">
+          <span class="material-symbols-outlined">hourglass_top</span>
+        </div>
+      </div>
+      <h3 id="cash-kpi-unpaid-commission" class="finance-kpi-value text-2xl font-bold text-amber-400">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Approved, belum dibayar</p>
+    </div>
+  </div>
+
+  <div class="finance-summary-breakdown space-y-3">
+    <div class="finance-summary-controls flex flex-col md:flex-row gap-4 justify-between items-end">
+      <div class="flex-1 w-full md:w-auto">
+        <label class="block text-xs font-medium text-slate-400 mb-1">Cari transaksi</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm">search</span>
+          <input id="cash-search-input" type="text" placeholder="Kategori, catatan, nama klien..." class="pl-9 bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary w-full md:w-80">
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 items-end w-full md:w-auto">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Periode</label>
+          <select id="cash-period-select" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+            <option value="this_month">Bulan Ini</option>
+            <option value="last_month">Bulan Lalu</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="cash-custom-dates" class="hidden flex flex-wrap gap-2 items-end">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Dari</label>
+            <input id="cash-start-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Sampai</label>
+            <input id="cash-end-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+          </div>
+        </div>
+        <button id="cash-apply-period" type="button" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
+          <span class="material-symbols-outlined text-lg">filter_list</span>
+        </button>
+        <button id="cash-btn-add-income" type="button" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 h-[38px] min-w-[96px]">
+          <span class="material-symbols-outlined text-lg">add</span>
+          Masuk
+        </button>
+        <button id="cash-btn-add-expense" type="button" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 h-[38px] min-w-[96px]">
+          <span class="material-symbols-outlined text-lg">add</span>
+          Keluar
+        </button>
+      </div>
+    </div>
+
+    <div class="glass-card rounded-xl overflow-hidden border border-white/10">
+      <table class="finance-table finance-summary-table finance-cash-table w-full text-left border-collapse">
+        <thead class="bg-white/5">
+          <tr>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Tanggal</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Keterangan</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Kategori</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Masuk</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Keluar</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="cash-transactions-body" class="divide-y divide-white/5">
+          <tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Memuat data...</td></tr>
+        </tbody>
+      </table>
+      <div class="finance-summary-pagination px-6 py-4 border-t border-white/5 flex items-center justify-between bg-white/2">
+        <span id="cash-pagination-info" class="text-xs text-slate-400 font-medium">Menampilkan 0 - 0 dari 0 data</span>
+        <div class="flex gap-2">
+          <button id="cash-prev" type="button" class="px-3 py-1 bg-white/5 rounded border border-white/10 text-xs font-bold text-slate-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">Prev</button>
+          <button id="cash-next" type="button" class="px-3 py-1 rounded text-xs font-bold text-white bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
     </main>
   </div>
   <div id="include-footer"></div>
 </div>
+
+<div id="cash-transaction-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
+  <div class="glass-panel w-full max-w-xl rounded-3xl border border-white/10 p-6 shadow-2xl">
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 id="cash-modal-title" class="text-xl font-bold text-slate-900 dark:text-white">Catat Transaksi</h3>
+        <p class="text-sm text-slate-500">Isi detail pemasukan atau pengeluaran.</p>
+      </div>
+      <button id="cash-modal-close" class="rounded-full bg-white/5 p-2 text-slate-300 hover:bg-white/10 transition"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Tanggal</label>
+        <input id="cash-modal-date" type="date" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Nominal</label>
+        <input id="cash-modal-amount" type="number" min="0" step="0.01" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Kategori</label>
+        <select id="cash-modal-category" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Catatan</label>
+        <textarea id="cash-modal-note" rows="3" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary"></textarea>
+      </div>
+      <div id="cash-modal-error" class="hidden rounded-2xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300"></div>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
+        <button id="cash-save-transaction" class="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition">Simpan</button>
+        <button id="cash-cancel-transaction" class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10 transition">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
+    function setFinanceTab(tabName) {
+        const buttons = document.querySelectorAll('[data-finance-tab-btn]');
+        const panels = document.querySelectorAll('[data-finance-tab-panel]');
+        buttons.forEach((btn) => {
+            const isActive = btn.getAttribute('data-finance-tab-btn') === tabName;
+            btn.classList.toggle('is-active', isActive);
+        });
+        panels.forEach((panel) => {
+            const isActive = panel.getAttribute('data-finance-tab-panel') === tabName;
+            panel.classList.toggle('hidden', !isActive);
+        });
+    }
+
+    function initFinanceTabs() {
+        document.querySelectorAll('[data-finance-tab-btn]').forEach((btn) => {
+            btn.addEventListener('click', () => setFinanceTab(btn.getAttribute('data-finance-tab-btn')));
+        });
+        setFinanceTab('summary');
+    }
+
+    function setBadgeCount(id, count) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = String(count || 0);
+        el.classList.toggle('hidden', !(count > 0));
+    }
+
+    const escapeHtml = (str) => {
+        const safe = String(str || '');
+        return safe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         // Set default dates (current month)
         const now = new Date();
@@ -273,23 +1297,197 @@ body { font-family: 'Inter', sans-serif; }
         if(financeStartDate) financeStartDate.value = formatDate(firstDay);
         if(financeEndDate) financeEndDate.value = formatDate(lastDay);
 
+        initFinanceTabs();
         loadFinanceOrders(); // Load main finance table
         const approvalStatusFilter = document.getElementById('approval-status-filter');
-        if (approvalStatusFilter) approvalStatusFilter.addEventListener('change', loadCommissionApprovals);
-        loadCommissionApprovals();
+        const approvalUserFilter = document.getElementById('approval-user-filter');
+        const approvalPeriodSelect = document.getElementById('approval-period-select');
+        const approvalStartDateInput = document.getElementById('approval-start-date');
+        const approvalEndDateInput = document.getElementById('approval-end-date');
+        if (approvalStatusFilter) {
+            approvalStatusFilter.addEventListener('change', () => {
+                approvalCurrentPage = 1;
+                applyApprovalFilters({ reload: true });
+            });
+        }
+        if (approvalUserFilter) {
+            approvalUserFilter.addEventListener('change', () => {
+                approvalCurrentPage = 1;
+                applyApprovalFilters({ reload: false });
+            });
+        }
+        if (approvalPeriodSelect) {
+            approvalPeriodSelect.addEventListener('change', () => {
+                updateApprovalCustomDatesVisibility();
+                if (approvalPeriodSelect.value !== 'custom') {
+                    const [start, end] = getDefaultCashPeriod(approvalPeriodSelect.value);
+                    setApprovalDateInputs(start, end);
+                    approvalCurrentPage = 1;
+                    applyApprovalFilters({ reload: false });
+                }
+            });
+        }
+        if (approvalStartDateInput) {
+            approvalStartDateInput.addEventListener('change', () => {
+                approvalCurrentPage = 1;
+                if ((approvalPeriodSelect?.value || '') === 'custom' && approvalStartDateInput.value && approvalEndDateInput?.value) {
+                    applyApprovalFilters({ reload: false });
+                }
+            });
+        }
+        if (approvalEndDateInput) {
+            approvalEndDateInput.addEventListener('change', () => {
+                approvalCurrentPage = 1;
+                if ((approvalPeriodSelect?.value || '') === 'custom' && approvalStartDateInput?.value && approvalEndDateInput.value) {
+                    applyApprovalFilters({ reload: false });
+                }
+            });
+        }
+        if (approvalApplyFiltersBtn) {
+            approvalApplyFiltersBtn.addEventListener('click', () => applyApprovalFilters({ reload: true }));
+        }
+        const approvalSearchInput = document.getElementById('approval-search');
+        if (approvalSearchInput) {
+            approvalSearchInput.addEventListener('input', () => {
+                approvalCurrentPage = 1;
+                renderCommissionApprovals();
+            });
+        }
+        const approveSelectedBtn = document.getElementById('approval-approve-selected-btn');
+        const rejectSelectedBtn = document.getElementById('approval-reject-selected-btn');
+        const payoutSelectedBtn = document.getElementById('approval-payout-selected-btn');
+        const selectAllCheckbox = document.getElementById('approval-select-all');
+        const approvalPrevBtn = document.getElementById('approval-prev');
+        const approvalNextBtn = document.getElementById('approval-next');
+        if (approveSelectedBtn) approveSelectedBtn.addEventListener('click', () => processSelectedCommissionAction('approve'));
+        if (rejectSelectedBtn) rejectSelectedBtn.addEventListener('click', () => processSelectedCommissionAction('reject'));
+        if (payoutSelectedBtn) payoutSelectedBtn.addEventListener('click', () => processSelectedCommissionAction('payout'));
+        if (approvalPrevBtn) approvalPrevBtn.addEventListener('click', () => {
+            if (approvalCurrentPage > 1) {
+                approvalCurrentPage -= 1;
+                renderCommissionApprovals();
+            }
+        });
+        if (approvalNextBtn) approvalNextBtn.addEventListener('click', () => {
+            const totalPages = Math.max(1, Math.ceil(approvalFilteredCount / itemsPerPage));
+            if (approvalCurrentPage < totalPages) {
+                approvalCurrentPage += 1;
+                renderCommissionApprovals();
+            }
+        });
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', () => {
+                const currentFilter = String(document.getElementById('approval-status-filter')?.value || 'pending').toLowerCase();
+                const inferredMode = currentFilter === 'approved' ? 'payout' : 'pending';
+                const mode = selectedApprovalMode || inferredMode;
+                const actionableIds = visibleApprovalRows
+                    .filter((r) => {
+                        const approval = String(r.approval_status || '').toLowerCase();
+                        const status = String(r.status || '').toLowerCase();
+                        if (status === 'paid') return false;
+                        if (mode === 'payout') return canPayoutCommission && approval === 'approved';
+                        return canApproveCommission && approval === 'pending';
+                    })
+                    .map((r) => String(r.id))
+                    .filter(Boolean);
+
+                selectedApprovalMode = selectAllCheckbox.checked ? mode : '';
+                selectedApprovalIds = selectAllCheckbox.checked ? actionableIds : [];
+                document.querySelectorAll('[data-approval-row-checkbox]').forEach((checkbox) => {
+                    const rowId = checkbox.getAttribute('data-approval-row-checkbox') || '';
+                    const rowMode = checkbox.getAttribute('data-approval-row-mode') || '';
+                    checkbox.checked = selectAllCheckbox.checked && rowMode === selectedApprovalMode && selectedApprovalIds.includes(rowId);
+                });
+                updateApprovalSelectionUI();
+            });
+        }
+        const [approvalStart, approvalEnd] = getDefaultCashPeriod('this_month');
+        setApprovalDateInputs(approvalStart, approvalEnd);
+        updateApprovalCustomDatesVisibility();
+        applyApprovalFilters({ reload: true });
+        loadLedgerAndPayout();
+        initCashTab();
     });
 
     let allFinanceOrders = [];
     let filteredFinanceOrders = [];
     let currentPage = 1;
+    let expandedFinanceOrderId = null;
+    let visibleApprovalRows = [];
+    let selectedApprovalIds = [];
+    let selectedApprovalMode = '';
+    let approvalAllRows = [];
+    let approvalFilteredCount = 0;
+    let approvalCurrentPage = 1;
+    let approvalPageStart = 0;
+    let approvalPageEnd = 0;
+    let approvalAppliedStatus = 'all';
+    let approvalAppliedUser = 'all';
+    let approvalAppliedPeriod = 'this_month';
+    let approvalAppliedStartDate = '';
+    let approvalAppliedEndDate = '';
+    const approvalUserFilter = document.getElementById('approval-user-filter');
+    const approvalPeriodSelect = document.getElementById('approval-period-select');
+    const approvalCustomDates = document.getElementById('approval-custom-dates');
+    const approvalStartDateInput = document.getElementById('approval-start-date');
+    const approvalEndDateInput = document.getElementById('approval-end-date');
+    const approvalApplyFiltersBtn = document.getElementById('approval-apply-filters');
     const itemsPerPage = 5;
     const currentFinanceRole = (localStorage.getItem('role') || '').toLowerCase();
     const currentFinanceUserId = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
     const canApproveCommission = ['keuangan', 'super_admin', 'superadmin', 'finance'].includes(currentFinanceRole);
+    const canPayoutCommission = canApproveCommission;
+    const cashPeriodSelect = document.getElementById('cash-period-select');
+    const cashCustomDates = document.getElementById('cash-custom-dates');
+    const cashStartDateInput = document.getElementById('cash-start-date');
+    const cashEndDateInput = document.getElementById('cash-end-date');
+    const cashApplyPeriod = document.getElementById('cash-apply-period');
+    const cashSearchInput = document.getElementById('cash-search-input');
+    const cashTransactionsBody = document.getElementById('cash-transactions-body');
+    const cashPaginationInfo = document.getElementById('cash-pagination-info');
+    const cashPrevBtn = document.getElementById('cash-prev');
+    const cashNextBtn = document.getElementById('cash-next');
+    const cashKpiIncome = document.getElementById('cash-kpi-income');
+    const cashKpiExpense = document.getElementById('cash-kpi-expense');
+    const cashKpiBalance = document.getElementById('cash-kpi-balance');
+    const cashKpiUnpaidCommission = document.getElementById('cash-kpi-unpaid-commission');
+    const cashTotalIncomeCell = document.getElementById('cash-total-income');
+    const cashTotalExpenseCell = document.getElementById('cash-total-expense');
+    const cashTransactionModal = document.getElementById('cash-transaction-modal');
+    const cashModalTitle = document.getElementById('cash-modal-title');
+    const cashModalDate = document.getElementById('cash-modal-date');
+    const cashModalAmount = document.getElementById('cash-modal-amount');
+    const cashModalCategory = document.getElementById('cash-modal-category');
+    const cashModalNote = document.getElementById('cash-modal-note');
+    const cashModalError = document.getElementById('cash-modal-error');
+    const cashSaveTransaction = document.getElementById('cash-save-transaction');
+    const cashCancelTransaction = document.getElementById('cash-cancel-transaction');
+    const cashModalClose = document.getElementById('cash-modal-close');
+    const cashBtnAddIncome = document.getElementById('cash-btn-add-income');
+    const cashBtnAddExpense = document.getElementById('cash-btn-add-expense');
+    let cashCurrentMode = 'income';
+    let cashCurrentTransactions = [];
+    let cashCurrentStartDate = '';
+    let cashCurrentEndDate = '';
+    let cashCurrentPage = 1;
+    let cashFilteredCount = 0;
+    let cashPageStart = 0;
+    let cashPageEnd = 0;
+    const cashCategories = {
+        income: [{ value: 'Pemasukan Lain', label: 'Pemasukan Lain' }],
+        expense: [
+            { value: 'Ad Spend', label: 'Ad Spend' },
+            { value: 'Komisi', label: 'Komisi' },
+            { value: 'Operasional', label: 'Operasional' },
+            { value: 'Gaji/Payroll', label: 'Gaji/Payroll' },
+            { value: 'Tools/SaaS', label: 'Tools/SaaS' },
+            { value: 'Lainnya', label: 'Lainnya' }
+        ]
+    };
 
     async function loadFinanceOrders() {
         const tbody = document.getElementById('finance-orders-body');
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td></tr>';
         
         try {
             const res = await fetch('/api/finance/orders');
@@ -299,11 +1497,23 @@ body { font-family: 'Inter', sans-serif; }
 
             allFinanceOrders = data;
             applyFilters(); // Initial render and calculation
+            loadCommissionApprovals();
 
         } catch (error) {
             console.error(error);
-            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-red-400">Error: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-red-400">Error: ${error.message}</td></tr>`;
         }
+    }
+
+    function getFinanceOrderDisplayName(orderId, fallback = '-') {
+        const normalizedOrderId = String(orderId || '').trim();
+        if (normalizedOrderId) {
+            const matchedOrder = allFinanceOrders.find((order) =>
+                String(order.order_id || order.id || '').trim() === normalizedOrderId
+            );
+            if (matchedOrder?.client_name) return matchedOrder.client_name;
+        }
+        return fallback;
     }
 
     function applyFilters() {
@@ -313,7 +1523,8 @@ body { font-family: 'Inter', sans-serif; }
 
         filteredFinanceOrders = allFinanceOrders.filter(order => {
             // Search Filter
-            const matchesSearch = (order.client_name && order.client_name.toLowerCase().includes(searchInput)) || 
+            const matchesSearch = String(order.order_id || order.id || '').toLowerCase().includes(searchInput.replace('#', '')) ||
+                                  (order.client_name && order.client_name.toLowerCase().includes(searchInput)) || 
                                   (order.package_name && order.package_name.toLowerCase().includes(searchInput));
             
             // Date Filter
@@ -356,7 +1567,7 @@ body { font-family: 'Inter', sans-serif; }
         const tbody = document.getElementById('finance-orders-body');
         
         if (filteredFinanceOrders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data yang cocok</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data yang cocok</td></tr>';
             updatePaginationUI();
             return;
         }
@@ -366,56 +1577,114 @@ body { font-family: 'Inter', sans-serif; }
         const paginatedOrders = filteredFinanceOrders.slice(start, end);
 
         tbody.innerHTML = paginatedOrders.map(order => {
+            const orderId = buildFinanceOrderKey(order);
             const revenue = parseFloat(order.total_income) || 0;
             const adSpend = parseFloat(order.total_expense) || 0;
             const commission = parseFloat(order.total_commission_paid) || 0;
-            const profit = revenue - adSpend - commission;
+            const grossProfit = revenue - adSpend;
+            const netProfit = grossProfit - commission;
 
-            const clientInitial = order.client_name ? order.client_name.charAt(0).toUpperCase() : '?';
             const createdDate = new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
-            const profitPercent = revenue > 0 ? (profit / revenue) * 100 : 0;
-            const barWidth = Math.max(0, Math.min(100, profitPercent));
-            const barColor = profit >= 0 ? 'bg-emerald-500' : 'bg-red-500';
-            const textColor = profit >= 0 ? 'text-emerald-400' : 'text-red-400';
+            const grossTextColor = grossProfit >= 0 ? 'text-sky-500' : 'text-red-500';
+            const netTextColor = netProfit >= 0 ? 'text-emerald-400' : 'text-red-400';
+            const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
+            const netMargin = revenue > 0 ? netProfit / revenue : 0;
+            const isExpanded = expandedFinanceOrderId === orderId;
+            const detailButtonLabel = isExpanded ? 'Tutup' : 'Detail';
+            const detailButtonIcon = isExpanded ? 'expand_less' : 'expand_more';
+            const rawClientName = String(order.client_name || 'Unknown').trim();
+            const shortClientName = escapeHtml((rawClientName.split(/\s+/).slice(0, 2).join(' ') || 'Unknown'));
 
             return `
-            <tr class="hover:bg-white/5 transition-colors group">
+            <tr class="finance-main-row hover:bg-white/5 transition-colors group">
                 <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">${clientInitial}</div>
-                        <div>
-                            <p class="text-sm font-bold text-white group-hover:text-primary transition-colors">${order.client_name || 'Unknown'}</p>
-                            <p class="text-xs text-slate-600 dark:text-slate-300">${order.package_name || 'Custom'}</p>
-                        </div>
-                    </div>
+                    <p class="finance-summary-value text-sm font-semibold text-slate-600">#${escapeHtml(order.order_id || order.id || '-')}</p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="text-sm font-medium text-white">${formatRupiah(revenue)}</p>
-                    <p class="text-xs text-slate-600 dark:text-slate-300">${createdDate}</p>
+                    <p class="finance-summary-value text-sm font-medium text-white group-hover:text-primary transition-colors">${shortClientName}</p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">${formatRupiah(commission)}</p>
-                    <p class="text-xs text-slate-600 dark:text-slate-300">Commission</p>
+                    <p class="finance-summary-value text-sm font-medium text-white">${formatRupiah(revenue)}</p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-200">${formatRupiah(adSpend)}</p>
-                    <p class="text-xs text-slate-600 dark:text-slate-300">Meta/Google Ads</p>
+                    <p class="finance-summary-value text-sm font-medium text-slate-700 dark:text-slate-200">${formatRupiah(adSpend)}</p>
                 </td>
                 <td class="px-6 py-4">
-                    <p class="text-sm font-bold ${textColor}">${formatRupiah(profit)}</p>
-                    <div class="w-16 h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
-                        <div class="h-full ${barColor}" style="width: ${barWidth}%"></div>
-                    </div>
+                    <p class="finance-summary-value text-sm font-medium text-slate-700 dark:text-slate-200">${formatRupiah(commission)}</p>
+                </td>
+                <td class="px-6 py-4">
+                    <p class="finance-summary-value text-sm font-bold ${grossTextColor}">${formatRupiah(grossProfit)}</p>
+                </td>
+                <td class="px-6 py-4">
+                    <p class="finance-summary-value text-sm font-bold ${netTextColor}">${formatRupiah(netProfit)}</p>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    <button class="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                    <button type="button" data-finance-detail-toggle="${escapeHtml(orderId)}" class="finance-detail-toggle inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50">
+                        <span class="material-symbols-outlined text-[16px]">${detailButtonIcon}</span>
+                        ${detailButtonLabel}
                     </button>
                 </td>
             </tr>
+            ${isExpanded ? `
+            <tr class="finance-order-detail-row">
+                <td colspan="8" class="px-6 py-4">
+                    <div class="finance-order-detail-card rounded-xl p-4">
+                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Rincian Order #${escapeHtml(order.order_id || order.id || '-')}</p>
+                                <p class="text-xs text-slate-500 mt-1">${escapeHtml(order.client_name || 'Unknown')} • ${escapeHtml(order.package_name || 'Custom')}</p>
+                            </div>
+                            <div class="text-xs text-slate-500">
+                                <span>Dibuat: ${createdDate}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3">
+                            <div class="finance-order-detail-metric rounded-lg p-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Info Order</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900">${escapeHtml(order.package_name || 'Custom')}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Tanggal order: ${createdDate}</p>
+                            </div>
+                            <div class="finance-order-detail-metric rounded-lg p-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Revenue</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900">${formatRupiah(revenue)}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Total pemasukan client</p>
+                            </div>
+                            <div class="finance-order-detail-metric rounded-lg p-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Spend Iklan</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900">${formatRupiah(adSpend)}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Biaya Meta/Google Ads aktual</p>
+                            </div>
+                            <div class="finance-order-detail-metric rounded-lg p-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Komisi</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900">${formatRupiah(commission)}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Komisi order terkait</p>
+                            </div>
+                            <div class="finance-order-detail-metric rounded-lg p-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Gross Profit</p>
+                                <p class="mt-1 text-sm font-bold ${grossTextColor}">${formatRupiah(grossProfit)}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Margin: ${formatPercent(grossMargin)}</p>
+                            </div>
+                            <div class="finance-order-detail-metric rounded-lg p-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Net Profit</p>
+                                <p class="mt-1 text-sm font-bold ${netTextColor}">${formatRupiah(netProfit)}</p>
+                                <p class="mt-1 text-[11px] text-slate-500">Margin bersih: ${formatPercent(netMargin)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            ` : ''}
             `;
         }).join('');
+
+        tbody.querySelectorAll('[data-finance-detail-toggle]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const orderId = button.getAttribute('data-finance-detail-toggle') || '';
+                expandedFinanceOrderId = expandedFinanceOrderId === orderId ? null : orderId;
+                renderFinanceTable();
+            });
+        });
 
         updatePaginationUI();
     }
@@ -446,78 +1715,592 @@ body { font-family: 'Inter', sans-serif; }
     }
 
     function updateKPIs(revenue, adSpend, commission) {
-        const profit = revenue - adSpend - commission;
-        const profitMargin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : 0;
+        const netProfit = revenue - adSpend - commission;
+        const profitMargin = revenue > 0 ? ((netProfit / revenue) * 100).toFixed(1) : 0;
+        const profitBadge = `${netProfit >= 0 ? '+' : ''}${profitMargin}%`;
 
         document.getElementById('kpi-revenue').innerText = formatRupiah(revenue);
         document.getElementById('kpi-ad-spend').innerText = formatRupiah(adSpend);
         document.getElementById('kpi-operational').innerText = formatRupiah(commission);
-        document.getElementById('kpi-net-profit').innerText = formatRupiah(profit);
-        
-        // Update profit margin text if exists, but for now just the values
+        document.getElementById('kpi-net-profit').innerText = formatRupiah(netProfit);
+        document.getElementById('kpi-net-profit-margin').innerText = `Margin bersih: ${profitMargin}%`;
+        document.getElementById('kpi-net-profit-badge').innerText = profitBadge;
+    }
+
+    function formatPercent(value) {
+        return `${(Number(value || 0) * 100).toFixed(1)}%`;
+    }
+
+    function buildFinanceOrderKey(order) {
+        return String(order.id || order.order_id || `${order.client_name || 'unknown'}-${order.package_name || 'custom'}-${order.created_at || ''}`);
     }
 
     function formatRupiah(amount) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
 
+    function formatCashDateTime(dateValue, fallbackDateTime = '') {
+        const rawDate = String(dateValue || '').trim();
+        const rawDateTime = String(fallbackDateTime || '').trim();
+
+        let formattedDate = '-';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+            const [year, month, day] = rawDate.split('-');
+            formattedDate = `${day}/${month}/${year}`;
+        } else {
+            const parsedDate = new Date(rawDate);
+            if (!Number.isNaN(parsedDate.getTime())) {
+                formattedDate = new Intl.DateTimeFormat('en-GB').format(parsedDate);
+            }
+        }
+
+        let formattedTime = '';
+        const parsedDateTime = new Date(rawDateTime || rawDate);
+        if (!Number.isNaN(parsedDateTime.getTime())) {
+            formattedTime = new Intl.DateTimeFormat('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).format(parsedDateTime);
+        }
+
+        const combinedDateTime = formattedTime ? `${formattedDate} ${formattedTime}` : formattedDate;
+        return { formattedDate, formattedTime, combinedDateTime };
+    }
+
+    function getDefaultCashPeriod(mode) {
+        const today = new Date();
+        if (mode === 'last_month') {
+            const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const end = new Date(today.getFullYear(), today.getMonth(), 0);
+            return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+        }
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+    }
+
+    function updateCashCustomDatesVisibility() {
+        if (!cashCustomDates || !cashPeriodSelect) return;
+        cashCustomDates.classList.toggle('hidden', cashPeriodSelect.value !== 'custom');
+    }
+
+    function setCashDateInputs(start, end) {
+        if (cashStartDateInput) cashStartDateInput.value = start;
+        if (cashEndDateInput) cashEndDateInput.value = end;
+    }
+
+    function updateApprovalCustomDatesVisibility() {
+        if (!approvalCustomDates || !approvalPeriodSelect) return;
+        approvalCustomDates.classList.toggle('hidden', approvalPeriodSelect.value !== 'custom');
+    }
+
+    function setApprovalDateInputs(start, end) {
+        if (approvalStartDateInput) approvalStartDateInput.value = start;
+        if (approvalEndDateInput) approvalEndDateInput.value = end;
+    }
+
+    function applyApprovalFilters(options = {}) {
+        const shouldReload = Boolean(options.reload);
+        const nextStatus = String(document.getElementById('approval-status-filter')?.value || 'all').trim().toLowerCase();
+        const nextUser = String(approvalUserFilter?.value || 'all').trim();
+        const nextPeriod = String(approvalPeriodSelect?.value || 'this_month').trim().toLowerCase();
+
+        let nextStartDate = String(approvalStartDateInput?.value || '').trim();
+        let nextEndDate = String(approvalEndDateInput?.value || '').trim();
+
+        if (nextPeriod === 'custom') {
+            if (!nextStartDate || !nextEndDate) {
+                alert('Silakan pilih tanggal mulai dan selesai.');
+                return;
+            }
+        } else {
+            const [start, end] = getDefaultCashPeriod(nextPeriod);
+            nextStartDate = start;
+            nextEndDate = end;
+            setApprovalDateInputs(start, end);
+        }
+
+        approvalAppliedStatus = nextStatus;
+        approvalAppliedUser = nextUser;
+        approvalAppliedPeriod = nextPeriod;
+        approvalAppliedStartDate = nextStartDate;
+        approvalAppliedEndDate = nextEndDate;
+        approvalCurrentPage = 1;
+
+        if (shouldReload) {
+            loadCommissionApprovals();
+            return;
+        }
+        renderCommissionApprovals();
+    }
+
+    function populateApprovalUserFilter(rows) {
+        if (!approvalUserFilter) return;
+        const previousValue = String(approvalUserFilter.value || approvalAppliedUser || 'all').trim();
+        const uniqueUsers = Array.from(new Set((rows || [])
+            .map((row) => String(row.user_name || '').trim())
+            .filter(Boolean)))
+            .sort((a, b) => a.localeCompare(b, 'id-ID'));
+        approvalUserFilter.innerHTML = ['<option value="all">Semua User</option>']
+            .concat(uniqueUsers.map((user) => `<option value="${escapeHtml(user)}">${escapeHtml(user)}</option>`))
+            .join('');
+        const preservedUser = uniqueUsers.find((user) => user.toLowerCase() === previousValue.toLowerCase());
+        approvalUserFilter.value = preservedUser || 'all';
+    }
+
+    function getFilteredCommissionApprovalRows() {
+        const rows = Array.isArray(approvalAllRows) ? approvalAllRows : [];
+        const search = (document.getElementById('approval-search')?.value || '').trim().toLowerCase();
+        const selectedUser = String(approvalAppliedUser || 'all').trim().toLowerCase();
+        const selectedPeriod = String(approvalAppliedPeriod || 'this_month').trim().toLowerCase();
+        const startDate = String(approvalAppliedStartDate || '').trim();
+        const endDate = String(approvalAppliedEndDate || '').trim();
+
+        return rows.filter((r) => {
+            const rowUser = String(r.user_name || '').trim().toLowerCase();
+            if (selectedUser !== 'all' && rowUser !== selectedUser) return false;
+
+            const rawDate = String(r.created_at || '').trim();
+            let rowDate = rawDate.slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(rowDate)) {
+                const parsedDate = new Date(rawDate);
+                rowDate = Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toISOString().slice(0, 10);
+            }
+
+            if (selectedPeriod === 'custom') {
+                if (startDate && rowDate && rowDate < startDate) return false;
+                if (endDate && rowDate && rowDate > endDate) return false;
+            } else {
+                const [periodStart, periodEnd] = getDefaultCashPeriod(selectedPeriod);
+                if (rowDate && (rowDate < periodStart || rowDate > periodEnd)) return false;
+            }
+
+            if (!search) return true;
+            const byOrder = String(r.order_id || '').toLowerCase().includes(search.replace('#', ''));
+            const resolvedOrderName = getFinanceOrderDisplayName(r.order_id, r.order_name || r.client_name || r.package_name || '');
+            const byOrderName = String(resolvedOrderName || '').toLowerCase().includes(search);
+            const byUser = rowUser.includes(search);
+            return byOrder || byOrderName || byUser;
+        });
+    }
+
+    function updateCommissionSummaryCards(rows) {
+        const safeRows = Array.isArray(rows) ? rows : [];
+        const summary = safeRows.reduce((acc, item) => {
+            const amount = Number(item.amount || 0);
+            const role = String(item.role || '').trim().toLowerCase();
+            const approvalStatus = String(item.approval_status || '').trim().toLowerCase();
+            const payoutStatus = String(item.status || '').trim().toLowerCase();
+
+            if (approvalStatus === 'pending' && payoutStatus !== 'paid') acc.pending += amount;
+            if (approvalStatus === 'approved' && payoutStatus !== 'paid') acc.approved += amount;
+            if (role === 'cs') acc.cs += amount;
+            else if (role === 'advertiser') acc.advertiser += amount;
+            else if (role === 'editor') acc.editor += amount;
+            return acc;
+        }, { pending: 0, approved: 0, cs: 0, advertiser: 0, editor: 0 });
+
+        document.getElementById('total-pending').textContent = formatRupiah(summary.pending);
+        document.getElementById('total-approved').textContent = formatRupiah(summary.approved);
+        document.getElementById('total-cs').textContent = formatRupiah(summary.cs);
+        document.getElementById('total-advertiser').textContent = formatRupiah(summary.advertiser);
+        document.getElementById('total-editor').textContent = formatRupiah(summary.editor);
+    }
+
+    async function loadCashTransactions() {
+        if (!cashTransactionsBody) return;
+        cashFilteredCount = 0;
+        cashPageStart = 0;
+        cashPageEnd = 0;
+        updateCashPaginationUI();
+        cashTransactionsBody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Memuat data...</td></tr>';
+        try {
+            const response = await fetch(`/api/cash/transactions?startDate=${cashCurrentStartDate}&endDate=${cashCurrentEndDate}`);
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Gagal memuat data');
+            cashCurrentTransactions = data.transactions || [];
+            cashCurrentPage = 1;
+            renderCashSummary(data.summary || {});
+            renderCashTable(cashCurrentTransactions);
+        } catch (error) {
+            cashTransactionsBody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-red-400">${escapeHtml(error.message || 'Terjadi kesalahan')}</td></tr>`;
+            renderCashSummary({});
+            cashFilteredCount = 0;
+            cashPageStart = 0;
+            cashPageEnd = 0;
+            updateCashPaginationUI();
+        }
+    }
+
+    function renderCashSummary(summary) {
+        const income = Number(summary.total_income || 0);
+        const expense = Number(summary.total_expense || 0);
+        const balance = Number(summary.balance || 0);
+        const unpaidCommission = Number(summary.unpaid_commission || 0);
+        if (cashKpiIncome) cashKpiIncome.textContent = formatRupiah(income);
+        if (cashKpiExpense) cashKpiExpense.textContent = formatRupiah(expense);
+        if (cashKpiBalance) {
+            cashKpiBalance.textContent = formatRupiah(balance);
+            cashKpiBalance.classList.remove('text-emerald-400', 'text-red-400', 'text-emerald-600', 'text-red-600');
+            cashKpiBalance.classList.add(balance >= 0 ? 'text-emerald-400' : 'text-red-400');
+        }
+        if (cashKpiUnpaidCommission) cashKpiUnpaidCommission.textContent = formatRupiah(unpaidCommission);
+        if (cashTotalIncomeCell) cashTotalIncomeCell.textContent = formatRupiah(income);
+        if (cashTotalExpenseCell) cashTotalExpenseCell.textContent = formatRupiah(expense);
+    }
+
+    function renderCashTable(transactions) {
+        if (!cashTransactionsBody) return;
+        const query = String(cashSearchInput?.value || '').trim().toLowerCase();
+        const filtered = transactions.filter((tx) => {
+            const category = String(tx.category || '').toLowerCase();
+            const note = String(tx.note || '').toLowerCase();
+            const client = String(tx.client_name || '').toLowerCase();
+            const orderId = String(tx.order_id || '').toLowerCase();
+            const orderName = String(getFinanceOrderDisplayName(tx.order_id, tx.order_name || tx.client_name || tx.package_name || '') || '').toLowerCase();
+            return category.includes(query) || note.includes(query) || client.includes(query) || orderId.includes(query) || orderName.includes(query);
+        });
+        cashFilteredCount = filtered.length;
+        if (!cashFilteredCount) {
+            cashPageStart = 0;
+            cashPageEnd = 0;
+            updateCashPaginationUI();
+            cashTransactionsBody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500">Belum ada transaksi pada periode ini</td></tr>';
+            return;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(cashFilteredCount / itemsPerPage));
+        if (cashCurrentPage > totalPages) cashCurrentPage = totalPages;
+        if (cashCurrentPage < 1) cashCurrentPage = 1;
+        const startIndexZero = (cashCurrentPage - 1) * itemsPerPage;
+        const endIndexZero = startIndexZero + itemsPerPage;
+        const paged = filtered.slice(startIndexZero, endIndexZero);
+        cashPageStart = startIndexZero + 1;
+        cashPageEnd = Math.min(endIndexZero, cashFilteredCount);
+        updateCashPaginationUI();
+
+        cashTransactionsBody.innerHTML = paged.map((tx) => {
+            const { combinedDateTime } = formatCashDateTime(tx.trx_date_value || '', tx.created_at || tx.trx_date_value || '');
+            const note = escapeHtml(tx.note || '-');
+            const category = escapeHtml(tx.category || '-');
+            const orderId = String(tx.order_id || '').trim();
+            const resolvedOrderName = String(getFinanceOrderDisplayName(tx.order_id, tx.order_name || tx.client_name || tx.package_name || '') || '').trim();
+            const detailParts = [];
+            if (orderId) detailParts.push(`#${escapeHtml(orderId)}`);
+            if (resolvedOrderName) detailParts.push(escapeHtml(resolvedOrderName));
+            if (note && note !== '-') detailParts.push(note);
+            const description = detailParts.length ? detailParts.join(' / ') : note;
+            const incomeValue = tx.type === 'income' ? formatRupiah(Number(tx.amount || 0)) : '';
+            const expenseValue = tx.type !== 'income' ? formatRupiah(Number(tx.amount || 0)) : '';
+            const isCommission = tx.type === 'commission_pay';
+            const badgeClass = isCommission ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200';
+            const actionButton = isCommission ? '<span class="text-xs text-slate-500">-</span>' : `<button data-id="${tx.id}" class="cash-delete-transaction inline-flex items-center justify-center rounded-lg bg-red-500 h-[38px] min-w-[38px] px-3 text-xs font-bold text-white hover:bg-red-600 transition"><span class="material-symbols-outlined text-[18px] text-white">delete</span></button>`;
+            return `
+                <tr>
+                  <td class="finance-cash-date px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-200">${escapeHtml(combinedDateTime || '-')}</td>
+                  <td class="finance-cash-description px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${description}</td>
+                  <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300"><span class="inline-flex rounded-full ${badgeClass} px-3 py-1 text-xs font-semibold">${category}</span></td>
+                  <td class="px-6 py-4 text-right text-emerald-600 font-semibold">${incomeValue}</td>
+                  <td class="px-6 py-4 text-right text-red-600 font-semibold">${expenseValue}</td>
+                  <td class="px-6 py-4 text-center">${actionButton}</td>
+                </tr>`;
+        }).join('');
+        document.querySelectorAll('.cash-delete-transaction').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const id = button.getAttribute('data-id');
+                if (!id || !confirm('Hapus transaksi ini?')) return;
+                await deleteCashTransaction(id);
+            });
+        });
+    }
+
+    function updateCashPaginationUI() {
+        if (cashPaginationInfo) {
+            cashPaginationInfo.textContent = `Menampilkan ${cashPageStart} - ${cashPageEnd} dari ${cashFilteredCount} data`;
+        }
+        const totalPages = Math.max(1, Math.ceil((cashFilteredCount || 0) / itemsPerPage));
+        if (cashPrevBtn) cashPrevBtn.disabled = cashFilteredCount === 0 || cashCurrentPage <= 1;
+        if (cashNextBtn) cashNextBtn.disabled = cashFilteredCount === 0 || cashCurrentPage >= totalPages;
+    }
+
+    function openCashModal(mode) {
+        if (!cashTransactionModal) return;
+        cashCurrentMode = mode;
+        cashModalTitle.textContent = mode === 'income' ? 'Catat Pemasukan' : 'Catat Pengeluaran';
+        cashModalCategory.innerHTML = cashCategories[mode].map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join('');
+        cashModalDate.value = new Date().toISOString().slice(0, 10);
+        cashModalAmount.value = '';
+        cashModalNote.value = '';
+        cashModalError.classList.add('hidden');
+        cashTransactionModal.classList.remove('hidden');
+        cashTransactionModal.classList.add('flex');
+    }
+
+    function closeCashModal() {
+        if (!cashTransactionModal) return;
+        cashTransactionModal.classList.add('hidden');
+        cashTransactionModal.classList.remove('flex');
+    }
+
+    async function saveCashTransaction() {
+        const amount = Number(cashModalAmount.value);
+        const category = cashModalCategory.value;
+        const note = cashModalNote.value.trim();
+        const trxDate = cashModalDate.value;
+        if (!amount || amount <= 0) {
+            cashModalError.textContent = 'Nominal harus lebih besar dari 0.';
+            cashModalError.classList.remove('hidden');
+            return;
+        }
+        try {
+            const response = await fetch('/api/cash/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: cashCurrentMode, amount, category, note, trx_date: trxDate })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Gagal menyimpan transaksi');
+            closeCashModal();
+            loadCashTransactions();
+        } catch (error) {
+            cashModalError.textContent = error.message;
+            cashModalError.classList.remove('hidden');
+        }
+    }
+
+    async function deleteCashTransaction(id) {
+        try {
+            const response = await fetch(`/api/cash/transactions/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Gagal menghapus transaksi');
+            await loadCashTransactions();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    function initCashTab() {
+        if (!cashPeriodSelect) return;
+        cashPeriodSelect.addEventListener('change', updateCashCustomDatesVisibility);
+        cashApplyPeriod.addEventListener('click', () => {
+            if (cashPeriodSelect.value === 'custom') {
+                if (!cashStartDateInput.value || !cashEndDateInput.value) {
+                    alert('Silakan pilih tanggal mulai dan selesai.');
+                    return;
+                }
+                cashCurrentStartDate = cashStartDateInput.value;
+                cashCurrentEndDate = cashEndDateInput.value;
+            } else {
+                const [start, end] = getDefaultCashPeriod(cashPeriodSelect.value);
+                cashCurrentStartDate = start;
+                cashCurrentEndDate = end;
+                setCashDateInputs(start, end);
+            }
+            cashCurrentPage = 1;
+            loadCashTransactions();
+        });
+        if (cashSearchInput) {
+            cashSearchInput.addEventListener('input', () => {
+                cashCurrentPage = 1;
+                renderCashTable(cashCurrentTransactions);
+            });
+        }
+        if (cashPrevBtn) {
+            cashPrevBtn.addEventListener('click', () => {
+                if (cashCurrentPage > 1) {
+                    cashCurrentPage -= 1;
+                    renderCashTable(cashCurrentTransactions);
+                }
+            });
+        }
+        if (cashNextBtn) {
+            cashNextBtn.addEventListener('click', () => {
+                const totalPages = Math.max(1, Math.ceil((cashFilteredCount || 0) / itemsPerPage));
+                if (cashCurrentPage < totalPages) {
+                    cashCurrentPage += 1;
+                    renderCashTable(cashCurrentTransactions);
+                }
+            });
+        }
+        if (cashBtnAddIncome) cashBtnAddIncome.addEventListener('click', () => openCashModal('income'));
+        if (cashBtnAddExpense) cashBtnAddExpense.addEventListener('click', () => openCashModal('expense'));
+        if (cashSaveTransaction) cashSaveTransaction.addEventListener('click', saveCashTransaction);
+        if (cashCancelTransaction) cashCancelTransaction.addEventListener('click', closeCashModal);
+        if (cashModalClose) cashModalClose.addEventListener('click', closeCashModal);
+        const [start, end] = getDefaultCashPeriod('this_month');
+        cashCurrentStartDate = start;
+        cashCurrentEndDate = end;
+        cashCurrentPage = 1;
+        setCashDateInputs(start, end);
+        updateCashCustomDatesVisibility();
+        loadCashTransactions();
+    }
+
     async function loadCommissionApprovals() {
         const tbody = document.getElementById('approval-commission-body');
-        const status = (document.getElementById('approval-status-filter')?.value || 'all').toLowerCase();
-        const search = (document.getElementById('approval-search')?.value || '').trim().toLowerCase();
-        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td></tr>';
+        visibleApprovalRows = [];
+        selectedApprovalIds = [];
+        selectedApprovalMode = '';
+        approvalCurrentPage = 1;
+        approvalPageStart = 0;
+        approvalPageEnd = 0;
+        approvalFilteredCount = 0;
+        updateApprovalSelectionUI();
+        const status = approvalAppliedStatus || 'all';
+        tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td></tr>';
         try {
             const res = await fetch(`/api/commissions/approvals?status=${encodeURIComponent(status)}`);
             const rows = await res.json();
-            if (!Array.isArray(rows) || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data approval</td></tr>';
-                return;
-            }
-            const filtered = rows.filter(r => {
-                if (!search) return true;
-                const byOrder = String(r.order_id || '').toLowerCase().includes(search.replace('#', ''));
-                const byUser = String(r.user_name || '').toLowerCase().includes(search);
-                return byOrder || byUser;
-            });
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data yang cocok dengan pencarian</td></tr>';
-                return;
-            }
-
-            const approvalBadge = (s) => {
-                const v = String(s || 'pending').toLowerCase();
-                if (v === 'approved') return '<span class="px-2 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">approved</span>';
-                if (v === 'rejected') return '<span class="px-2 py-1 rounded text-[10px] font-bold bg-red-500/20 text-red-400">rejected</span>';
-                return '<span class="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">pending</span>';
-            };
-
-            tbody.innerHTML = filtered.map(r => {
-                const dt = r.created_at ? new Date(r.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-                const canAction = canApproveCommission && String(r.approval_status || '').toLowerCase() === 'pending' && String(r.status || '').toLowerCase() !== 'paid';
-                return `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${dt}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-white">#${r.order_id || '-'}</td>
-                    <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${r.user_name || ('User ' + r.user_id)}</td>
-                    <td class="px-6 py-4 text-sm">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400">${r.role || '-'}</span>
-                        <span class="ml-2 px-2 py-1 rounded text-[10px] font-bold bg-slate-500/20 text-slate-300">${r.content_type || 'general'}</span>
-                    </td>
-                    <td class="px-6 py-4 text-sm">${approvalBadge(r.approval_status)}</td>
-                    <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(Number(r.amount || 0))}</td>
-                    <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-300">${r.approval_note || '-'}</td>
-                    <td class="px-6 py-4 text-right">
-                        ${canAction ? `
-                            <button onclick="approveCommission(${r.id})" class="px-2.5 py-1.5 text-[11px] font-bold rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 mr-2">Approve</button>
-                            <button onclick="rejectCommission(${r.id})" class="px-2.5 py-1.5 text-[11px] font-bold rounded bg-red-500/20 hover:bg-red-500/30 text-red-300">Reject</button>
-                        ` : '<span class="text-slate-500 text-xs">-</span>'}
-                    </td>
-                </tr>
-                `;
-            }).join('');
+            approvalAllRows = Array.isArray(rows) ? rows : [];
+            populateApprovalUserFilter(approvalAllRows);
+            setBadgeCount('finance-approval-badge', approvalAllRows.filter(r => String(r.approval_status || '').toLowerCase() === 'pending').length);
+            renderCommissionApprovals();
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-red-400">Error: ${e.message}</td></tr>`;
+            visibleApprovalRows = [];
+            selectedApprovalIds = [];
+            approvalAllRows = [];
+            approvalFilteredCount = 0;
+            approvalPageStart = 0;
+            approvalPageEnd = 0;
+            updateCommissionSummaryCards([]);
+            populateApprovalUserFilter([]);
+            updateApprovalSelectionUI();
+            updateApprovalFooter(0, 0, 0);
+            updateApprovalPager();
+            setBadgeCount('finance-approval-badge', 0);
+            tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-8 text-center text-red-400">Error: ${e.message}</td></tr>`;
         }
+    }
+
+    function renderCommissionApprovals() {
+        const tbody = document.getElementById('approval-commission-body');
+        const rows = Array.isArray(approvalAllRows) ? approvalAllRows : [];
+
+        if (!tbody) return;
+        if (!rows.length) {
+            visibleApprovalRows = [];
+            approvalFilteredCount = 0;
+            approvalPageStart = 0;
+            approvalPageEnd = 0;
+            selectedApprovalIds = [];
+            selectedApprovalMode = '';
+            updateCommissionSummaryCards([]);
+            updateApprovalSelectionUI();
+            updateApprovalPager();
+            updateApprovalFooter(0, 0, 0);
+            tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data approval</td></tr>';
+            return;
+        }
+
+        const filtered = getFilteredCommissionApprovalRows();
+        updateCommissionSummaryCards(filtered);
+
+        approvalFilteredCount = filtered.length;
+        if (approvalFilteredCount === 0) {
+            visibleApprovalRows = [];
+            approvalPageStart = 0;
+            approvalPageEnd = 0;
+            selectedApprovalIds = [];
+            selectedApprovalMode = '';
+            updateApprovalSelectionUI();
+            updateApprovalPager();
+            updateApprovalFooter(0, 0, 0);
+            tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data yang cocok dengan pencarian</td></tr>';
+            return;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(approvalFilteredCount / itemsPerPage));
+        if (approvalCurrentPage > totalPages) approvalCurrentPage = totalPages;
+        if (approvalCurrentPage < 1) approvalCurrentPage = 1;
+
+        const startIndexZero = (approvalCurrentPage - 1) * itemsPerPage;
+        const endIndexZero = startIndexZero + itemsPerPage;
+        const paged = filtered.slice(startIndexZero, endIndexZero);
+        visibleApprovalRows = paged;
+        approvalPageStart = startIndexZero + 1;
+        approvalPageEnd = Math.min(endIndexZero, approvalFilteredCount);
+
+        updateApprovalSelectionUI();
+        updateApprovalPager();
+        updateApprovalFooter(approvalPageStart, approvalPageEnd, approvalFilteredCount);
+
+        const approvalBadge = (s) => {
+            const v = String(s || 'pending').toLowerCase();
+            if (v === 'approved') return '<span class="finance-chip finance-chip-approved">approved</span>';
+            if (v === 'rejected') return '<span class="finance-chip finance-chip-rejected">rejected</span>';
+            return '<span class="finance-chip finance-chip-pending">pending</span>';
+        };
+
+        tbody.innerHTML = paged.map(r => {
+            const dt = r.created_at ? new Intl.DateTimeFormat('en-GB').format(new Date(r.created_at)) : '-';
+            const approvalStatus = String(r.approval_status || '').toLowerCase();
+            const rowStatus = String(r.status || '').toLowerCase();
+            const canApproveAction = canApproveCommission && approvalStatus === 'pending' && rowStatus !== 'paid';
+            const canPayoutAction = false;
+            const rowMode = canApproveAction ? 'pending' : '';
+            const orderLabel = escapeHtml(r.order_id || '-');
+            const rawOrderName = String(getFinanceOrderDisplayName(r.order_id, r.order_name || r.client_name || r.package_name || '-')).trim();
+            const shortOrderName = escapeHtml((rawOrderName.split(/\s+/).slice(0, 2).join(' ') || '-'));
+            const userLabel = escapeHtml(r.user_name || ('User ' + r.user_id));
+            const roleLabel = escapeHtml(r.role || '-');
+            const typeLabel = escapeHtml(r.content_type || 'general');
+            const noteLabel = escapeHtml(r.approval_note || '-');
+            const rowId = String(r.id || '');
+            const isChecked = selectedApprovalIds.includes(rowId);
+            const statusBadge = rowStatus === 'paid'
+                ? '<span class="finance-chip finance-chip-approved">paid</span>'
+                : approvalBadge(r.approval_status);
+            return `
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="px-6 py-4 text-center">
+                    <input type="checkbox" data-approval-row-checkbox="${rowId}" data-approval-row-mode="${rowMode}" class="finance-approval-checkbox" ${(canApproveAction || canPayoutAction) ? '' : 'disabled'} ${((canApproveAction || canPayoutAction) && isChecked) ? 'checked' : ''} />
+                </td>
+                <td class="px-6 py-4 text-sm font-semibold text-slate-700">#${orderLabel}</td>
+                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${shortOrderName}</td>
+                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${dt}</td>
+                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">${userLabel}</td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="flex flex-wrap gap-1.5">
+                        <span class="finance-chip finance-chip-role">${roleLabel}</span>
+                        <span class="finance-chip finance-chip-type">${typeLabel}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-sm">${statusBadge}</td>
+                <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(Number(r.amount || 0))}</td>
+                <td class="finance-approval-note px-6 py-4 text-xs text-slate-600 dark:text-slate-300" title="${noteLabel}">${noteLabel}</td>
+                <td class="px-6 py-4 text-right">
+                    ${canApproveAction ? `
+                        <div class="finance-approval-actions">
+                            <button onclick="approveCommission(${r.id})" class="finance-approval-btn finance-approval-btn-approve">Approve</button>
+                            <button onclick="rejectCommission(${r.id})" class="finance-approval-btn finance-approval-btn-reject">Reject</button>
+                        </div>
+                    ` : '<span class="text-slate-500 text-xs">-</span>'}
+                </td>
+            </tr>
+            `;
+        }).join('');
+
+        tbody.querySelectorAll('[data-approval-row-checkbox]').forEach((checkbox) => {
+            checkbox.addEventListener('change', () => {
+                const id = checkbox.getAttribute('data-approval-row-checkbox') || '';
+                const mode = checkbox.getAttribute('data-approval-row-mode') || '';
+                if (!id) return;
+                if (checkbox.checked) {
+                    if (selectedApprovalMode && selectedApprovalMode !== mode) {
+                        selectedApprovalIds = [];
+                        document.querySelectorAll('[data-approval-row-checkbox]').forEach((cb) => {
+                            cb.checked = false;
+                        });
+                    }
+                    selectedApprovalMode = mode;
+                    if (!selectedApprovalIds.includes(id)) selectedApprovalIds.push(id);
+                } else {
+                    selectedApprovalIds = selectedApprovalIds.filter((item) => item !== id);
+                    if (selectedApprovalIds.length === 0) selectedApprovalMode = '';
+                }
+                updateApprovalSelectionUI();
+            });
+        });
     }
 
     async function approveCommission(id) {
@@ -535,6 +2318,7 @@ body { font-family: 'Inter', sans-serif; }
             const data = await res.json();
             if (!res.ok || data.error) throw new Error(data.error || 'Gagal approve komisi');
             await loadCommissionApprovals();
+            await loadLedgerAndPayout();
         } catch (e) {
             alert('Gagal approve: ' + e.message);
         }
@@ -559,8 +2343,189 @@ body { font-family: 'Inter', sans-serif; }
             const data = await res.json();
             if (!res.ok || data.error) throw new Error(data.error || 'Gagal reject komisi');
             await loadCommissionApprovals();
+            await loadLedgerAndPayout();
         } catch (e) {
             alert('Gagal reject: ' + e.message);
+        }
+    }
+
+    function updateApprovalSelectionUI() {
+        const approveSelectedBtn = document.getElementById('approval-approve-selected-btn');
+        const rejectSelectedBtn = document.getElementById('approval-reject-selected-btn');
+        const payoutSelectedBtn = document.getElementById('approval-payout-selected-btn');
+        const selectAllCheckbox = document.getElementById('approval-select-all');
+        const selectedCountLabel = document.getElementById('approval-selected-count');
+        const pendingActionableIds = visibleApprovalRows
+            .filter((r) => canApproveCommission && String(r.approval_status || '').toLowerCase() === 'pending' && String(r.status || '').toLowerCase() !== 'paid')
+            .map((r) => String(r.id))
+            .filter(Boolean);
+        const payoutActionableIds = visibleApprovalRows
+            .filter((r) => canPayoutCommission && String(r.approval_status || '').toLowerCase() === 'approved' && String(r.status || '').toLowerCase() !== 'paid')
+            .map((r) => String(r.id))
+            .filter(Boolean);
+        const actionableIds = selectedApprovalMode === 'payout' ? payoutActionableIds : pendingActionableIds;
+        selectedApprovalIds = selectedApprovalIds.filter((id) => actionableIds.includes(id));
+        const selectedCount = selectedApprovalIds.length;
+        const approveDisabled = selectedApprovalMode !== 'pending' || !canApproveCommission || selectedCount === 0;
+        const payoutDisabled = selectedApprovalMode !== 'payout' || !canPayoutCommission || selectedCount === 0;
+        if (approveSelectedBtn) approveSelectedBtn.disabled = approveDisabled;
+        if (rejectSelectedBtn) rejectSelectedBtn.disabled = approveDisabled;
+        if (payoutSelectedBtn) payoutSelectedBtn.disabled = payoutDisabled;
+        if (selectedCountLabel) selectedCountLabel.textContent = `${selectedCount} dipilih`;
+        if (selectAllCheckbox) {
+            selectAllCheckbox.disabled = (selectedApprovalMode === 'payout' ? !canPayoutCommission : !canApproveCommission) || actionableIds.length === 0;
+            selectAllCheckbox.checked = actionableIds.length > 0 && selectedCount === actionableIds.length;
+            selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < actionableIds.length;
+        }
+        updateApprovalFooter(approvalPageStart, approvalPageEnd, approvalFilteredCount, selectedCount);
+    }
+
+    function updateApprovalFooter(rangeStart, rangeEnd, totalCount, selectedCount = selectedApprovalIds.length) {
+        const infoEl = document.getElementById('approval-footer-info');
+        const selectedEl = document.getElementById('approval-footer-selected');
+        if (infoEl) {
+            const start = Number(rangeStart || 0);
+            const end = Number(rangeEnd || 0);
+            const total = Number(totalCount || 0);
+            infoEl.textContent = `Menampilkan ${start} - ${end} dari ${total} data`;
+        }
+        if (selectedEl) {
+            selectedEl.textContent = `Dipilih ${Number(selectedCount || 0)} data`;
+        }
+    }
+
+    function updateApprovalPager() {
+        const prevBtn = document.getElementById('approval-prev');
+        const nextBtn = document.getElementById('approval-next');
+        const totalPages = Math.max(1, Math.ceil((approvalFilteredCount || 0) / itemsPerPage));
+        if (prevBtn) prevBtn.disabled = approvalCurrentPage <= 1;
+        if (nextBtn) nextBtn.disabled = approvalCurrentPage >= totalPages;
+    }
+
+    async function processSelectedCommissionAction(action) {
+        if ((action === 'payout' && !canPayoutCommission) || (action !== 'payout' && !canApproveCommission)) {
+            alert('Hanya role keuangan/super admin yang bisa menjalankan aksi massal komisi.');
+            return;
+        }
+        if (!selectedApprovalIds.length) {
+            alert('Pilih minimal 1 data komisi yang ingin diproses.');
+            return;
+        }
+
+        if (action === 'payout') {
+            await payoutCommission(selectedApprovalIds);
+            selectedApprovalIds = [];
+            selectedApprovalMode = '';
+            updateApprovalSelectionUI();
+            return;
+        }
+
+        const pendingRows = visibleApprovalRows.filter((r) => selectedApprovalIds.includes(String(r.id)));
+        const isReject = action === 'reject';
+        const actionLabel = isReject ? 'reject' : 'approve';
+        const notePrompt = isReject ? 'Alasan reject data yang dicentang (wajib):' : 'Catatan approve data yang dicentang (opsional):';
+        const note = prompt(notePrompt, '') || '';
+        if (isReject && !note.trim()) {
+            alert('Alasan reject wajib diisi.');
+            return;
+        }
+        if (!confirm(`${actionLabel.toUpperCase()} ${pendingRows.length} data yang dicentang?`)) return;
+
+        let successCount = 0;
+        let failedCount = 0;
+        for (const row of pendingRows) {
+            try {
+                const endpoint = isReject ? `/api/commissions/${row.id}/reject` : `/api/commissions/${row.id}/approve`;
+                const payload = isReject
+                    ? { user_id: currentFinanceUserId || null, note }
+                    : { approver_id: currentFinanceUserId || null, note };
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || `Gagal ${actionLabel}`);
+                successCount += 1;
+            } catch (error) {
+                console.error(`Bulk ${actionLabel} failed for commission ${row.id}:`, error);
+                failedCount += 1;
+            }
+        }
+
+        selectedApprovalIds = [];
+        selectedApprovalMode = '';
+        await loadCommissionApprovals();
+        await loadLedgerAndPayout();
+        alert(`${actionLabel.toUpperCase()} selesai. Berhasil: ${successCount}, gagal: ${failedCount}.`);
+    }
+
+    async function loadLedgerAndPayout() {
+        try {
+            const res = await fetch('/api/commissions/ledger');
+            const data = await res.json();
+            const ledgerRows = Array.isArray(data) ? data : (data.ledger || []);
+            const normalizedData = Array.isArray(data)
+                ? buildLegacyLedgerPayload(ledgerRows)
+                : {
+                    ledger: ledgerRows,
+                    summary: data.summary || { pending: 0, approved: 0, paid: 0 },
+                    approved_items: Array.isArray(data.approved_items) ? data.approved_items : []
+                };
+            renderPayoutSummary(normalizedData);
+        } catch (e) {
+            console.error('Failed to load ledger:', e);
+            renderPayoutSummary({ summary: { pending: 0, approved: 0, paid: 0 }, approved_items: [] });
+        }
+    }
+
+    function buildLegacyLedgerPayload(ledger) {
+        const summary = { pending: 0, approved: 0, paid: 0 };
+        const approvedItems = [];
+        (ledger || []).forEach(item => {
+            const amount = Number(item.amount || 0);
+            const approvalStatus = String(item.approval_status || '').toLowerCase();
+            const status = String(item.status || '').toLowerCase();
+            if (status === 'paid') summary.paid += amount;
+            else if (approvalStatus === 'approved') summary.approved += amount;
+            else summary.pending += amount;
+            if (approvalStatus === 'approved' && status !== 'paid') {
+                approvedItems.push(item);
+            }
+        });
+        return { ledger, summary, approved_items: approvedItems };
+    }
+
+    function renderPayoutSummary(data) {
+        const approvedCount = Array.isArray(data.approved_items) ? data.approved_items.length : 0;
+        setBadgeCount('finance-payout-badge', approvedCount);
+    }
+
+    async function payoutCommission(ledgerIds) {
+        if (!canPayoutCommission) {
+            alert('Hanya role keuangan/super admin yang bisa payout komisi.');
+            return;
+        }
+        const ids = Array.isArray(ledgerIds) ? ledgerIds.filter(Boolean) : [];
+        const message = ids.length > 0
+            ? `Bayar ${ids.length} komisi yang dipilih?`
+            : 'Bayar semua komisi yang sudah disetujui?';
+        if (!confirm(message)) return;
+        try {
+            const res = await fetch('/api/commissions/payout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ids.length > 0 ? { ledger_ids: ids } : {})
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Gagal melakukan payout');
+            alert(`✓ ${data.count || 0} komisi berhasil dibayar`);
+            selectedApprovalIds = [];
+            selectedApprovalMode = '';
+            await loadCommissionApprovals();
+            await loadLedgerAndPayout();
+        } catch (e) {
+            alert('Gagal payout: ' + e.message);
         }
     }
 

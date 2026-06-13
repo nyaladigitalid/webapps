@@ -323,15 +323,28 @@
               <div id="chat-scroll" class="flex-1 overflow-y-auto p-4 space-y-2 wa-chat-bg">
               </div>
               <div class="border-t border-slate-200/70 dark:border-white/10 p-3 bg-white/70 dark:bg-white/5">
+                <div id="attach-preview" class="hidden mb-2">
+                  <div class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-2 py-2">
+                    <img id="attach-preview-img" alt="Lampiran" class="size-12 rounded-xl object-cover border border-slate-200 dark:border-white/10" />
+                    <div class="min-w-0">
+                      <p id="attach-preview-name" class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate max-w-[220px]">Gambar</p>
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400">Akan ikut dinilai</p>
+                    </div>
+                    <button id="attach-remove" type="button" class="ml-1 size-9 rounded-full inline-flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10">
+                      <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                  </div>
+                </div>
                 <div class="flex items-end gap-2">
                   <div class="flex-1 flex items-end gap-2 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-full px-3 py-2">
                     <button type="button" class="text-slate-500 dark:text-slate-300">
                       <span class="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
                     </button>
                     <textarea id="chat-input" rows="1" class="flex-1 bg-transparent border-0 focus:ring-0 p-0 text-sm leading-relaxed resize-none" placeholder="Ketik pesan..."></textarea>
-                    <button type="button" class="text-slate-500 dark:text-slate-300">
+                    <button id="btn-attach" type="button" class="text-slate-500 dark:text-slate-300">
                       <span class="material-symbols-outlined text-[20px]">attach_file</span>
                     </button>
+                    <input id="attach-input" type="file" accept="image/*" class="hidden" />
                   </div>
                   <button id="btn-send" class="shrink-0 size-11 inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold transition-all shadow-lg shadow-emerald-600/20">
                     <span class="material-symbols-outlined text-[20px]">send</span>
@@ -416,6 +429,12 @@
       const chatPanel = document.getElementById("chat-panel");
       const chatScroll = document.getElementById("chat-scroll");
       const chatInput = document.getElementById("chat-input");
+      const btnAttach = document.getElementById("btn-attach");
+      const attachInput = document.getElementById("attach-input");
+      const attachPreview = document.getElementById("attach-preview");
+      const attachPreviewImg = document.getElementById("attach-preview-img");
+      const attachPreviewName = document.getElementById("attach-preview-name");
+      const attachRemove = document.getElementById("attach-remove");
       const btnSend = document.getElementById("btn-send");
       const btnStart = document.getElementById("btn-start");
       const btnEnd = document.getElementById("btn-end");
@@ -461,6 +480,8 @@
       let attempts = [];
       let attemptSeq = 0;
       let turnLocked = false;
+      let pendingImageDataUrl = "";
+      let pendingImageName = "";
 
       function fmtTime(d) {
         try {
@@ -565,7 +586,7 @@
         return history.length > 0 && history[history.length - 1].role === "client";
       }
 
-      function appendAttemptBubble(text, scoreData, attemptId, source) {
+      function appendAttemptBubble(text, scoreData, attemptId, source, imageDataUrl) {
         const line = document.createElement("div");
         line.className = "flex justify-end";
         const bubble = document.createElement("div");
@@ -582,6 +603,13 @@
         content.className = "text-sm whitespace-pre-wrap leading-relaxed";
         content.innerHTML = escapeHtml(text);
         bubble.appendChild(content);
+        const imgUrl = String(imageDataUrl || "").trim();
+        if (imgUrl) {
+          const imgWrap = document.createElement("div");
+          imgWrap.className = "mt-2";
+          imgWrap.innerHTML = '<img src="' + escapeHtml(imgUrl) + '" alt="Lampiran" class="rounded-2xl border border-slate-200 dark:border-white/10 max-w-full h-auto" style="max-height:260px; object-fit:cover;" />';
+          bubble.appendChild(imgWrap);
+        }
         const metaTime = document.createElement("div");
         metaTime.className = "wa-meta";
         metaTime.innerHTML = '<span>' + escapeHtml(fmtTime(new Date())) + '</span><span class="material-symbols-outlined text-[16px]" style="line-height:1">done_all</span>';
@@ -689,7 +717,7 @@
           "4) Jangan menolak atau meragukan pada mode ini";
       }
 
-      function buildScoringPrompt(p, hist, csMsg) {
+      function buildScoringPrompt(p, hist, csMsg, hasImage) {
         const lines = (hist || []).slice(-6).map(function (h) {
           const who = h.role === "client" ? p.name : "CS";
           return who + ": " + h.content;
@@ -704,6 +732,7 @@
           "6. Jangan kirim PDF/pricelist/promo di awal\n" +
           "7. Welcome message harus sederhana — perkenalan + 1 pertanyaan saja\n" +
           "8. Bonus dan promo disimpan sebagai amunisi closing, bukan diumbar di awal\n\n" +
+          (hasImage ? "CATATAN GAMBAR: Ada gambar terlampir dari CS. Nilai apakah gambar itu relevan, jelas, membantu closing, dan timing-nya tepat. Jika kurang tepat, sebut 1 saran perbaikan.\n\n" : "") +
           "PRODUK: Paket Rp375.000 — video iklan, setup akun, iklan ke WhatsApp, laporan harian, garansi leads, website gratis, template chat.\n\n" +
           "PERSONA KLIEN: " + p.name + " — " + p.desc + "\n" +
           "TIPE: " + p.type + "\n" +
@@ -757,8 +786,9 @@
           "{\"overall\":\"Penilaian singkat 1 kalimat\",\"strengths\":[\"kekuatan spesifik 1\",\"kekuatan spesifik 2\"],\"improvements\":[\"perbaikan spesifik 1\",\"perbaikan spesifik 2\"],\"tip\":\"Tips paling penting untuk sesi berikutnya\",\"verdict\":\"Lulus / Perlu Latihan Lagi / Belum Siap\"}";
       }
 
-      async function callProxy(systemPrompt, userMessage, maxTokens) {
+      async function callProxy(systemPrompt, userMessage, maxTokens, opts) {
         const model = String(modelSelect.value || "gpt-4o-mini");
+        const images = (opts && Array.isArray(opts.images)) ? opts.images : [];
         const res = await fetch("/api/openai-proxy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -766,6 +796,7 @@
             model: model,
             systemPrompt: systemPrompt,
             userMessage: userMessage,
+            images: images,
             maxTokens: maxTokens || 300
           })
         });
@@ -793,7 +824,27 @@
         chatScroll.innerHTML = "";
         summaryCard.classList.add("hidden");
         setSessionError("");
+        clearAttachment();
         updateStats();
+      }
+
+      function renderAttachmentPreview() {
+        if (!attachPreview || !attachPreviewImg || !attachPreviewName) return;
+        const u = String(pendingImageDataUrl || "").trim();
+        if (!u) {
+          attachPreview.classList.add("hidden");
+          return;
+        }
+        attachPreviewImg.src = u;
+        attachPreviewName.textContent = pendingImageName ? pendingImageName : "Gambar";
+        attachPreview.classList.remove("hidden");
+      }
+
+      function clearAttachment() {
+        pendingImageDataUrl = "";
+        pendingImageName = "";
+        if (attachInput) attachInput.value = "";
+        if (attachPreview) attachPreview.classList.add("hidden");
       }
 
       function isMobile() {
@@ -937,7 +988,8 @@
 
       async function submitAttempt() {
         const txt = String(chatInput.value || "").trim();
-        if (!txt) return;
+        const hasImg = !!String(pendingImageDataUrl || "").trim();
+        if (!txt && !hasImg) return;
         chatInput.value = "";
         await submitAttemptText(txt, "manual");
       }
@@ -950,22 +1002,41 @@
           return;
         }
         const text = String(txt || "").trim();
-        if (!text) return;
+        const imageDataUrl = String(pendingImageDataUrl || "").trim();
+        const imageName = String(pendingImageName || "").trim();
+        const hasImage = !!imageDataUrl;
+        const displayText = text ? text : (hasImage ? "Mengirim gambar" : "");
+        if (!displayText) return;
         busy = true;
         setSessionError("");
         try {
           const scoreFallback = { score: 65, feedback: "Lanjutkan identifikasi kebutuhan.", stage: "Identifikasi" };
-          const scoreRaw = await callProxy("Kamu penilai sales.", buildScoringPrompt(persona, history, text), 220);
+          const scoreRaw = await callProxy(
+            "Kamu penilai sales.",
+            buildScoringPrompt(persona, history, displayText, hasImage),
+            220,
+            { images: hasImage ? [imageDataUrl] : [] }
+          );
           const scoreData = parseJsonLoose(scoreRaw, scoreFallback);
 
           const attemptId = String(turnKey) + "-" + String(++attemptSeq);
-          attempts.push({ id: attemptId, turnKey: turnKey, text: text, score: Number(scoreData.score || 0), scoreData: scoreData, source: String(source || "") });
+          attempts.push({
+            id: attemptId,
+            turnKey: turnKey,
+            text: displayText,
+            image: imageDataUrl,
+            imageName: imageName,
+            score: Number(scoreData.score || 0),
+            scoreData: scoreData,
+            source: String(source || "")
+          });
 
           scores.push(Number(scoreData.score || 0));
           best = best == null ? Number(scoreData.score || 0) : Math.max(best, Number(scoreData.score || 0));
           stage = String(scoreData.stage || stage || "Identifikasi");
           updateStats();
-          appendAttemptBubble(text, scoreData, attemptId, source);
+          appendAttemptBubble(displayText, scoreData, attemptId, source, imageDataUrl);
+          if (hasImage) clearAttachment();
           return attemptId;
         } catch (e) {
           setSessionError((e && e.message) ? e.message : "Gagal menilai jawaban");
@@ -1153,6 +1224,56 @@
       btnNewSession.addEventListener("click", function () { newSession(); });
       if (btnNewSessionTop) btnNewSessionTop.addEventListener("click", function () { newSession(); });
       btnTryAgain.addEventListener("click", function () { newSession(); });
+
+      if (btnAttach && attachInput) {
+        btnAttach.addEventListener("click", function () {
+          attachInput.click();
+        });
+      }
+      if (attachRemove) {
+        attachRemove.addEventListener("click", function () {
+          clearAttachment();
+          chatInput.focus();
+        });
+      }
+      if (attachInput) {
+        attachInput.addEventListener("change", function () {
+          try {
+            const file = attachInput.files && attachInput.files[0] ? attachInput.files[0] : null;
+            if (!file) {
+              clearAttachment();
+              return;
+            }
+            const isImg = !!(file.type && String(file.type).startsWith("image/"));
+            if (!isImg) {
+              clearAttachment();
+              setSessionError("File lampiran harus berupa gambar.");
+              return;
+            }
+            if (Number(file.size || 0) > 3 * 1024 * 1024) {
+              clearAttachment();
+              setSessionError("Ukuran gambar terlalu besar (maks 3MB).");
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = function () {
+              pendingImageDataUrl = String(reader.result || "");
+              pendingImageName = String(file.name || "Gambar");
+              setSessionError("");
+              renderAttachmentPreview();
+              chatInput.focus();
+            };
+            reader.onerror = function () {
+              clearAttachment();
+              setSessionError("Gagal membaca gambar.");
+            };
+            reader.readAsDataURL(file);
+          } catch (_) {
+            clearAttachment();
+            setSessionError("Gagal memproses lampiran.");
+          }
+        });
+      }
 
       if (chatMenuBtn) {
         chatMenuBtn.addEventListener("click", function () {

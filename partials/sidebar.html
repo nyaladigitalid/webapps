@@ -1,94 +1,103 @@
-<aside class="layout-sidebar w-56 flex-col gap-4 glass-panel rounded-2xl p-3">
+<aside class="layout-sidebar w-56 flex-col gap-4 rounded-2xl p-3 bg-white border border-slate-200 shadow-sm dark:bg-white dark:border-slate-200">
+  <div class="flex items-center gap-3 px-3 py-2 border-b border-slate-200/70 dark:border-white/10">
+    <div class="h-9 w-9 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-sm">
+      <img src="img/logo.png" alt="Nyala Digital Logo" class="h-7 w-auto" />
+    </div>
+    <div class="min-w-0">
+      <p class="text-xs font-semibold tracking-[0.2em] text-primary uppercase">Nyala Digital Apps</p>
+    </div>
+  </div>
   <nav class="space-y-1">
     <a href="dashboard.html" data-menu="overview"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">dashboard</span>
       <span>Dashboard</span>
     </a>
     <a href="kampanye.html" data-menu="campaigns"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">campaign</span>
       <span>Kampanye & Ads Set</span>
     </a>
     <a href="analisaiklan.html" data-menu="analytics"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">insights</span>
       <span>Analytics & ROAS</span>
     </a>
-    <a href="order.html" data-menu="orders"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
-      <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
-      <span>Pesanan</span>
-    </a>
     <a href="produk.html" data-menu="products"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">inventory_2</span>
       <span>Produk</span>
     </a>
     <a href="commission.html" data-menu="commissions"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">payments</span>
       <span>Komisi</span>
     </a>
     <a href="finance.html" data-menu="finance"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">account_balance</span>
       <span>Keuangan & Billing</span>
     </a>
     <a href="crm.html" data-menu="crm"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">group</span>
       <span>CRM Dashboard</span>
     </a>
-    <a href="data-crm.html" data-menu="data_crm"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
-      <span class="material-symbols-outlined text-[18px]">inventory</span>
+    <a href="data-crm-1.html" data-menu="data_crm"
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
+      <span class="material-symbols-outlined text-[18px]">inventory_2</span>
       <span>Data CRM</span>
     </a>
     <a href="clients.html" data-menu="clients"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">contacts</span>
       <span>Data Klien</span>
     </a>
     <a href="kpi.html" data-menu="team"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">groups</span>
       <span>Tim & Role</span>
     </a>
     <a href="users.html" data-menu="users"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
       <span>Users</span>
     </a>
     <a href="editor-assignments.html" data-menu="editor_assignments"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">assignment_ind</span>
       <span>Assignment Editor</span>
     </a>
     <a href="#" data-menu="audit" title="Segera hadir"
-       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="hidden flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">description</span>
       <span>Audit Log</span>
     </a>
     <a href="meta-config.html" data-menu="meta_config"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">settings_input_antenna</span>
       <span>Meta Ads Config</span>
     </a>
     <a href="cprcalculator.html" data-menu="cpr_calculator"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">calculate</span>
       <span>CPR Calculator</span>
     </a>
     <a href="simulator-cs.html" data-menu="simulator_cs"
-       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-secondary/10 hover:text-white transition-colors">
+       class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-secondary/70 hover:bg-primary/10 hover:text-secondary transition-colors">
       <span class="material-symbols-outlined text-[18px]">smart_toy</span>
       <span>Simulator CS</span>
     </a>
   </nav>
-  <div id="sidebar-login-info" class="mt-auto px-3 py-1">
-    <p class="text-[10px] text-secondary/60">Login:</p>
-    <p id="sidebar-login-at" class="text-[10px] text-secondary/80 font-medium">-</p>
+  <div id="sidebar-login-info" class="mt-auto px-3 pt-3 border-t border-slate-200/70 dark:border-slate-200">
+    <div class="flex items-center gap-3 rounded-xl bg-slate-50 border border-slate-200 px-3 py-3">
+      <div id="sidebar-user-avatar" class="header-profile-icon h-9 w-9 rounded-full bg-gradient-to-br from-primary to-secondary text-[12px] flex items-center justify-center font-semibold text-white">U</div>
+      <div class="min-w-0">
+        <p id="sidebar-user-name" class="text-[12px] font-semibold text-slate-900 truncate">User</p>
+        <p id="sidebar-user-role" class="text-[10px] uppercase tracking-wide text-secondary/70 truncate">ROLE</p>
+        <p id="sidebar-login-at" class="text-[10px] text-secondary/60 mt-1">Login: -</p>
+      </div>
+    </div>
   </div>
   <a id="sidebar-logout" href="login.html"
      class="sidebar-logout flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] text-red-500/80 hover:bg-red-500/10 hover:text-red-500 transition-colors">

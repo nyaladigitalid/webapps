@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json({
-    limit: '2mb',
+    limit: '12mb',
     verify: (req, res, buf) => {
         req.rawBody = buf;
     }
@@ -104,6 +104,32 @@ async function ensurePackagesSchema() {
         console.log('Packages schema ready');
     } catch (e) {
         console.error('Error ensuring packages schema:', e);
+    }
+}
+
+async function ensureTransactionsCategoryColumn() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE transactions ADD COLUMN category VARCHAR(50)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE transactions ADD COLUMN trx_date DATE`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`UPDATE transactions SET category = 'Pembayaran Order' WHERE type = 'income' AND order_id IS NOT NULL AND category IS NULL`);
+        } catch (e) {
+            console.error('Error backfilling transaction categories:', e);
+        }
+        console.log('Transactions category columns ready');
+    } catch (e) {
+        console.error('Error ensuring transactions category columns:', e);
     }
 }
 
@@ -652,6 +678,7 @@ async function verifyScalevWebhook(req) {
 
 ensureUsersPhoneColumn();
 ensurePackagesSchema();
+ensureTransactionsCategoryColumn();
 ensureOrdersExtraColumns();
 ensureOrdersRenewalColumns();
 ensureOrdersTimingColumns();
@@ -2903,7 +2930,7 @@ app.post('/api/orders', async (req, res) => {
             }
         }
         const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
-        await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [orderId, incomeAmount]);
+        await connection.query('INSERT INTO transactions (order_id, type, amount, category) VALUES (?, "income", ?, "Pembayaran Order")', [orderId, incomeAmount]);
 
         const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
         await connection.query(
@@ -3316,15 +3343,44 @@ app.post('/api/commissions/accrue-from-order', async (req, res) => {
 app.get('/api/commissions/ledger', async (req, res) => {
     try {
         const { order_id, user_id, status, approval_status } = req.query || {};
-        let sql = `SELECT * FROM commission_ledger WHERE 1=1`;
+        let sql = `
+            SELECT cl.*, u.name as user_name 
+            FROM commission_ledger cl
+            LEFT JOIN users u ON cl.user_id = u.id
+            WHERE 1=1
+        `;
         const params = [];
-        if (order_id) { sql += ' AND order_id = ?'; params.push(order_id); }
-        if (user_id) { sql += ' AND user_id = ?'; params.push(user_id); }
-        if (status) { sql += ' AND status = ?'; params.push(status); }
-        if (approval_status) { sql += ' AND approval_status = ?'; params.push(approval_status); }
-        sql += ' ORDER BY created_at DESC';
-        const [rows] = await pool.query(sql, params);
-        res.json(rows);
+        if (order_id) { sql += ' AND cl.order_id = ?'; params.push(order_id); }
+        if (user_id) { sql += ' AND cl.user_id = ?'; params.push(user_id); }
+        if (status) { sql += ' AND cl.status = ?'; params.push(status); }
+        if (approval_status) { sql += ' AND cl.approval_status = ?'; params.push(approval_status); }
+        sql += ' ORDER BY cl.created_at DESC';
+        const [ledger] = await pool.query(sql, params);
+
+        // Hitung summary
+        const [summaryRows] = await pool.query(`
+            SELECT 
+                SUM(CASE WHEN approval_status = 'pending' THEN amount ELSE 0 END) as pending,
+                SUM(CASE WHEN approval_status = 'approved' THEN amount ELSE 0 END) as approved,
+                SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as paid
+            FROM commission_ledger
+        `);
+        const summary = summaryRows[0];
+
+        // Dapatkan approved items untuk payout
+        const [approvedItems] = await pool.query(`
+            SELECT cl.*, u.name as user_name 
+            FROM commission_ledger cl
+            LEFT JOIN users u ON cl.user_id = u.id
+            WHERE cl.approval_status = 'approved' AND cl.status != 'paid'
+            ORDER BY cl.created_at DESC
+        `);
+
+        res.json({
+            ledger,
+            summary,
+            approved_items: approvedItems
+        });
     } catch (e) {
         console.error('Fetch ledger error:', e);
         res.status(500).json({ error: 'Internal server error' });
@@ -3339,12 +3395,17 @@ app.get('/api/commissions/approvals', async (req, res) => {
             FROM commission_ledger cl
             LEFT JOIN users u ON cl.user_id = u.id
             LEFT JOIN orders o ON cl.order_id = o.id
-            WHERE cl.status IN ('accrued','approved','rejected')
+            WHERE cl.status IN ('accrued','approved','rejected','paid')
         `;
         const params = [];
         if (status !== 'all') {
-            sql += ' AND cl.approval_status = ?';
-            params.push(status);
+            const normalizedStatus = String(status || '').toLowerCase();
+            if (normalizedStatus === 'paid') {
+                sql += ` AND cl.status = 'paid'`;
+            } else {
+                sql += ' AND cl.approval_status = ?';
+                params.push(normalizedStatus);
+            }
         }
         sql += ' ORDER BY cl.created_at DESC';
         const [rows] = await pool.query(sql, params);
@@ -3422,6 +3483,258 @@ app.post('/api/commissions/:id/reject', async (req, res) => {
     } catch (e) {
         console.error('Reject commission error:', e);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/commissions/payout', async (req, res) => {
+    const connection = await pool.getConnection();
+    // #region debug-point A:payout-init
+    const _traceId = `payout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const _dbg = (() => {
+        try {
+            const fs = require('fs');
+            const envPath = '.dbg/commission-payout-500.env';
+            let url = 'http://127.0.0.1:7777/event';
+            let sessionId = 'commission-payout-500';
+            try {
+                const c = fs.readFileSync(envPath, 'utf8');
+                url = c.match(/DEBUG_SERVER_URL=(.+)/)?.[1]?.trim() || url;
+                sessionId = c.match(/DEBUG_SESSION_ID=(.+)/)?.[1]?.trim() || sessionId;
+            } catch (_) {}
+            return (hypothesisId, msg, data) => {
+                try {
+                    const payload = JSON.stringify({
+                        sessionId,
+                        runId: 'pre-fix',
+                        hypothesisId,
+                        location: 'server.js:/api/commissions/payout',
+                        traceId: _traceId,
+                        msg: `[DEBUG] ${msg}`,
+                        data: data || {},
+                        ts: Date.now()
+                    });
+                    const u = new URL(url);
+                    const client = u.protocol === 'https:' ? require('https') : require('http');
+                    const req = client.request(
+                        {
+                            hostname: u.hostname,
+                            port: u.port,
+                            path: u.pathname,
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Content-Length': Buffer.byteLength(payload)
+                            }
+                        },
+                        (resp) => {
+                            resp.on('data', () => {});
+                            resp.on('end', () => {});
+                        }
+                    );
+                    req.on('error', () => {});
+                    req.write(payload);
+                    req.end();
+                } catch (_) {}
+            };
+        } catch (_) {
+            return () => {};
+        }
+    })();
+    // #endregion
+    try {
+        let _step = 'parse-body';
+        const body = req.body || {};
+        const ledgerIdsRaw = Array.isArray(body.ledger_ids)
+            ? body.ledger_ids
+            : (Array.isArray(body.ledgerIds) ? body.ledgerIds : []);
+        const ledgerIds = ledgerIdsRaw.map((v) => String(v || '').trim()).filter(Boolean);
+        _dbg('A', 'request', { step: _step, ledgerIdsCount: ledgerIds.length, ledgerIds: ledgerIds.slice(0, 10) });
+
+        const now = new Date();
+        const periodStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+        _step = 'begin-transaction';
+        await connection.beginTransaction();
+        _dbg('B', 'beginTransaction ok', { step: _step });
+
+        _step = 'ensure-payout-schema';
+        try {
+            await connection.query(`
+                CREATE TABLE IF NOT EXISTS payout_batch (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  period_start DATE NOT NULL,
+                  period_end DATE NOT NULL,
+                  status VARCHAR(20) NOT NULL DEFAULT 'draft',
+                  total_amount DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                  posted_at DATETIME NULL,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            `);
+            await connection.query(`
+                CREATE TABLE IF NOT EXISTS payout_batch_items (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  batch_id INT NOT NULL,
+                  ledger_id INT NOT NULL,
+                  amount DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  UNIQUE KEY uniq_payout_batch_ledger (batch_id, ledger_id),
+                  KEY idx_payout_batch_items_ledger (ledger_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            `);
+            _dbg('B', 'ensure payout tables ok', { step: _step });
+        } catch (e) {
+            _dbg('H1', 'ensure payout tables failed (will continue without batch)', {
+                step: _step,
+                message: e?.message,
+                code: e?.code,
+                sqlState: e?.sqlState,
+                sqlMessage: e?.sqlMessage
+            });
+        }
+
+        let selectSql = `
+            SELECT id, order_id, amount
+            FROM commission_ledger
+            WHERE approval_status = 'approved'
+              AND status != 'paid'
+        `;
+        const params = [];
+        if (ledgerIds.length > 0) {
+            selectSql += ` AND id IN (${ledgerIds.map(() => '?').join(',')})`;
+            params.push(...ledgerIds);
+        }
+        selectSql += ' FOR UPDATE';
+        _step = 'select-ledger';
+        const [items] = await connection.query(selectSql, params);
+        _dbg('C', 'selected ledger items', { step: _step, itemsCount: Array.isArray(items) ? items.length : null, sample: Array.isArray(items) ? items.slice(0, 5) : null });
+
+        if (!items || items.length === 0) {
+            _step = 'rollback-empty';
+            await connection.rollback();
+            _dbg('C', 'no items; rollback', { step: _step });
+            return res.json({ success: true, count: 0, total_amount: 0 });
+        }
+
+        _step = 'insert-batch';
+        let batchId = null;
+        try {
+            const [batchRes] = await connection.query(
+                `
+                INSERT INTO payout_batch (period_start, period_end, status, total_amount)
+                VALUES (?, ?, 'draft', 0)
+                `,
+                [periodStart, periodStart]
+            );
+            batchId = batchRes.insertId;
+            _dbg('D', 'batch inserted', { step: _step, batchId });
+        } catch (e) {
+            _dbg('H1', 'insert payout_batch failed (will continue without batch)', {
+                step: _step,
+                message: e?.message,
+                code: e?.code,
+                sqlState: e?.sqlState,
+                sqlMessage: e?.sqlMessage
+            });
+        }
+
+        let total = 0;
+        for (const it of items) {
+            _step = 'process-item';
+            const amount = Number(it.amount || 0);
+            total += amount;
+            _dbg('E', 'item', { step: _step, ledgerId: it.id, orderId: it.order_id, amount });
+            let txnRes;
+            try {
+                [txnRes] = await connection.query(
+                    `
+                    INSERT INTO transactions (order_id, type, amount, category, trx_date, created_at)
+                    VALUES (?, 'commission_pay', ?, 'Komisi', CURDATE(), NOW())
+                    `,
+                    [it.order_id, amount]
+                );
+            } catch (_) {
+                [txnRes] = await connection.query(
+                    `
+                    INSERT INTO transactions (order_id, type, amount)
+                    VALUES (?, 'commission_pay', ?)
+                    `,
+                    [it.order_id, amount]
+                );
+            }
+            const txnId = txnRes.insertId;
+            _dbg('E', 'txn inserted', { step: _step, ledgerId: it.id, txnId });
+            await connection.query(
+                `
+                UPDATE commission_ledger
+                SET status = 'paid',
+                    ref_txn_id = ?,
+                    posted_at = NOW()
+                WHERE id = ?
+                `,
+                [txnId, it.id]
+            );
+            _dbg('E', 'ledger updated to paid', { step: _step, ledgerId: it.id });
+            if (batchId) {
+                try {
+                    await connection.query(
+                        `
+                        INSERT INTO payout_batch_items (batch_id, ledger_id, amount)
+                        VALUES (?, ?, ?)
+                        `,
+                        [batchId, it.id, amount]
+                    );
+                    _dbg('E', 'batch item inserted', { step: _step, ledgerId: it.id, batchId });
+                } catch (e) {
+                    _dbg('H1', 'insert payout_batch_items failed (ignored)', {
+                        step: _step,
+                        batchId,
+                        ledgerId: it.id,
+                        message: e?.message,
+                        code: e?.code,
+                        sqlState: e?.sqlState,
+                        sqlMessage: e?.sqlMessage
+                    });
+                }
+            }
+        }
+
+        _step = 'finalize-batch';
+        if (batchId) {
+            try {
+                await connection.query(
+                    `UPDATE payout_batch SET total_amount = ?, status = 'posted', posted_at = NOW() WHERE id = ?`,
+                    [total, batchId]
+                );
+            } catch (e) {
+                _dbg('H1', 'update payout_batch failed (ignored)', {
+                    step: _step,
+                    batchId,
+                    message: e?.message,
+                    code: e?.code,
+                    sqlState: e?.sqlState,
+                    sqlMessage: e?.sqlMessage
+                });
+            }
+        }
+        _step = 'commit';
+        await connection.commit();
+        _dbg('D', 'commit ok', { step: _step, batchId, totalAmount: total, count: items.length });
+        res.json({ success: true, batch_id: batchId, total_amount: total, count: items.length });
+    } catch (e) {
+        try { await connection.rollback(); } catch (_) {}
+        _dbg('H1', 'error', {
+            step: typeof _step === 'string' ? _step : 'unknown',
+            message: e?.message,
+            code: e?.code,
+            errno: e?.errno,
+            sqlState: e?.sqlState,
+            sqlMessage: e?.sqlMessage,
+            stack: e?.stack
+        });
+        console.error('Payout error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
     }
 });
 
@@ -4029,17 +4342,43 @@ app.post('/api/openai-proxy', async (req, res) => {
         const model = String(body.model || 'gpt-4o-mini').trim() || 'gpt-4o-mini';
         const systemPrompt = String(body.systemPrompt || '').trim();
         const userMessage = String(body.userMessage || '').trim();
+        const images = Array.isArray(body.images) ? body.images : [];
         const maxTokens = Number(body.maxTokens || 500);
-        if (!systemPrompt || !userMessage) {
-            return res.status(400).json({ error: 'systemPrompt dan userMessage wajib diisi' });
+        if (!systemPrompt || (!userMessage && images.length === 0)) {
+            return res.status(400).json({ error: 'systemPrompt wajib diisi, dan minimal ada userMessage atau images' });
         }
+
+        const safeImages = [];
+        for (const img of images) {
+            if (safeImages.length >= 2) break;
+            const s = String(img || '').trim();
+            if (!s) continue;
+            const isDataImage = /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s);
+            const isHttps = /^https:\/\/.+/i.test(s);
+            if (!isDataImage && !isHttps) continue;
+            if (isDataImage) {
+                const base64Part = s.split(',')[1] || '';
+                const approxBytes = Math.floor((base64Part.length * 3) / 4);
+                if (approxBytes > 4 * 1024 * 1024) {
+                    return res.status(413).json({ error: 'Ukuran gambar terlalu besar (maks 4MB per gambar)' });
+                }
+            }
+            safeImages.push(s);
+        }
+
+        const userContent = safeImages.length > 0
+            ? [
+                ...(userMessage ? [{ type: 'text', text: userMessage }] : []),
+                ...safeImages.map((u) => ({ type: 'image_url', image_url: { url: u } }))
+            ]
+            : userMessage;
 
         const payload = JSON.stringify({
             model,
             max_tokens: Number.isFinite(maxTokens) ? maxTokens : 500,
             messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
+                { role: 'user', content: userContent }
             ]
         });
 
@@ -4091,6 +4430,132 @@ app.get('/api/openai-proxy/health', async (req, res) => {
     }
 });
 
+app.get('/api/cash/transactions', async (req, res) => {
+    try {
+        const today = new Date();
+        const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+        const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+        const startDate = String(req.query.startDate || '').trim() || defaultStart;
+        const endDate = String(req.query.endDate || '').trim() || defaultEnd;
+
+        const p = await getPool();
+        const [summaryRows] = await p.query(
+            `SELECT
+                SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS total_income,
+                SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) + SUM(CASE WHEN type = 'commission_pay' THEN amount ELSE 0 END) AS total_expense
+             FROM transactions
+             WHERE type IN ('income','expense','commission_pay')
+               AND DATE(COALESCE(trx_date, created_at)) BETWEEN ? AND ?`,
+            [startDate, endDate]
+        );
+
+        const [unpaidRows] = await p.query(
+            `SELECT COALESCE(SUM(amount), 0) AS unpaid_commission
+             FROM commission_ledger
+             WHERE approval_status = 'approved'
+               AND status != 'paid'`
+        );
+
+        const totalIncome = Number((summaryRows[0] && summaryRows[0].total_income) || 0);
+        const totalExpense = Number((summaryRows[0] && summaryRows[0].total_expense) || 0);
+        const balance = totalIncome - totalExpense;
+        const unpaidCommission = Number((unpaidRows[0] && unpaidRows[0].unpaid_commission) || 0);
+
+        const [rows] = await p.query(
+            `SELECT
+                t.id,
+                t.order_id,
+                t.client_id,
+                t.type,
+                t.amount,
+                COALESCE(t.category,
+                    CASE
+                        WHEN t.type = 'income' AND t.order_id IS NOT NULL THEN 'Pembayaran Order'
+                        WHEN t.type = 'commission_pay' THEN 'Komisi'
+                        ELSE 'Lainnya'
+                    END) AS category,
+                t.note,
+                t.created_at,
+                t.trx_date,
+                DATE(COALESCE(t.trx_date, t.created_at)) AS trx_date_value,
+                c.name AS client_name
+             FROM transactions t
+             LEFT JOIN orders o ON t.order_id = o.id
+             LEFT JOIN clients c ON o.client_id = c.id
+             WHERE t.type IN ('income','expense','commission_pay')
+               AND DATE(COALESCE(t.trx_date, t.created_at)) BETWEEN ? AND ?
+             ORDER BY DATE(COALESCE(t.trx_date, t.created_at)) DESC, t.created_at DESC`,
+            [startDate, endDate]
+        );
+
+        res.json({
+            summary: {
+                total_income: totalIncome,
+                total_expense: totalExpense,
+                balance: balance,
+                unpaid_commission: unpaidCommission
+            },
+            transactions: rows
+        });
+    } catch (e) {
+        console.error('Cash transactions fetch error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/cash/transactions', async (req, res) => {
+    try {
+        const type = String(req.body.type || '').trim();
+        const amount = Number(req.body.amount);
+        const category = req.body.category ? String(req.body.category).trim() : null;
+        const note = req.body.note ? String(req.body.note).trim() : null;
+        const trxDate = String(req.body.trx_date || '').trim() || new Date().toISOString().slice(0, 10);
+        const orderId = req.body.order_id ? Number(req.body.order_id) : null;
+
+        if (!['income', 'expense'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid type' });
+        }
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid amount' });
+        }
+
+        const p = await getPool();
+        const [result] = await p.query(
+            'INSERT INTO transactions (type, amount, category, note, trx_date, order_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+            [type, amount, category, note, trxDate, orderId]
+        );
+
+        res.json({ success: true, id: result.insertId });
+    } catch (e) {
+        console.error('Cash transaction create error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/cash/transactions/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        if (!id) {
+            return res.status(404).json({ error: 'Not found' });
+        }
+
+        const p = await getPool();
+        const [rows] = await p.query(
+            "SELECT id FROM transactions WHERE id = ? AND type IN ('income','expense') LIMIT 1",
+            [id]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ error: 'Not found' });
+        }
+
+        await p.query('DELETE FROM transactions WHERE id = ?', [id]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Cash transaction delete error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
@@ -4102,4 +4567,49 @@ app.listen(PORT, HOST, () => {
     const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
     console.log(`Server running on http://${displayHost}:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    // #region debug-point A:startup-ping
+    (() => {
+        try {
+            const fs = require('fs');
+            const envPath = '.dbg/commission-payout-500.env';
+            let url = 'http://127.0.0.1:7777/event';
+            let sessionId = 'commission-payout-500';
+            try {
+                const c = fs.readFileSync(envPath, 'utf8');
+                url = c.match(/DEBUG_SERVER_URL=(.+)/)?.[1]?.trim() || url;
+                sessionId = c.match(/DEBUG_SESSION_ID=(.+)/)?.[1]?.trim() || sessionId;
+            } catch (_) {}
+            const payload = JSON.stringify({
+                sessionId,
+                runId: 'pre-fix',
+                hypothesisId: 'A',
+                location: 'server.js:listen',
+                msg: '[DEBUG] server started',
+                data: { port: PORT, host: HOST },
+                ts: Date.now()
+            });
+            const u = new URL(url);
+            const client = u.protocol === 'https:' ? require('https') : require('http');
+            const req = client.request(
+                {
+                    hostname: u.hostname,
+                    port: u.port,
+                    path: u.pathname,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(payload)
+                    }
+                },
+                (resp) => {
+                    resp.on('data', () => {});
+                    resp.on('end', () => {});
+                }
+            );
+            req.on('error', () => {});
+            req.write(payload);
+            req.end();
+        } catch (_) {}
+    })();
+    // #endregion
 });

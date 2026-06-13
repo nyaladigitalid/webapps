@@ -1642,7 +1642,36 @@ document.addEventListener("DOMContentLoaded", function(){
         address: c.address, 
         business_type: c.business_type 
       };
+      function buildWhatsAppPhone(rawValue) {
+        var phone = String(rawValue || '').trim().replace(/[^\d]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.slice(1);
+        if (phone.startsWith('8')) phone = '62' + phone;
+        if (phone.startsWith('620')) phone = '62' + phone.slice(3);
+        return phone;
+      }
+      function openWhatsAppWithMessage(message) {
+        var phone = buildWhatsAppPhone(c.whatsapp || '');
+        if (!phone || phone.length < 8) {
+          alert('Nomor WhatsApp klien belum valid.');
+          return;
+        }
+        var url = "https://wa.me/" + encodeURIComponent(phone) + "?text=" + encodeURIComponent(message);
+        window.open(url, "_blank");
+      }
       var roleSafe = (getRole() || '').toLowerCase();
+      var waBtnBase = document.getElementById('btn-wa-send');
+      if (waBtnBase) {
+        waBtnBase.innerHTML = '<span class="material-symbols-outlined text-sm">chat</span> KIRIM PESAN';
+        waBtnBase.onclick = function(){
+          try {
+            var clientName = String(c.name || '').trim();
+            var firstName = clientName ? clientName.split(/\s+/)[0] : 'Kak';
+            var orderId = (o && o.id) ? o.id : getId();
+            var msg = `Halo Kak ${firstName},\n\nSaya admin Nyala Digital. Saya mau follow up pertama terkait order #${orderId}.\nApakah ada yang bisa saya bantu?`;
+            openWhatsAppWithMessage(msg);
+          } catch(e) {}
+        };
+      }
       if (roleSafe === 'editor') {
         var editBtn = document.getElementById('btn-edit-client');
         if (editBtn) editBtn.style.display = 'none';
@@ -1673,19 +1702,11 @@ document.addEventListener("DOMContentLoaded", function(){
           waBtn.querySelector('span.material-symbols-outlined').textContent = 'chat';
           waBtn.innerHTML = detailSrc === 'data_crm'
             ? '<span class="material-symbols-outlined text-sm">chat</span> KONTAK KLIEN'
-            : '<span class="material-symbols-outlined text-sm">chat</span> KIRIM OTP';
-          waBtn.onclick = async function(){
+            : '<span class="material-symbols-outlined text-sm">chat</span> KIRIM PESAN';
+          waBtn.onclick = function(){
             try {
-              var phone = (c.whatsapp || '').replace(/[^\d]/g,'');
-              var msg = "Halo kaka,..\nSaya admin nyala digital, yg kemarin kakak sudah order ke cs kami, saya mau buat iklan untuk kaka tapi perlu daftarkan dulu no WA nya\n\nMohon konfirmasi kak, apakah WA nya sudah tipe bisnis?";
-              var url = "https://wa.me/" + encodeURIComponent(phone) + "?text=" + encodeURIComponent(msg);
-              window.open(url, "_blank");
-              if (o && o.id && detailSrc !== 'data_crm') {
-                var uid = localStorage.getItem('user_id') || localStorage.getItem('userId');
-                await fetch('/api/orders/' + encodeURIComponent(o.id) + '/content/otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid }) });
-                loadContentStatus(o.id);
-                renderCrmActionArea(o.id);
-              }
+              var otpMsg = "Halo kaka,..\nSaya admin nyala digital, yg kemarin kakak sudah order ke cs kami, saya mau buat iklan untuk kaka tapi perlu daftarkan dulu no WA nya\n\nMohon konfirmasi kak, apakah WA nya sudah tipe bisnis?";
+              openWhatsAppWithMessage(otpMsg);
             } catch(e) {}
           };
         }

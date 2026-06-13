@@ -244,7 +244,8 @@
           const [ledgerRes, ordersRes] = await Promise.all([fetch(ledgerUrl), fetch(ordersUrl)]);
           if (!ledgerRes.ok || !ordersRes.ok) throw new Error("Gagal memuat histori");
 
-          const ledgerRows = await ledgerRes.json();
+          const ledgerResponse = await ledgerRes.json();
+          const ledgerRows = Array.isArray(ledgerResponse) ? ledgerResponse : (ledgerResponse.ledger || []);
           const ordersPayload = await ordersRes.json();
           const ordersRows = Array.isArray(ordersPayload) ? ordersPayload : (ordersPayload.data || []);
           ordersById = {};
@@ -252,7 +253,7 @@
             ordersById[String(o.id)] = o;
           });
 
-          rows = (Array.isArray(ledgerRows) ? ledgerRows : []).map((r) => {
+          rows = ledgerRows.map((r) => {
             const order = ordersById[String(r.order_id)] || {};
             return {
               ...r,

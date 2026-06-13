@@ -16,14 +16,12 @@
       --oa-muted: #6b7280;
       --oa-accent: #111827;
       --oa-accent-contrast: #ffffff;
-      --oa-header-h: 64px;
+      --oa-header-h: 0px;
       --oa-sidebar-w: 252px;
       --oa-gutter-l: 16px;
       --oa-gutter-r: 28px;
     }
     html.theme-openai body{background:var(--oa-bg) !important;color:var(--oa-text) !important}
-    html.theme-openai header,
-    html.theme-openai header.glass-panel{background:var(--oa-surface) !important;border-bottom:1px solid var(--oa-border) !important}
     html.theme-openai .layout-sidebar{background:var(--oa-surface) !important;border-right:1px solid var(--oa-border) !important}
     html.theme-openai main{padding-right:var(--oa-gutter-r) !important;scrollbar-gutter:stable !important}
     html.theme-openai #new-order-modal{z-index:100 !important}
@@ -185,7 +183,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   const ROLE_MENUS = {
-    super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","clients","meta_config","cpr_calculator","simulator_cs"],
+    super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","data_crm","clients","meta_config","cpr_calculator","simulator_cs"],
     cs: ["overview","orders","commissions","crm","simulator_cs"],
     keuangan: ["overview","finance","orders","commissions","clients"],
     advertiser: ["overview","orders","analytics","campaigns"],
@@ -197,7 +195,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   function applySidebarByRole(role) {
     const allowed = ROLE_MENUS[role.toLowerCase()] || ROLE_MENUS.super_admin;
     const FORCE_HIDDEN_BY_ROLE = {
-      crm: ["orders", "crm", "clients"]
+      crm: ["crm", "clients"]
     };
     const forceHidden = FORCE_HIDDEN_BY_ROLE[role.toLowerCase()] || [];
     const links = document.querySelectorAll(".layout-sidebar nav a[data-menu]");
@@ -243,11 +241,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   function updateProfileInfo() {
-    // Find the profile section in header
-    // It's the last element in the flex container
-    const profileContainer = document.querySelector("header .flex.items-center.gap-3:last-child");
-    if (!profileContainer) return;
-
     const userName = localStorage.getItem('user_name') || 'User';
     const userRole = localStorage.getItem('role') || 'guest';
     const loginAtRaw = localStorage.getItem('login_at') || '';
@@ -268,30 +261,15 @@ document.addEventListener("DOMContentLoaded", async function () {
       } catch (_) {}
     }
 
-    // Find the specific elements inside
-    // The structure is: div.flex > div.header-profile-icon + div.hidden.sm:block > p + p
-    const profileBox = profileContainer.querySelector(".cursor-default");
-    
-    if (profileBox) {
-        // Update Initials
-        const icon = profileBox.querySelector(".header-profile-icon");
-        if (icon) icon.textContent = userInitials;
-
-        // Update Name and Role
-        const textContainer = profileBox.querySelector(".hidden.sm\\:block");
-        if (textContainer) {
-            const ps = textContainer.querySelectorAll("p");
-            if (ps.length >= 2) {
-                ps[0].textContent = userName;
-                ps[1].textContent = userRole.replace('_', ' ').toUpperCase();
-            }
-        }
-
-    }
-
+    const sidebarAvatar = document.getElementById('sidebar-user-avatar');
+    if (sidebarAvatar) sidebarAvatar.textContent = userInitials;
+    const sidebarUserName = document.getElementById('sidebar-user-name');
+    if (sidebarUserName) sidebarUserName.textContent = userName;
+    const sidebarUserRole = document.getElementById('sidebar-user-role');
+    if (sidebarUserRole) sidebarUserRole.textContent = userRole.replace(/_/g, ' ').toUpperCase();
     const sidebarLoginAt = document.getElementById('sidebar-login-at');
     if (sidebarLoginAt) {
-      sidebarLoginAt.textContent = loginAtText;
+      sidebarLoginAt.textContent = `Login: ${loginAtText}`;
     }
   }
 
@@ -509,7 +487,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         --oa-accent: #111827;
         --oa-accent-2: #111827;
         --oa-accent-contrast: #ffffff;
-        --oa-header-h: 64px;
+        --oa-header-h: 0px;
         --oa-sidebar-w: 252px;
         --oa-gutter-l: 16px;
         --oa-gutter-r: 28px;
@@ -531,22 +509,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         border:1px solid var(--oa-border) !important;
         box-shadow:none !important;
       }
-      html.theme-openai header{
-        background:var(--oa-surface) !important;
-        border-bottom:1px solid var(--oa-border) !important;
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 60 !important;
-      }
+      html.theme-openai #include-header{display:none !important}
       html.theme-openai #new-order-modal{z-index:100 !important}
       html.theme-openai #smartorder-root{z-index:100 !important}
-      html.theme-openai header.glass-panel{
-        background:var(--oa-surface) !important;
-      }
       html.theme-openai #top-nav{
         display:none !important;
       }
-      html.theme-openai body .header-brand{color:#0f172a !important;letter-spacing:0.22em !important}
       html.theme-openai .header-subtitle,
       html.theme-openai .header-status,
       html.theme-openai .text-secondary\\/80,
@@ -575,9 +543,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         background:linear-gradient(135deg,#ef7225 0%,#f97316 100%) !important;
         color:#ffffff !important;
         box-shadow:0 2px 4px rgba(239,114,37,0.25) !important;
-      }
-      html.theme-openai header .material-symbols-outlined{
-        color:#64748b !important;
       }
       html.theme-openai .bg-white\\/5{background-color:rgba(15, 23, 42, 0.04) !important;border-color:var(--oa-border) !important}
       html.theme-openai .hover\\:bg-white\\/10:hover{background-color:rgba(15, 23, 42, 0.06) !important}
@@ -616,26 +581,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         padding-left: calc(var(--oa-sidebar-w) + var(--oa-gutter-l)) !important;
         padding-right: var(--oa-gutter-r) !important;
       }
-      html.theme-openai #include-header > header .max-w-7xl.mx-auto{
-        max-width: none !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-      }
-      html.theme-openai #include-header > header .max-w-7xl.mx-auto.px-6{
-        padding-left: var(--oa-gutter-l) !important;
-        padding-right: var(--oa-gutter-r) !important;
-      }
-      html.theme-openai #sidebar-toggle{display:inline-flex !important}
-
       html.theme-openai #sidebar-backdrop{display:none;}
       html.theme-openai body.sidebar-open #sidebar-backdrop{display:block;}
 
       @media (max-width: 768px){
         html.theme-openai body > .relative.z-10 > .flex-1.max-w-7xl.mx-auto.w-full{
-          padding-left: var(--oa-gutter-l) !important;
-          padding-right: var(--oa-gutter-l) !important;
-        }
-        html.theme-openai #include-header > header .max-w-7xl.mx-auto.px-6{
           padding-left: var(--oa-gutter-l) !important;
           padding-right: var(--oa-gutter-l) !important;
         }
@@ -703,7 +653,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       html.theme-openai body[data-active="overview"].bg-background-light{background-color:var(--oa-bg) !important}
       html.theme-openai body[data-active="overview"] .glass-panel{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
       html.theme-openai body[data-active="overview"] .metric-card{background:var(--oa-panel) !important;border:1px solid var(--oa-border) !important;box-shadow:none !important}
-      html.theme-openai body[data-active="overview"] header.glass-panel{background:var(--oa-surface) !important;border-bottom:1px solid var(--oa-border) !important}
       html.theme-openai body[data-active="overview"] .layout-sidebar{background:var(--oa-surface) !important;border-right:1px solid var(--oa-border) !important}
       html.theme-openai body[data-active="overview"] a#btn-cs-new-order-top,
       html.theme-openai body[data-active="overview"] a#btn-cs-new-order-top *{color:var(--oa-accent-contrast) !important}

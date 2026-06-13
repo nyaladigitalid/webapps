@@ -3,7 +3,7 @@
 <html class="theme-openai" lang="id"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Nyala Digital Apps - Pesanan</title>
+<title>Nyala Digital Apps - Data CRM</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -152,6 +152,9 @@ html.theme-openai body.orders-clean #btn-input-baru .material-symbols-outlined {
     font-size: 16px !important;
     color: #ffffff !important;
 }
+html.theme-openai body.orders-clean[data-active="data_crm"] #btn-input-baru {
+    display: none !important;
+}
 html.theme-openai body.orders-clean .orders-section-card {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
@@ -254,7 +257,7 @@ html.theme-openai body.orders-clean .orders-client-line {
 }
 </style>
 </head>
-<body class="orders-clean bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="orders">
+<body class="orders-clean bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="data_crm">      
 <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
 <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
 </div>
@@ -269,8 +272,8 @@ html.theme-openai body.orders-clean .orders-client-line {
 <!-- Page Title Area -->
 <div class="orders-page-header px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
-        <h1 class="orders-page-title text-xl md:text-2xl font-semibold tracking-tight">Pesanan</h1>
-        <p class="orders-page-subtitle text-secondary/80 text-sm mt-1">Kelola dan pantau seluruh pesanan klien Anda.</p>
+        <h1 class="orders-page-title text-xl md:text-2xl font-semibold tracking-tight">Data CRM</h1>
+        <p class="orders-page-subtitle text-secondary/80 text-sm mt-1">Kelola data CRM dengan format tabel seperti menu Pesanan.</p>
     </div>
     <button id="btn-input-baru" style="display: none;" class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20">
         <span class="material-symbols-outlined text-lg">add</span>
@@ -779,7 +782,7 @@ document.addEventListener("DOMContentLoaded", function () {
       tr.addEventListener('click', function(e){
         var t = e.target;
         if (t && (t.closest && t.closest('button'))) return;
-        window.location.href = 'orderdetail.html?id=' + encodeURIComponent(r.id);
+        window.location.href = 'orderdetail.html?id=' + encodeURIComponent(r.id) + '&src=data_crm&v=20260511';
       });
       tbody.appendChild(tr);
 
@@ -849,7 +852,7 @@ document.addEventListener("DOMContentLoaded", function () {
           card.addEventListener('click', function(e){
             var t = e.target;
             if (t && (t.closest && t.closest('button'))) return;
-             window.location.href = 'orderdetail.html?id=' + encodeURIComponent(r.id);
+             window.location.href = 'orderdetail.html?id=' + encodeURIComponent(r.id) + '&src=data_crm&v=20260511';
           });
           mobileContainer.appendChild(card);
       }
@@ -1055,22 +1058,12 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  const roleNow = (localStorage.getItem('role') || '').toLowerCase();
-  const uidNow = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
-  let ordersUrl = '/api/orders?limit=10000';
-  if (uidNow) {
-      if (roleNow === 'cs') {
-          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=CS&limit=10000';
-      } else if (roleNow === 'crm') {
-          ordersUrl = '/api/orders?content_status=menunggu_otp&limit=10000';
-      } else if (roleNow === 'advertiser') {
-          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=Advertiser&limit=10000';
-      } else if (roleNow === 'editor') {
-          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=Editor&limit=10000';
-      } else if (roleNow === 'bengkel' || roleNow === 'team_bengkel' || roleNow === 'team bengkel') {
-          ordersUrl = '/api/orders?assigned_to=' + encodeURIComponent(uidNow) + '&role=Team Bengkel&limit=10000';
-      }
+  const roleNow = (localStorage.getItem('role') || '').toLowerCase().replace(/\s+/g, '_');
+  if (roleNow !== 'crm' && roleNow !== 'super_admin') {
+      alert('Halaman ini khusus CRM.');
+      window.location.href = 'dashboard.html';
   }
+  let ordersUrl = '/api/orders/crm-data?limit=10000';
 
   fetch(ordersUrl)
     .then(function(res){ return res.json(); })
@@ -1778,13 +1771,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const userRole = (localStorage.getItem('role') || 'super_admin').toLowerCase();
   const btnInputBaru = document.getElementById('btn-input-baru');
   if (btnInputBaru) {
-      // Ensure we clear any inline display:none if allowed
-      if (userRole === 'cs' || userRole === 'super_admin' || userRole === 'crm') {
-          btnInputBaru.style.display = 'inline-flex';
-          btnInputBaru.classList.remove('hidden');
-      } else {
-          btnInputBaru.style.display = 'none';
-      }
+      btnInputBaru.style.display = 'none';
+      btnInputBaru.classList.add('hidden');
   }
 
   // Handle action=new from dashboard

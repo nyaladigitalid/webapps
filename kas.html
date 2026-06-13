@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html class="theme-openai" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nyala Digital Apps - Buku Kas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="js/include.js"></script>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#ef7225",
+        secondary: "#0d3b66",
+        "background-light": "#f5f7f8",
+        "background-dark": "#0b0e14",
+        "sidebar-dark": "#101922"
+      },
+      fontFamily: { display: ["Inter", "sans-serif"] },
+      borderRadius: { DEFAULT: "0.5rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" }
+    }
+  }
+};
+</script>
+<style>
+body { font-family: 'Inter', sans-serif; }
+.glass-surface {
+  background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.4), transparent 60%),
+              radial-gradient(circle at bottom right, rgba(29, 155, 240, 0.18), transparent 60%);
+}
+.glass-panel {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(15,23,42,0.1);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+.metric-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+  border: 1px solid rgba(15,23,42,0.08);
+}
+.glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+  border: 1px solid rgba(15,23,42,0.08);
+}
+.dark .glass-panel {
+  background: rgba(6, 12, 31, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+.dark .metric-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.dark .glass-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.finance-table thead th {
+  color: #64748b;
+  font-weight: 800;
+}
+.finance-table tbody td {
+  color: #334155;
+}
+.finance-table tbody tr:hover td {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+.dark .finance-table thead th {
+  color: #90aecb;
+}
+.dark .finance-table tbody td {
+  color: #e2e8f0;
+}
+.dark .finance-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+</style>
+</head>
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface font-display" data-active="kas">
+<div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
+  <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
+</div>
+<div class="relative z-10 min-h-screen flex flex-col">
+  <div id="include-header"></div>
+  <div class="flex-1 max-w-7xl mx-auto w-full px-6 py-6 flex gap-5">
+    <div id="include-sidebar"></div>
+    <main class="flex-1 flex flex-col min-w-0">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-black tracking-tight">Buku Kas</h2>
+          <p class="text-secondary/80 text-sm mt-1">Pencatatan pemasukan dan pengeluaran.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row items-start sm:items-end gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-2">Periode cepat</label>
+            <select id="period-select" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 focus:ring-primary focus:border-primary">
+              <option value="this_month">Bulan Ini</option>
+              <option value="last_month">Bulan Lalu</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div id="custom-dates" class="hidden flex flex-wrap gap-3 items-end">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-2">Dari</label>
+              <input id="start-date" type="date" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 focus:ring-primary focus:border-primary" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-2">Sampai</label>
+              <input id="end-date" type="date" class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 focus:ring-primary focus:border-primary" />
+            </div>
+          </div>
+          <button id="apply-period" class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition">Terapkan</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="metric-card rounded-2xl p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-500">Pemasukan</p>
+              <h3 id="kpi-income" class="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+              <span class="material-symbols-outlined">trending_up</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-card rounded-2xl p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-500">Pengeluaran</p>
+              <h3 id="kpi-expense" class="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+              <span class="material-symbols-outlined">trending_down</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-card rounded-2xl p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-500">Saldo</p>
+              <h3 id="kpi-balance" class="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+            </div>
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-900">
+              <span class="material-symbols-outlined">account_balance_wallet</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-6">
+        <div class="glass-panel rounded-2xl border border-amber-200 bg-amber-50 p-5 text-slate-800 dark:bg-amber-950/40 dark:border-amber-700/50 dark:text-amber-100">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-amber-700 dark:text-amber-300">Kewajiban Komisi (approved, belum dibayar)</p>
+              <p id="kpi-unpaid-commission" class="mt-2 text-3xl font-bold text-amber-900 dark:text-amber-100">Rp 0</p>
+            </div>
+            <div class="inline-flex items-center gap-2 rounded-2xl bg-amber-100 px-3 py-2 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+              <span class="material-symbols-outlined">hourglass_top</span>
+              <span class="text-sm">Akan masuk pengeluaran saat payout dijalankan</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+        <div class="flex-1 min-w-0">
+          <label class="block text-xs font-semibold text-slate-500 mb-2">Cari transaksi</label>
+          <input id="search-input" type="text" placeholder="Kategori, catatan, nama klien..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:ring-primary focus:border-primary" />
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button id="btn-add-income" class="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 transition">
+            <span class="material-symbols-outlined">add</span>Pemasukan
+          </button>
+          <button id="btn-add-expense" class="inline-flex items-center gap-2 rounded-2xl bg-red-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-600 transition">
+            <span class="material-symbols-outlined">add</span>Pengeluaran
+          </button>
+        </div>
+      </div>
+      <div class="glass-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10">
+        <table class="finance-table w-full text-left border-collapse">
+          <thead class="bg-slate-50 dark:bg-slate-900">
+            <tr>
+              <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Tanggal</th>
+              <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Keterangan</th>
+              <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Kategori</th>
+              <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">Masuk</th>
+              <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">Keluar</th>
+              <th class="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-body" class="divide-y divide-slate-200 dark:divide-slate-800">
+            <tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">Memuat data...</td></tr>
+          </tbody>
+          <tfoot class="bg-slate-50 dark:bg-slate-900">
+            <tr>
+              <td colspan="3" class="px-5 py-4 text-sm font-semibold text-slate-600">TOTAL</td>
+              <td id="total-income" class="px-5 py-4 text-sm font-semibold text-emerald-600 text-right">Rp 0</td>
+              <td id="total-expense" class="px-5 py-4 text-sm font-semibold text-red-600 text-right">Rp 0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </main>
+  </div>
+  <div id="include-footer"></div>
+</div>
+
+<div id="transaction-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
+  <div class="glass-panel w-full max-w-xl rounded-3xl border border-slate-200/70 p-6 shadow-2xl">
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 id="modal-title" class="text-xl font-bold text-slate-900 dark:text-white">Catat Transaksi</h3>
+        <p class="text-sm text-slate-500">Isi detail pemasukan atau pengeluaran.</p>
+      </div>
+      <button id="modal-close" class="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 transition"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-2">Tanggal</label>
+        <input id="modal-date" type="date" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:ring-primary focus:border-primary" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-2">Nominal</label>
+        <input id="modal-amount" type="number" min="0" step="0.01" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:ring-primary focus:border-primary" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-2">Kategori</label>
+        <select id="modal-category" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:ring-primary focus:border-primary"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-2">Catatan</label>
+        <textarea id="modal-note" rows="3" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:ring-primary focus:border-primary"></textarea>
+      </div>
+      <div id="modal-error" class="hidden rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"></div>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
+        <button id="save-transaction" class="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition">Simpan</button>
+        <button id="cancel-transaction" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const escapeHtml = (str) => {
+    const safe = String(str || '');
+    return safe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+
+  const formatCurrency = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value || 0);
+
+  const periodSelect = document.getElementById('period-select');
+  const customDates = document.getElementById('custom-dates');
+  const startDateInput = document.getElementById('start-date');
+  const endDateInput = document.getElementById('end-date');
+  const applyPeriod = document.getElementById('apply-period');
+  const searchInput = document.getElementById('search-input');
+  const transactionsBody = document.getElementById('transactions-body');
+  const kpiIncome = document.getElementById('kpi-income');
+  const kpiExpense = document.getElementById('kpi-expense');
+  const kpiBalance = document.getElementById('kpi-balance');
+  const kpiUnpaidCommission = document.getElementById('kpi-unpaid-commission');
+  const totalIncomeCell = document.getElementById('total-income');
+  const totalExpenseCell = document.getElementById('total-expense');
+  const transactionModal = document.getElementById('transaction-modal');
+  const modalTitle = document.getElementById('modal-title');
+  const modalDate = document.getElementById('modal-date');
+  const modalAmount = document.getElementById('modal-amount');
+  const modalCategory = document.getElementById('modal-category');
+  const modalNote = document.getElementById('modal-note');
+  const modalError = document.getElementById('modal-error');
+  const saveTransaction = document.getElementById('save-transaction');
+  const cancelTransaction = document.getElementById('cancel-transaction');
+  const modalClose = document.getElementById('modal-close');
+  const btnAddIncome = document.getElementById('btn-add-income');
+  const btnAddExpense = document.getElementById('btn-add-expense');
+
+  let currentMode = 'income';
+  let currentTransactions = [];
+  let currentStartDate = '';
+  let currentEndDate = '';
+
+  const categories = {
+    income: [
+      { value: 'Pemasukan Lain', label: 'Pemasukan Lain' }
+    ],
+    expense: [
+      { value: 'Ad Spend', label: 'Ad Spend' },
+      { value: 'Operasional', label: 'Operasional' },
+      { value: 'Gaji/Payroll', label: 'Gaji/Payroll' },
+      { value: 'Tools/SaaS', label: 'Tools/SaaS' },
+      { value: 'Lainnya', label: 'Lainnya' }
+    ]
+  };
+
+  const getDefaultPeriod = (mode) => {
+    const today = new Date();
+    if (mode === 'last_month') {
+      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const end = new Date(today.getFullYear(), today.getMonth(), 0);
+      return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+    }
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+  };
+
+  const updateCustomDatesVisibility = () => {
+    customDates.classList.toggle('hidden', periodSelect.value !== 'custom');
+  };
+
+  const setDateInputs = (start, end) => {
+    startDateInput.value = start;
+    endDateInput.value = end;
+  };
+
+  const loadTransactions = async () => {
+    transactionsBody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">Memuat data...</td></tr>';
+    try {
+      const response = await fetch(`/api/cash/transactions?startDate=${currentStartDate}&endDate=${currentEndDate}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Gagal memuat data');
+
+      currentTransactions = data.transactions || [];
+      renderSummary(data.summary || {});
+      renderTable(currentTransactions);
+    } catch (error) {
+      transactionsBody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-red-500">${escapeHtml(error.message || 'Terjadi kesalahan')}</td></tr>`;
+      kpiIncome.textContent = formatCurrency(0);
+      kpiExpense.textContent = formatCurrency(0);
+      kpiBalance.textContent = formatCurrency(0);
+      totalIncomeCell.textContent = formatCurrency(0);
+      totalExpenseCell.textContent = formatCurrency(0);
+    }
+  };
+
+  const renderSummary = (summary) => {
+    const income = Number(summary.total_income || 0);
+    const expense = Number(summary.total_expense || 0);
+    const balance = Number(summary.balance || 0);
+    const unpaidCommission = Number(summary.unpaid_commission || 0);
+    kpiIncome.textContent = formatCurrency(income);
+    kpiExpense.textContent = formatCurrency(expense);
+    kpiBalance.textContent = formatCurrency(balance);
+    kpiBalance.className = balance >= 0 ? 'mt-3 text-3xl font-bold text-emerald-600' : 'mt-3 text-3xl font-bold text-red-600';
+    kpiUnpaidCommission.textContent = formatCurrency(unpaidCommission);
+    totalIncomeCell.textContent = formatCurrency(income);
+    totalExpenseCell.textContent = formatCurrency(expense);
+  };
+
+  const renderTable = (transactions) => {
+    const query = String(searchInput.value||'').trim().toLowerCase();
+    const filtered = transactions.filter((tx) => {
+      const category = String(tx.category||'').toLowerCase();
+      const note = String(tx.note||'').toLowerCase();
+      const client = String(tx.client_name||'').toLowerCase();
+      return category.includes(query) || note.includes(query) || client.includes(query);
+    });
+
+    if (!filtered.length) {
+      transactionsBody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">Belum ada transaksi pada periode ini</td></tr>';
+      return;
+    }
+
+    transactionsBody.innerHTML = filtered.map((tx) => {
+      const dateValue = escapeHtml(tx.trx_date_value || tx.created_at || '');
+      const note = escapeHtml(tx.note || '-');
+      const category = escapeHtml(tx.category || '-');
+      const client = tx.client_name ? `<p class="text-xs text-slate-500">${escapeHtml(tx.client_name)}</p>` : '';
+      const incomeValue = tx.type === 'income' ? formatCurrency(Number(tx.amount || 0)) : '';
+      const expenseValue = tx.type !== 'income' ? formatCurrency(Number(tx.amount || 0)) : '';
+      const isCommission = tx.type === 'commission_pay';
+      const badgeClass = isCommission ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200';
+      const actionButton = isCommission ? '<span class="text-xs text-slate-500">-</span>' : `<button data-id="${tx.id}" class="delete-transaction inline-flex items-center justify-center rounded-xl bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600 transition"><span class="material-symbols-outlined">delete</span></button>`;
+      return `
+          <tr>
+            <td class="px-5 py-4 text-sm font-medium text-slate-700 dark:text-slate-200">${dateValue}</td>
+            <td class="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">
+              <div>${note}</div>
+              ${client}
+            </td>
+            <td class="px-5 py-4 text-sm text-slate-600 dark:text-slate-300"><span class="inline-flex rounded-full ${badgeClass} px-3 py-1 text-xs font-semibold">${category}</span></td>
+            <td class="px-5 py-4 text-right text-emerald-600 font-semibold">${incomeValue}</td>
+            <td class="px-5 py-4 text-right text-red-600 font-semibold">${expenseValue}</td>
+            <td class="px-5 py-4 text-center">${actionButton}</td>
+          </tr>`;
+    }).join('');
+
+    document.querySelectorAll('.delete-transaction').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.getAttribute('data-id');
+        if (!id || !confirm('Hapus transaksi ini?')) return;
+        await deleteTransaction(id);
+      });
+    });
+  };
+
+  const openModal = (mode) => {
+    currentMode = mode;
+    modalTitle.textContent = mode === 'income' ? 'Catat Pemasukan' : 'Catat Pengeluaran';
+    modalCategory.innerHTML = categories[mode].map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join('');
+    modalDate.value = new Date().toISOString().slice(0, 10);
+    modalAmount.value = '';
+    modalNote.value = '';
+    modalError.classList.add('hidden');
+    transactionModal.classList.remove('hidden');
+  };
+
+  const closeModal = () => {
+    transactionModal.classList.add('hidden');
+  };
+
+  const saveNewTransaction = async () => {
+    const amount = Number(modalAmount.value);
+    const category = modalCategory.value;
+    const note = modalNote.value.trim();
+    const trxDate = modalDate.value;
+
+    if (!amount || amount <= 0) {
+      modalError.textContent = 'Nominal harus lebih besar dari 0.';
+      modalError.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/cash/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: currentMode, amount, category, note, trx_date: trxDate })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Gagal menyimpan transaksi');
+      closeModal();
+      loadTransactions();
+    } catch (error) {
+      modalError.textContent = error.message;
+      modalError.classList.remove('hidden');
+    }
+  };
+
+  const deleteTransaction = async (id) => {
+    try {
+      const response = await fetch(`/api/cash/transactions/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Gagal menghapus transaksi');
+      await loadTransactions();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  periodSelect.addEventListener('change', updateCustomDatesVisibility);
+  applyPeriod.addEventListener('click', () => {
+    if (periodSelect.value === 'custom') {
+      if (!startDateInput.value || !endDateInput.value) {
+        alert('Silakan pilih tanggal mulai dan selesai.');
+        return;
+      }
+      currentStartDate = startDateInput.value;
+      currentEndDate = endDateInput.value;
+    } else {
+      const [start, end] = getDefaultPeriod(periodSelect.value);
+      currentStartDate = start;
+      currentEndDate = end;
+      setDateInputs(start, end);
+    }
+    loadTransactions();
+  });
+
+  searchInput.addEventListener('input', () => renderTable(currentTransactions));
+  btnAddIncome.addEventListener('click', () => openModal('income'));
+  btnAddExpense.addEventListener('click', () => openModal('expense'));
+  saveTransaction.addEventListener('click', saveNewTransaction);
+  cancelTransaction.addEventListener('click', closeModal);
+  modalClose.addEventListener('click', closeModal);
+
+  const init = () => {
+    const [start, end] = getDefaultPeriod('this_month');
+    currentStartDate = start;
+    currentEndDate = end;
+    setDateInputs(start, end);
+    updateCustomDatesVisibility();
+    loadTransactions();
+  };
+
+  init();
+</script>
+</body>
+</html>

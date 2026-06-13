@@ -109,6 +109,180 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+        html.theme-openai body[data-active="overview"] .orders-kpi-card {
+            padding: 12px 13px !important;
+            border-radius: 14px !important;
+            position: relative !important;
+        }
+        html.theme-openai body[data-active="overview"] .orders-kpi-label {
+            color: #64748b !important;
+            font-size: 12px !important;
+            line-height: 1.2 !important;
+        }
+        html.theme-openai body[data-active="overview"] .orders-kpi-value {
+            color: #0f172a !important;
+            font-size: 18px !important;
+            line-height: 1.15 !important;
+            letter-spacing: -0.02em !important;
+            margin-top: 2px !important;
+            font-weight: 700 !important;
+        }
+        html.theme-openai body[data-active="overview"] .orders-kpi-foot {
+            color: #64748b !important;
+            font-size: 11px !important;
+            line-height: 1.35 !important;
+            margin-top: 3px !important;
+        }
+        html.theme-openai body[data-active="overview"] .orders-kpi-icon {
+            width: 26px !important;
+            height: 26px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 8px !important;
+            position: absolute !important;
+            top: 12px !important;
+            right: 14px !important;
+        }
+        html.theme-openai body[data-active="overview"] .orders-kpi-icon .material-symbols-outlined {
+            font-size: 15px !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell {
+            margin-top: 16px !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+            justify-content: space-between !important;
+            align-items: flex-end !important;
+        }
+        @media (min-width: 768px) {
+            html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap {
+                flex-direction: row !important;
+            }
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap select,
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap input[type="date"],
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap input[type="text"] {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #475569 !important;
+            font-size: 12px !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap select:hover,
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap input[type="date"]:hover,
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap input[type="text"]:hover {
+            background: #f8fafc !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap .material-symbols-outlined,
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-filter-wrap .text-white\/40 {
+            color: #94a3b8 !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-table-card {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-table thead th {
+            background: #f8fafc !important;
+            color: #64748b !important;
+            font-size: 11px !important;
+            font-weight: 900 !important;
+            letter-spacing: .08em !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-table td {
+            color: #475569 !important;
+            font-size: 12px !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            vertical-align: middle !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-table tbody tr:hover td {
+            background: #f8fafc !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-pagination {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            padding: 10px 12px !important;
+            background: #f8fafc !important;
+            border-top: 1px solid #f1f5f9 !important;
+            color: #64748b !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+        }
+        html.theme-openai body[data-active="overview"] .dash-orders-shell .orders-pagination strong {
+            color: #0f172a !important;
+        }
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order-top,
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order {
+            align-items: center !important;
+            gap: 6px !important;
+            height: 36px !important;
+            padding: 0 12px !important;
+            border-radius: 10px !important;
+            background: #ef7225 !important;
+            color: #ffffff !important;
+            border: 1px solid #ef7225 !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+            box-shadow: none !important;
+        }
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order-top:hover,
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order:hover {
+            background: #de6419 !important;
+            border-color: #de6419 !important;
+            color: #ffffff !important;
+        }
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order-top .material-symbols-outlined,
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order .material-symbols-outlined {
+            font-size: 16px !important;
+            color: #ffffff !important;
+        }
+        html.theme-openai body[data-active="overview"] #prev-page,
+        html.theme-openai body[data-active="overview"] #next-page {
+            padding: 5px 9px !important;
+            font-size: 11px !important;
+            line-height: 1 !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            border-radius: 8px !important;
+        }
+        html.theme-openai body[data-active="overview"] #prev-page {
+            background: #ffffff !important;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        html.theme-openai body[data-active="overview"] #prev-page:hover:not(:disabled) {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        html.theme-openai body[data-active="overview"] #next-page {
+            background: #ef7225 !important;
+            color: #ffffff !important;
+            border: 1px solid #ef7225 !important;
+        }
+        html.theme-openai body[data-active="overview"] #next-page:hover:not(:disabled) {
+            background: #de6419 !important;
+            border-color: #de6419 !important;
+            color: #ffffff !important;
+        }
+        html.theme-openai body[data-active="overview"][data-role="crm"] #btn-cs-new-order-top,
+        html.theme-openai body[data-active="overview"][data-role="crm"] #btn-cs-new-order {
+            display: none !important;
+        }
+        html.theme-openai body[data-active="overview"][data-role="crm"] #dash-status-filter {
+            display: none !important;
+        }
+        html.theme-openai body[data-active="overview"][data-role="crm"] #dash-status-filter + .material-symbols-outlined {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface font-display" data-active="overview">
@@ -319,85 +493,93 @@
 
                     <!-- CRM Cards (shown for role CRM) -->
                     <section id="crm-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
-                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-cyan-400">sms</span>
+                        <div class="orders-kpi-card metric-card rounded-xl flex flex-col">
+                            <div class="orders-kpi-icon bg-cyan-500/10 text-cyan-600">
+                                <span class="material-symbols-outlined">sms</span>
                             </div>
-                            <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Jumlah OTP Bulan Ini</p>
-                                <h3 id="crm-otp-count" class="text-3xl font-bold text-white">0</h3>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                                <span class="material-symbols-outlined text-sm">calendar_month</span>
-                                <span>Periode saat ini</span>
-                            </div>
+                            <span class="orders-kpi-label">Jumlah OTP Bulan Ini</span>
+                            <span id="crm-otp-count" class="orders-kpi-value">0</span>
+                            <span class="orders-kpi-foot">Periode saat ini</span>
                         </div>
-                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
-                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-orange-400">hourglass_top</span>
+                        <div class="orders-kpi-card metric-card rounded-xl flex flex-col">
+                            <div class="orders-kpi-icon bg-amber-500/10 text-amber-600">
+                                <span class="material-symbols-outlined">hourglass_top</span>
                             </div>
-                            <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Menunggu OTP (Aktif)</p>
-                                <h3 id="crm-waiting-otp-count" class="text-3xl font-bold text-orange-300">0</h3>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                                <span class="material-symbols-outlined text-sm">task</span>
-                                <span>Antrian saat ini</span>
-                            </div>
+                            <span class="orders-kpi-label">Menunggu OTP (Aktif)</span>
+                            <span id="crm-waiting-otp-count" class="orders-kpi-value">0</span>
+                            <span class="orders-kpi-foot">Antrian saat ini</span>
                         </div>
-                        <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
-                            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <span class="material-symbols-outlined text-6xl text-emerald-400">payments</span>
+                        <div class="orders-kpi-card metric-card rounded-xl flex flex-col">
+                            <div class="orders-kpi-icon bg-emerald-500/10 text-emerald-600">
+                                <span class="material-symbols-outlined">payments</span>
                             </div>
-                            <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Komisi Bulan Ini</p>
-                                <h3 id="crm-commission-total" class="text-3xl font-bold text-emerald-400">Rp 0</h3>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                                <span class="material-symbols-outlined text-sm">calendar_month</span>
-                                <span>Periode saat ini</span>
-                            </div>
+                            <span class="orders-kpi-label">Komisi Bulan Ini</span>
+                            <span id="crm-commission-total" class="orders-kpi-value">Rp 0</span>
+                            <span class="orders-kpi-foot">Periode saat ini</span>
                         </div>
                     </section>
 
-                    <section id="dashboard-recent-orders" class="mt-4">
-                        <div class="glass-panel rounded-2xl overflow-hidden">
-                            <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                                <h4 class="text-lg font-bold text-white">Pesanan Terbaru</h4>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <a id="btn-cs-new-order" href="order.html?action=new" class="hidden inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition bg-white/5 border border-white/10">
-                                        <span class="material-symbols-outlined text-sm">add_circle</span>
-                                        <span>Input Order Baru</span>
-                                    </a>
-                                    <select id="dash-status-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                    <section id="dashboard-recent-orders" class="dash-orders-shell mt-4">
+                        <div class="orders-filter-wrap">
+                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                <a id="btn-cs-new-order" href="order.html?action=new" class="hidden inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition bg-white/5 border border-white/10">
+                                    <span class="material-symbols-outlined text-sm">add_circle</span>
+                                    <span>Input Order Baru</span>
+                                </a>
+                                <div class="relative">
+                                    <select id="dash-status-filter" class="appearance-none bg-white border border-slate-200 text-slate-600 text-xs font-medium rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer hover:bg-slate-50 transition-colors">
                                         <option value="all">Semua Status</option>
-                                        <option value="active">Active</option>
+                                        <option value="active">Aktif</option>
                                         <option value="baru">Baru</option>
                                         <option value="perpanjang">Perpanjang</option>
                                         <option value="pending">Pending</option>
                                         <option value="proses konten">Proses Konten</option>
                                         <option value="siap iklan">Siap Iklan</option>
                                     </select>
-                                    <select id="dash-month-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[16px] pointer-events-none">expand_more</span>
+                                </div>
+                                <div class="relative">
+                                    <select id="dash-month-filter" class="appearance-none bg-white border border-slate-200 text-slate-600 text-xs font-medium rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer hover:bg-slate-50 transition-colors">
                                         <option value="all">Semua Bulan</option>
-                                        <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">Mei</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Agu</option><option value="9">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option>
+                                        <option value="1">Januari</option>
+                                        <option value="2">Februari</option>
+                                        <option value="3">Maret</option>
+                                        <option value="4">April</option>
+                                        <option value="5">Mei</option>
+                                        <option value="6">Juni</option>
+                                        <option value="7">Juli</option>
+                                        <option value="8">Agustus</option>
+                                        <option value="9">September</option>
+                                        <option value="10">Oktober</option>
+                                        <option value="11">November</option>
+                                        <option value="12">Desember</option>
                                     </select>
-                                    <select id="dash-year-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[16px] pointer-events-none">expand_more</span>
+                                </div>
+                                <div class="relative">
+                                    <select id="dash-year-filter" class="appearance-none bg-white border border-slate-200 text-slate-600 text-xs font-medium rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer hover:bg-slate-50 transition-colors">
                                         <option value="all">Semua Tahun</option>
                                     </select>
-                                    <input type="date" id="dash-date-start" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
-                                    <span class="text-white/40 text-[11px]">-</span>
-                                    <input type="date" id="dash-date-end" class="bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-3 py-1.5 focus:ring-primary focus:border-primary">
-                                    <div class="relative group w-40">
-                                        <span class="absolute left-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-white/40 text-[16px]">search</span>
-                                        <input type="text" id="dash-search-input" placeholder="Cari..."
-                                               class="w-full bg-white/5 border border-white/10 rounded-full pl-7 pr-3 py-1.5 text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/40">
-                                    </div>
+                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[16px] pointer-events-none">expand_more</span>
                                 </div>
                             </div>
+                            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                                <div class="flex items-center gap-2" title="Rentang Tanggal Custom">
+                                    <input type="date" id="dash-date-start" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all w-28">
+                                    <span class="text-slate-400">-</span>
+                                    <input type="date" id="dash-date-end" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all w-28">
+                                </div>
+                                <div class="relative group w-full md:w-48">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">search</span>
+                                    <input type="text" id="dash-search-input" placeholder="Cari..."
+                                           class="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-slate-400">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="orders-table-card mt-4">
                             <div class="overflow-x-auto">
-                                <table class="w-full text-left">
-                                    <thead class="bg-white/5">
+                                <table class="orders-table w-full text-left border-collapse" id="dash-orders-table">
+                                    <thead id="dash-thead-default" class="bg-white/5">
                                         <tr>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Proses</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
@@ -411,14 +593,28 @@
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-10"></th>
                                         </tr>
                                     </thead>
+                                    <thead id="dash-thead-orders" class="hidden">
+                                        <tr class="border-b border-slate-100 bg-slate-50">
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Tanggal</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Nama Klien</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Nama Usaha</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Paket / Produk</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Status Iklan</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">No WhatsApp</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider">Informasi CS</th>
+                                            <th class="px-6 py-4 text-[11px] font-black text-slate-500 uppercase tracking-wider w-10"></th>
+                                        </tr>
+                                    </thead>
                                     <tbody class="divide-y divide-white/5" id="orders-table-body">
                                         <tr><td colspan="10" class="text-center py-4 text-slate-500">Memuat...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
                             <!-- Pagination -->
-                            <div class="p-4 border-t border-white/5 flex items-center justify-between" id="pagination-container">
-                                <button id="prev-page" class="px-3 py-1 text-xs rounded bg-white/5 hover:bg-white/10 text-white disabled:opacity-50 transition-colors">Previous</button>
+                            <div class="orders-pagination px-6 py-4 flex items-center justify-between" id="pagination-container">
+                                <button id="prev-page" class="px-3 py-1 text-xs rounded bg-white/5 hover:bg-white/10 text-white disabled:opacity-50 transition-colors">Prev</button>
                                 <span class="text-xs text-slate-400" id="page-info">Page 1</span>
                                 <button id="next-page" class="px-3 py-1 text-xs rounded bg-white/5 hover:bg-white/10 text-white disabled:opacity-50 transition-colors">Next</button>
                             </div>
@@ -555,7 +751,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-slate-400 font-medium mb-1">Jumlah OTP Bulan Ini</p>
-                                <h3 id="crm-otp-count" class="text-3xl font-bold text-white">0</h3>
+                                <h3 id="crm-dashboard-otp-count" class="text-3xl font-bold text-white">0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
                                 <span class="material-symbols-outlined text-sm">calendar_month</span>
@@ -568,7 +764,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-slate-400 font-medium mb-1">Klien Baru Bulan Ini</p>
-                                <h3 id="crm-new-count" class="text-3xl font-bold text-white">0</h3>
+                                <h3 id="crm-dashboard-new-count" class="text-3xl font-bold text-white">0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
                                 <span class="material-symbols-outlined text-sm">calendar_month</span>
@@ -581,7 +777,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-slate-400 font-medium mb-1">Perpanjang Bulan Ini</p>
-                                <h3 id="crm-extend-count" class="text-3xl font-bold text-white">0</h3>
+                                <h3 id="crm-dashboard-extend-count" class="text-3xl font-bold text-white">0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
                                 <span class="material-symbols-outlined text-sm">calendar_month</span>
@@ -594,7 +790,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-slate-400 font-medium mb-1">Komisi Bulan Ini</p>
-                                <h3 id="crm-commission-total" class="text-3xl font-bold text-emerald-400">Rp 0</h3>
+                                <h3 id="crm-dashboard-commission-total" class="text-3xl font-bold text-emerald-400">Rp 0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
                                 <span class="material-symbols-outlined text-sm">calendar_month</span>
@@ -918,6 +1114,7 @@
             const role = localStorage.getItem('role') || 'super_admin';
             const userId = localStorage.getItem('user_id') || localStorage.getItem('userId');
             const isAdmin = (role || '').toLowerCase() === 'super_admin';
+            document.body.setAttribute('data-role', String(role || '').toLowerCase());
             ['card-revenue','card-commissions','card-ads-spend'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = isAdmin ? '' : 'none';
@@ -997,7 +1194,14 @@
                 const crmCards = document.getElementById('crm-cards');
                 if (crmCards) crmCards.classList.remove('hidden');
                 const btnNewTop = document.getElementById('btn-cs-new-order-top');
-                if (btnNewTop) { btnNewTop.classList.remove('hidden'); btnNewTop.style.display = 'inline-flex'; }
+                if (btnNewTop) { btnNewTop.classList.add('hidden'); btnNewTop.style.display = 'none'; }
+                const btnNewInline = document.getElementById('btn-cs-new-order');
+                if (btnNewInline) { btnNewInline.classList.add('hidden'); btnNewInline.style.display = 'none'; }
+                dashStatus = 'all';
+                const headDefault = document.getElementById('dash-thead-default');
+                const headOrders = document.getElementById('dash-thead-orders');
+                if (headDefault) headDefault.classList.add('hidden');
+                if (headOrders) headOrders.classList.remove('hidden');
                 await loadAdminOrders(1);
                 await loadCRMData(userId);
             } else if (role.toLowerCase() === 'keuangan') {
@@ -1341,7 +1545,32 @@
                     if (!key) return;
                     if (!dedupMap.has(key)) dedupMap.set(key, row);
                 });
-                const uniqueData = Array.from(dedupMap.values());
+                const uniqueData = Array.from(dedupMap.values()).map((o) => {
+                    let meta = o && o.meta_data;
+                    if (typeof meta === 'string') {
+                        try { meta = JSON.parse(meta); } catch (_) {}
+                    }
+                    return {
+                        id: o.id,
+                        created_at: o.created_at,
+                        startDate: o.start_date || o.created_at,
+                        status: o.status,
+                        content_status: o.content_status,
+                        process_status: o.process_status,
+                        clientName: o.client_name || o.clientName || '',
+                        businessName: o.business_name || o.businessName || '',
+                        clientWhatsapp: o.client_whatsapp || o.clientWhatsapp || o.whatsapp || '',
+                        csName: o.cs_name || o.csName || '',
+                        csEmail: o.cs_email || o.csEmail || '',
+                        csPhone: o.cs_phone || o.csPhone || '',
+                        packageName: o.package_name || o.packageName || '',
+                        duration: o.duration,
+                        days_remaining: o.days_remaining,
+                        progress_percent: o.progress_percent,
+                        repeat_order: o.repeat_order,
+                        metaData: meta || {}
+                    };
+                });
                 
                 const tbody = document.getElementById('orders-table-body');
                 if (!tbody) return;
@@ -1365,12 +1594,19 @@
         let dashDateStart = '';
         let dashDateEnd = '';
 
+        function dashShortTwoWords(value) {
+            const s = String(value || '').trim().replace(/\s+/g, ' ');
+            if (!s) return '';
+            return s.split(' ').slice(0, 2).join(' ');
+        }
+
         function applyDashboardFilters(page) {
             dashCurrentPage = page || dashCurrentPage;
             const raw = window.dashAllOrders || [];
+            const roleLower = (localStorage.getItem('role') || '').toLowerCase();
             const filtered = raw.filter(o => {
                 const s = String(o.status || '').toLowerCase();
-                const statusMatch = (dashStatus === 'all') ||
+                const statusMatch = (roleLower === 'crm') || (dashStatus === 'all') ||
                     (dashStatus === 'active' && (s === 'active' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten')) ||
                     (dashStatus === 'pending' && (s === 'pending' || s === 'draft')) ||
                     (dashStatus === 'baru' && (s === 'baru' || s === 'new')) ||
@@ -1380,8 +1616,9 @@
                 const searchLower = dashSearch.toLowerCase();
                 const searchMatch = !dashSearch ||
                     String(o.id).toLowerCase().includes(searchLower) ||
-                    String(o.client_name || '').toLowerCase().includes(searchLower) ||
-                    String(o.package_name || '').toLowerCase().includes(searchLower);
+                    String(o.clientName || o.client_name || '').toLowerCase().includes(searchLower) ||
+                    String(o.businessName || o.business_name || '').toLowerCase().includes(searchLower) ||
+                    String(o.packageName || o.package_name || '').toLowerCase().includes(searchLower);
                 const dateObj = o.created_at ? new Date(o.created_at) : null;
                 let monthMatch = true, yearMatch = true, rangeMatch = true;
                 if (dateObj) {
@@ -1411,46 +1648,67 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (pageItems.length === 0) {
-                     tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>';
+                    const colSpan = roleLower === 'crm' ? 10 : 10;
+                    tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>`;
                 } else {
                     pageItems.forEach(order => {
                         const tr = document.createElement('tr');
-                        tr.className = 'hover:bg-white/5 transition-colors group cursor-pointer';
-                        const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
-                        const pkg = order.package_name || '-';
-                        const clientWa = order.client_whatsapp || '-';
-                        const csName = String(order.cs_name || '').trim();
-                        const csMeta = String(order.cs_phone || order.cs_email || '').trim();
-                        const csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
-                        const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
-
-                        tr.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center gap-2">
-                                    <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
-                                    <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
-                                        <option value="">Ubah...</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
-                            <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex flex-col">
+                        if (roleLower === 'crm') {
+                            tr.className = "hover:bg-slate-50 transition-colors group cursor-pointer border-b border-slate-100 last:border-0";
+                            const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
+                            const clientName = dashShortTwoWords(order.clientName || order.client_name || '');
+                            const businessName = dashShortTwoWords(order.businessName || order.business_name || '');
+                            const packageName = String(order.packageName || order.package_name || '-').trim() || '-';
+                            const clientWa = String(order.clientWhatsapp || order.client_whatsapp || order.whatsapp || '-').trim() || '-';
+                            const csName = dashShortTwoWords(order.csName || order.cs_name || '');
+                            tr.innerHTML = ''
+                                + `<td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>`
+                                + `<td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>`
+                                + `<td class="px-6 py-4"><span class="text-slate-900">${clientName || '-'}</span></td>`
+                                + `<td class="px-6 py-4"><span class="text-slate-500">${businessName || '-'}</span></td>`
+                                + `<td class="px-6 py-4"><span class="text-slate-600">${packageName}</span></td>`
+                                + `<td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">-</span></td>`
+                                + `<td class="px-6 py-4"><span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">-</span></td>`
+                                + `<td class="px-6 py-4 text-sm text-slate-600">${clientWa}</td>`
+                                + `<td class="px-6 py-4"><div class="text-sm font-medium text-slate-600">${csName || '-'}</div></td>`
+                                + `<td class="px-6 py-4 text-right"><a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-slate-600 transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a></td>`;
+                        } else {
+                            tr.className = 'hover:bg-white/5 transition-colors group cursor-pointer';
+                            const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
+                            const pkg = order.packageName || order.package_name || '-';
+                            const clientWa = order.clientWhatsapp || order.client_whatsapp || '-';
+                            const csName = String(order.csName || order.cs_name || '').trim();
+                            const csMeta = String(order.csPhone || order.cs_phone || order.csEmail || order.cs_email || '').trim();
+                            const csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
+                            const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
+                            tr.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-sm font-semibold text-white">${order.client_name || order.business_name || '-'}</span>
-                                        <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
+                                        <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
+                                        <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                            <option value="">Ubah...</option>
+                                        </select>
                                     </div>
-                                    <div class="text-[11px] text-slate-500 mt-1">${order.business_name || ''}</div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                            <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
-                            <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
-                            <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
-                            <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
-                            <td class="px-6 py-4 text-right"><a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a></td>
-                        `;
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
+                                <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
+                                            <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
+                                <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
+                                <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
+                                <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
+                                <td class="px-6 py-4 text-right"><a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a></td>
+                            `;
+                        }
                         tbody.appendChild(tr);
                         // Row click navigates to order detail
                         tr.addEventListener('click', function(e){
@@ -1473,7 +1731,7 @@
                                     tr.style.display = 'none';
                                     return;
                                    }
-                                   if (role === 'crm' && !procVal.includes('menunggu otp')) {
+                                   if (role === 'crm' && !procVal.includes('menunggu')) {
                                     tr.style.display = 'none';
                                     return;
                                    }
@@ -1573,7 +1831,14 @@
                 const pageInfo = document.getElementById('page-info');
                 const prevBtn = document.getElementById('prev-page');
                 const nextBtn = document.getElementById('next-page');
-                if (pageInfo) pageInfo.textContent = `Page ${dashCurrentPage} of ${Math.max(totalPages,1)}`;
+                if (pageInfo) {
+                    const roleLower = (localStorage.getItem('role') || '').toLowerCase();
+                    const showStart = totalItems === 0 ? 0 : (start + 1);
+                    const showEnd = Math.min(end, totalItems);
+                    pageInfo.textContent = roleLower === 'crm'
+                        ? `Menampilkan ${showStart} - ${showEnd} dari ${totalItems} pesanan`
+                        : `Page ${dashCurrentPage} of ${Math.max(totalPages,1)}`;
+                }
                 if (prevBtn) {
                     prevBtn.disabled = dashCurrentPage <= 1;
                     prevBtn.onclick = () => applyDashboardFilters(dashCurrentPage - 1);
