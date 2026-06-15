@@ -583,6 +583,24 @@ html.theme-openai body.orders-clean .orders-client-line {
                                 <p class="mt-1 text-slate-600 dark:text-slate-300 italic" id="pkg-desc"></p>
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Status Pembayaran</label>
+                            <select id="payment-status" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary">
+                                <option value="DP" selected>DP</option>
+                                <option value="Lunas">Lunas</option>
+                            </select>
+                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">DP boleh diproses, tetapi status Iklan Tayang hanya bisa untuk order yang sudah lunas.</p>
+                        </div>
+                        <div id="payment-dp-wrap">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Nominal DP</label>
+                            <input type="number" id="payment-dp-amount" min="0" step="1000" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Contoh: 500000">
+                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Isi nominal yang sudah dibayar saat order dibuat.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Kurang Bayar</label>
+                            <input type="text" id="payment-remaining-amount" readonly class="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-700 dark:text-slate-300" value="Rp 0">
+                            <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Sisa otomatis dihitung dari harga paket dikurangi nominal DP.</p>
+                        </div>
                     </div>
                 </section>
 
@@ -1394,6 +1412,7 @@ document.addEventListener("DOMContentLoaded", function () {
   renderDynamicFields = function(type) {
       originalRender(type);
       updatePackageOptions(type);
+      syncPaymentSummary();
       
       var commonBrief = document.getElementById('common-brief-section');
       if (commonBrief) {
@@ -1406,6 +1425,46 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   // Package Info Display
+  function getSelectedPackagePrice() {
+      var select = document.getElementById('package-select');
+      if (!select) return 0;
+      var opt = select.selectedOptions[0];
+      return opt && opt.value ? Number(opt.dataset.price || 0) : 0;
+  }
+
+  function formatRupiahInput(value) {
+      return 'Rp ' + Number(value || 0).toLocaleString('id-ID');
+  }
+
+  function syncPaymentSummary() {
+      var paymentStatusEl = document.getElementById('payment-status');
+      var dpInput = document.getElementById('payment-dp-amount');
+      var remainingInput = document.getElementById('payment-remaining-amount');
+      var dpWrap = document.getElementById('payment-dp-wrap');
+      var totalPrice = getSelectedPackagePrice();
+      var status = paymentStatusEl ? paymentStatusEl.value : 'DP';
+      var dpValue = dpInput ? Number(dpInput.value || 0) : 0;
+
+      if (status === 'Lunas') {
+          if (dpWrap) dpWrap.classList.add('opacity-60');
+          if (dpInput) {
+              dpInput.value = totalPrice > 0 ? String(totalPrice) : '';
+              dpInput.disabled = true;
+          }
+          if (remainingInput) remainingInput.value = formatRupiahInput(0);
+          return;
+      }
+
+      if (dpWrap) dpWrap.classList.remove('opacity-60');
+      if (dpInput) dpInput.disabled = false;
+      if (dpValue > totalPrice && totalPrice > 0) {
+          dpValue = totalPrice;
+          if (dpInput) dpInput.value = String(totalPrice);
+      }
+      var remaining = Math.max(totalPrice - dpValue, 0);
+      if (remainingInput) remainingInput.value = formatRupiahInput(remaining);
+  }
+
   document.getElementById('package-select').addEventListener('change', function(e) {
       var opt = e.target.selectedOptions[0];
       var infoDiv = document.getElementById('package-info');
@@ -1418,7 +1477,11 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
           infoDiv.classList.add('hidden');
       }
+      syncPaymentSummary();
   });
+  document.getElementById('payment-status').addEventListener('change', syncPaymentSummary);
+  document.getElementById('payment-dp-amount').addEventListener('input', syncPaymentSummary);
+  syncPaymentSummary();
 
   // Save Order Logic
   document.getElementById('btn-save-order').addEventListener('click', function() {
@@ -1486,12 +1549,29 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       var packageId = document.getElementById('package-select').value;
+      var paymentStatus = document.getElementById('payment-status') ? document.getElementById('payment-status').value : 'DP';
+      var paymentDpAmount = document.getElementById('payment-dp-amount') ? Number(document.getElementById('payment-dp-amount').value || 0) : 0;
       
       if (!packageId) {
           alert('Silakan pilih paket terlebih dahulu');
           btn.disabled = false;
           btn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> Simpan Pesanan';
           return;
+      }
+      if (paymentStatus === 'DP') {
+          var totalPrice = getSelectedPackagePrice();
+          if (!(paymentDpAmount > 0)) {
+              alert('Nominal DP wajib diisi.');
+              btn.disabled = false;
+              btn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> Simpan Pesanan';
+              return;
+          }
+          if (totalPrice > 0 && paymentDpAmount >= totalPrice) {
+              alert('Nominal DP harus lebih kecil dari total paket. Jika sudah penuh, pilih status Lunas.');
+              btn.disabled = false;
+              btn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> Simpan Pesanan';
+              return;
+          }
       }
 
       // 3. Meta Data (Dynamic Fields)
@@ -1533,6 +1613,8 @@ document.addEventListener("DOMContentLoaded", function () {
               metaData: metaData,
               status: orderStatus,
               repeatOrder: isRepeatOrder,
+              paymentStatus: paymentStatus,
+              paymentDpAmount: paymentDpAmount,
               csId: document.getElementById('assignment-cs') ? document.getElementById('assignment-cs').value : null
           },
           details: details,

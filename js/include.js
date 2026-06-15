@@ -186,10 +186,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","data_crm","clients","meta_config","cpr_calculator","simulator_cs"],
     cs: ["overview","orders","commissions","crm","simulator_cs"],
     keuangan: ["overview","finance","orders","commissions","clients"],
-    advertiser: ["overview","orders","analytics","campaigns"],
+    advertiser: ["overview","commissions"],
     crm: ["overview","data_crm","orders"],
-    editor: ["overview","orders"],
-    "team bengkel": ["overview", "orders", "campaigns"]
+    editor: ["overview","commissions"],
+    "team bengkel": ["overview", "commissions"]
   };
 
   function applySidebarByRole(role) {
@@ -215,18 +215,35 @@ document.addEventListener("DOMContentLoaded", async function () {
     const safeRole = String(role || "").toLowerCase();
     const commissionLink = document.querySelector('.layout-sidebar nav a[data-menu="commissions"]');
     if (!commissionLink) return;
-    if (safeRole === "cs") {
+    const commissionLabel = commissionLink.querySelector("span:last-child");
+    if (safeRole === "cs" || safeRole === "editor" || safeRole === "advertiser" || safeRole === "team bengkel" || safeRole === "bengkel") {
       commissionLink.setAttribute("href", "commission-history.html");
+      if (commissionLabel) commissionLabel.textContent = "Komisi Saya";
     } else {
       commissionLink.setAttribute("href", "commission.html");
+      if (commissionLabel) commissionLabel.textContent = "Komisi";
     }
   }
 
   function checkPageAccess(role) {
     const active = document.body.dataset.active;
+    const explicitAllowedRoles = String(document.body.dataset.allowedRoles || "")
+      .split(",")
+      .map(v => v.trim().toLowerCase())
+      .filter(Boolean);
+    const normalizedRole = String(role || "").toLowerCase();
+
+    if (explicitAllowedRoles.length > 0) {
+      if (!explicitAllowedRoles.includes(normalizedRole)) {
+        alert("Anda tidak memiliki akses ke halaman ini.");
+        window.location.href = "dashboard.html";
+      }
+      return;
+    }
+
     if (!active) return; // No restriction if page doesn't define its menu key
 
-    const allowed = ROLE_MENUS[role.toLowerCase()] || ROLE_MENUS.super_admin;
+    const allowed = ROLE_MENUS[normalizedRole] || ROLE_MENUS.super_admin;
     if (!allowed.includes(active)) {
         console.warn(`Access denied for role ${role} on page ${active}`);
         // Redirect to the first allowed page

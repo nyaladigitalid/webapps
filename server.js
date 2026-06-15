@@ -1,7 +1,7 @@
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '.env') });
-dotenv.config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
@@ -26,7 +26,7 @@ app.use((req, res, next) => {
         const origin = req.headers.origin ? String(req.headers.origin) : '*';
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Vary', 'Origin');
-        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         if (req.method === 'OPTIONS') return res.sendStatus(204);
     }
@@ -35,19 +35,35 @@ app.use((req, res, next) => {
 
 // Database Connection
 const DATABASE_URL = process.env.MYSQL_URL || process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-    console.error('Missing MYSQL_URL/DATABASE_URL env. Make sure .env exists in app folder or PM2 env is set.');
-    process.exit(1);
+let pool;
+if (DATABASE_URL) {
+    pool = mysql.createPool(DATABASE_URL);
+} else {
+    const host = process.env.MYSQL_HOST;
+    const user = process.env.MYSQL_USER;
+    const password = process.env.MYSQL_PASSWORD;
+    const database = process.env.MYSQL_DATABASE;
+    const port = process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : 3306;
+
+    if (host && user && database) {
+        pool = mysql.createPool({ host, user, password, database, port });
+    } else {
+        const envPath = path.join(__dirname, '.env');
+        const envStatus = fs.existsSync(envPath) ? 'exists' : 'not found';
+        console.error(`Missing database env. Set MYSQL_URL (recommended) or MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE. .env ${envStatus} at ${envPath}`);
+        process.exit(1);
+    }
 }
-const pool = mysql.createPool(DATABASE_URL);
 
 // Helper function for Scalev code compatibility
 const getPool = () => pool;
 
 // Helper function to ensure environment is ready (mock implementation)
 function ensureEnv() {
-    if (!process.env.MYSQL_URL && !process.env.DATABASE_URL) {
-        throw new Error('MYSQL_URL/DATABASE_URL is missing');
+    const hasUrl = Boolean(process.env.MYSQL_URL || process.env.DATABASE_URL);
+    const hasParts = Boolean(process.env.MYSQL_HOST && process.env.MYSQL_USER && process.env.MYSQL_DATABASE);
+    if (!hasUrl && !hasParts) {
+        throw new Error('Database env is missing');
     }
 }
 
@@ -123,9 +139,29 @@ async function ensureTransactionsCategoryColumn() {
             if (code !== 'ER_DUP_FIELDNAME') throw e;
         }
         try {
-            await p.query(`UPDATE transactions SET category = 'Pembayaran Order' WHERE type = 'income' AND order_id IS NOT NULL AND category IS NULL`);
+            await p.query(`ALTER TABLE transactions ADD COLUMN employee_user_id INT NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE transactions ADD COLUMN updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`UPDATE transactions SET category = 'Pembayaran Order (Pelunasan)' WHERE type = 'income' AND order_id IS NOT NULL AND category IS NULL`);
         } catch (e) {
             console.error('Error backfilling transaction categories:', e);
+        }
+        try {
+            await p.query(`UPDATE transactions SET updated_at = created_at WHERE updated_at IS NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_BAD_FIELD_ERROR') {
+                console.error('Error backfilling transaction updated_at:', e);
+            }
         }
         console.log('Transactions category columns ready');
     } catch (e) {
@@ -157,9 +193,137 @@ async function ensureOrdersExtraColumns() {
                 }
             }
         }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN payment_status VARCHAR(20) NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN payment_total_amount DECIMAL(15,2) NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN payment_dp_amount DECIMAL(15,2) NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE orders ADD COLUMN payment_remaining_amount DECIMAL(15,2) NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`UPDATE orders SET payment_status = 'Lunas' WHERE payment_status IS NULL OR TRIM(payment_status) = ''`);
+        } catch (e) {
+            console.error('Error backfilling orders payment_status:', e);
+        }
         console.log('Orders extra columns ready');
     } catch (e) {
         console.error('Error ensuring orders extra columns:', e);
+    }
+}
+
+function normalizePaymentStatus(value, fallback = 'Lunas') {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return fallback;
+    if (raw === 'dp' || raw === 'down payment' || raw === 'partial' || raw === 'partially_paid') return 'DP';
+    if (raw === 'lunas' || raw === 'paid' || raw === 'full' || raw === 'settled') return 'Lunas';
+    return fallback;
+}
+
+function normalizeMoney(value, fallback = 0) {
+    if (value == null || value === '') return fallback;
+    if (typeof value === 'string') {
+        const cleaned = value.replace(/[^\d.-]/g, '');
+        const parsed = Number(cleaned);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function resolvePackagePrice(conn, packageId) {
+    if (!packageId) return 0;
+    try {
+        const [rows] = await conn.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+        if (rows.length > 0 && rows[0].price != null) return Number(rows[0].price) || 0;
+    } catch (e) {
+        const code = String((e && e.code) || '');
+        if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+        const [fallbackRows] = await conn.query('SELECT price_monthly as price FROM packages WHERE id = ? LIMIT 1', [packageId]);
+        if (fallbackRows.length > 0 && fallbackRows[0].price != null) return Number(fallbackRows[0].price) || 0;
+    }
+    return 0;
+}
+
+async function buildOrderPaymentSummary(conn, packageId, requestedStatus, requestedDpAmount) {
+    const totalAmount = await resolvePackagePrice(conn, packageId);
+    const paymentStatus = normalizePaymentStatus(requestedStatus, 'DP');
+    let dpAmount = Math.max(0, normalizeMoney(requestedDpAmount, 0));
+    let remainingAmount = 0;
+
+    if (paymentStatus === 'DP') {
+        if (totalAmount > 0) {
+            if (!(dpAmount > 0 && dpAmount < totalAmount)) {
+                throw new Error('Nominal DP harus lebih dari 0 dan lebih kecil dari total paket');
+            }
+            remainingAmount = Math.max(totalAmount - dpAmount, 0);
+        } else if (!(dpAmount > 0)) {
+            throw new Error('Nominal DP wajib diisi');
+        }
+    } else {
+        dpAmount = totalAmount > 0 ? totalAmount : dpAmount;
+        remainingAmount = 0;
+    }
+
+    return {
+        paymentStatus,
+        totalAmount,
+        dpAmount,
+        remainingAmount
+    };
+}
+
+async function insertOrderPaymentTransaction(conn, { orderId, amount, category, note = null, trxDate = null }) {
+    const normalizedAmount = Math.max(0, normalizeMoney(amount, 0));
+    if (!orderId || normalizedAmount <= 0) return;
+    await conn.query(
+        'INSERT INTO transactions (order_id, type, amount, category, note, trx_date) VALUES (?, "income", ?, ?, ?, ?)',
+        [orderId, normalizedAmount, category || 'Pembayaran Order', note, trxDate]
+    );
+}
+
+async function accrueCsCommissionOnOrderLunas(conn, orderId) {
+    const [orderRows] = await conn.query('SELECT id, package_id, status FROM orders WHERE id = ? LIMIT 1', [orderId]);
+    if (!orderRows.length) return;
+    const order = orderRows[0];
+    const defaultContentType = String(order.status || '').toLowerCase().includes('perpanjang') ? 'extend' : 'new';
+    const [assignments] = await conn.query(
+        'SELECT user_id, content_type, commission_amount FROM order_assignments WHERE order_id = ? AND role = "CS"',
+        [orderId]
+    );
+    for (const assignment of assignments) {
+        const userId = Number(assignment.user_id || 0);
+        if (!userId) continue;
+        const contentType = String(assignment.content_type || '').trim() || defaultContentType;
+        let amount = Number(assignment.commission_amount || 0);
+        if (!amount && order.package_id) {
+            amount = await resolveCommissionAmount(conn, order.package_id, 'CS', contentType);
+        }
+        await accrueCommissionLedger({
+            order_id: orderId,
+            user_id: userId,
+            role: 'CS',
+            content_type: contentType,
+            amount,
+            source_event: 'order_lunas',
+            source_event_key: `order_lunas:${orderId}:${userId}:CS:${contentType}`
+        }, conn);
     }
 }
 
@@ -440,6 +604,51 @@ async function ensureCommissionLedgerSchema() {
     }
 }
 
+async function ensureOrderContentsWorkflowSchema() {
+    try {
+        const p = await getPool();
+        const tryAdd = async (sql) => {
+            try {
+                await p.query(sql);
+            } catch (e) {
+                const code = String((e && e.code) || '');
+                if (code === 'ER_DUP_FIELDNAME' || code === 'ER_NO_SUCH_TABLE') return;
+                throw e;
+            }
+        };
+        await tryAdd(`ALTER TABLE order_contents ADD COLUMN repair_issue TEXT NULL`);
+        await tryAdd(`ALTER TABLE order_contents ADD COLUMN repair_fix TEXT NULL`);
+        await tryAdd(`ALTER TABLE order_contents ADD COLUMN repair_user_id INT NULL`);
+        console.log('Order contents workflow schema ready');
+    } catch (e) {
+        console.error('Error ensuring order_contents workflow schema:', e);
+    }
+}
+
+async function ensureOrderRepairHistorySchema() {
+    try {
+        const p = await getPool();
+        await p.query(`
+            CREATE TABLE IF NOT EXISTS order_repair_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                order_id INT NOT NULL,
+                repair_no INT NOT NULL,
+                repair_issue TEXT NOT NULL,
+                repair_fix TEXT NOT NULL,
+                user_id INT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_order_repair_no (order_id, repair_no),
+                KEY idx_order_repair_logs_order (order_id),
+                KEY idx_order_repair_logs_user (user_id)
+            )
+        `);
+        console.log('Order repair history schema ready');
+    } catch (e) {
+        console.error('Error ensuring order_repair_logs schema:', e);
+    }
+}
+
 async function accrueCommissionLedger(input = {}, conn = null) {
     const db = conn || pool;
     const orderId = Number(input.order_id || input.orderId || 0);
@@ -685,6 +894,8 @@ ensureOrdersTimingColumns();
 ensureMetaAdsConfigSchema();
 ensureCampaignsSchema();
 ensureCommissionLedgerSchema();
+ensureOrderContentsWorkflowSchema();
+ensureOrderRepairHistorySchema();
 ensureCsEditorAssignmentsTable();
 createScalevTable();
 createScalevWebhookEventsTable();
@@ -1141,12 +1352,11 @@ app.get('/api/dashboard/cs-stats', async (req, res) => {
               AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
         `, [userId]);
         const [commission] = await pool.query(`
-            SELECT COALESCE(SUM(oa.commission_amount), 0) as total
-            FROM order_assignments oa
-            JOIN orders o ON oa.order_id = o.id
-            WHERE oa.user_id = ? AND oa.role = 'CS'
-              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
-              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            SELECT COALESCE(SUM(cl.amount), 0) as total
+            FROM commission_ledger cl
+            WHERE cl.user_id = ? AND cl.role = 'CS' AND cl.source_event = 'order_lunas'
+              AND MONTH(cl.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(cl.created_at) = YEAR(CURRENT_DATE())
         `, [userId]);
         res.json({
             totalClients: totalClients[0].count || 0,
@@ -1252,10 +1462,11 @@ app.get('/api/dashboard/stats', async (req, res) => {
             // Commission (Mock calculation)
             // Assuming commission rules are simple for now
             const [comm] = await pool.query(`
-                SELECT COUNT(DISTINCT o.id) * 50000 as total 
-                FROM orders o 
-                JOIN order_assignments oa ON o.id = oa.order_id 
-                WHERE oa.user_id = ? AND oa.role = 'CS' AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+                SELECT COALESCE(SUM(cl.amount), 0) as total
+                FROM commission_ledger cl
+                WHERE cl.user_id = ? AND cl.role = 'CS' AND cl.source_event = 'order_lunas'
+                  AND MONTH(cl.created_at) = MONTH(CURRENT_DATE())
+                  AND YEAR(cl.created_at) = YEAR(CURRENT_DATE())
             `, [userId]);
             stats.commission = comm[0].total || 0;
             
@@ -1292,15 +1503,29 @@ app.get('/api/dashboard/stats', async (req, res) => {
             `, [userId]);
             stats.activeCampaigns = myAds[0].count;
         }
-        else if ((role === 'Team Bengkel' || role === 'Bengkel') && userId) {
+        else if (role === 'Team Bengkel' || role === 'Bengkel') {
              const [tasks] = await pool.query(`
-                SELECT COUNT(DISTINCT o.id) as count
-                FROM orders o
-                JOIN order_assignments oa ON o.id = oa.order_id
-                WHERE oa.user_id = ? AND oa.role = 'Team Bengkel'
-                AND o.status NOT IN ('completed', 'cancelled')
-             `, [userId]);
-             stats.pendingTasks = tasks[0].count;
+                SELECT COUNT(DISTINCT oc.order_id) as count
+                FROM order_contents oc
+                WHERE LOWER(oc.status) LIKE '%iklan tayang%'
+             `);
+             const [completed] = await pool.query(`
+                SELECT COUNT(DISTINCT oc.order_id) as count
+                FROM order_contents oc
+                WHERE LOWER(oc.status) LIKE '%sudah diperbaiki%'
+             `);
+             let commissionTotal = 0;
+             if (userId) {
+                const [comm] = await pool.query(`
+                    SELECT COALESCE(SUM(cl.amount), 0) as total
+                    FROM commission_ledger cl
+                    WHERE cl.user_id = ? AND cl.role = 'Team Bengkel' AND cl.source_event = 'bengkel_done'
+                 `, [userId]);
+                commissionTotal = comm[0].total || 0;
+             }
+             stats.pendingTasks = tasks[0].count || 0;
+             stats.completedTasks = completed[0].count || 0;
+             stats.commissionThisMonth = commissionTotal;
         }
 
         res.json(stats);
@@ -1316,18 +1541,19 @@ app.get('/api/dashboard/crm-stats', async (req, res) => {
         const userId = parseInt(req.query.user_id || '0');
         if (!userId) return res.status(400).json({ error: 'user_id required' });
         const [otpCount] = await pool.query(`
-            SELECT COUNT(*) as count
-            FROM commission_ledger
-            WHERE user_id = ? AND role = 'CRM' AND source_event = 'otp_sent'
-              AND MONTH(created_at) = MONTH(CURRENT_DATE())
-              AND YEAR(created_at) = YEAR(CURRENT_DATE())
+            SELECT COUNT(DISTINCT oc.order_id) as count
+            FROM order_contents oc
+            JOIN order_assignments oa ON oa.order_id = oc.order_id AND oa.role = 'CRM' AND oa.user_id = ?
+            WHERE LOWER(oc.status) = 'otp selesai'
+              AND MONTH(COALESCE(oc.updated_at, oc.created_at)) = MONTH(CURRENT_DATE())
+              AND YEAR(COALESCE(oc.updated_at, oc.created_at)) = YEAR(CURRENT_DATE())
         `, [userId]);
-        const [commPaid] = await pool.query(`
-            SELECT COALESCE(SUM(amount), 0) as total
-            FROM commission_ledger
-            WHERE user_id = ? AND role = 'CRM' AND status = 'paid'
-              AND MONTH(posted_at) = MONTH(CURRENT_DATE())
-              AND YEAR(posted_at) = YEAR(CURRENT_DATE())
+        const [commTotal] = await pool.query(`
+            SELECT COALESCE(SUM(cl.amount), 0) as total
+            FROM commission_ledger cl
+            WHERE cl.user_id = ? AND cl.role = 'CRM' AND cl.source_event = 'otp_selesai'
+              AND MONTH(cl.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(cl.created_at) = YEAR(CURRENT_DATE())
         `, [userId]);
         // New clients handled by CRM this month
         const [newClients] = await pool.query(`
@@ -1351,7 +1577,7 @@ app.get('/api/dashboard/crm-stats', async (req, res) => {
         `, [userId]);
         res.json({
             otpThisMonth: otpCount[0].count || 0,
-            commissionThisMonth: commPaid[0].total || 0,
+            commissionThisMonth: commTotal[0].total || 0,
             newClientsThisMonth: newClients[0].count || 0,
             extendClientsThisMonth: extendClients[0].count || 0
         });
@@ -2293,6 +2519,8 @@ app.get('/api/orders/:id/combined-status', async (req, res) => {
             else if (cs.includes('mulai konten')) process = 'Mulai Konten';
             else if (cs.includes('proses konten')) process = 'Proses Konten';
             else if (cs.includes('siap iklan')) process = 'Siap Iklan';
+            else if (cs.includes('iklan tayang')) process = 'Iklan Tayang';
+            else if (cs.includes('sudah diperbaiki')) process = 'Sudah Diperbaiki';
             else process = contents[0].status;
         }
         // Ad status from campaigns
@@ -2303,6 +2531,8 @@ app.get('/api/orders/:id/combined-status', async (req, res) => {
             if (statuses.some(s => s === 'ACTIVE')) ad = 'Aktif';
             else if (statuses.some(s => s === 'PAUSED' || s === 'ARCHIVED' || s === 'INACTIVE')) ad = 'Tidak Aktif';
             else ad = 'Proses Iklan';
+        } else if (process === 'Sudah Diperbaiki' || process === 'Iklan Tayang') {
+            ad = 'Aktif';
         } else if (process === 'Siap Iklan') {
             ad = 'Siap Iklan';
         }
@@ -2318,24 +2548,20 @@ app.get('/api/dashboard/editor-stats', async (req, res) => {
     try {
         const userId = req.query.user_id;
         if (!userId) return res.status(400).json({ error: 'user_id required' });
-        const [waiting] = await pool.query(`
-            SELECT COUNT(DISTINCT o.id) as count
-            FROM orders o
-            JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Editor' AND oa.user_id = ?
-            JOIN order_contents oc ON oc.order_id = o.id
-            WHERE LOWER(oc.status) LIKE 'menunggu%'
-        `, [userId]);
-        const [processing] = await pool.query(`
-            SELECT COUNT(DISTINCT o.id) as count
-            FROM orders o
-            JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Editor' AND oa.user_id = ?
-            JOIN order_contents oc ON oc.order_id = o.id
-            WHERE LOWER(oc.status) = 'proses konten'
-        `, [userId]);
-        const [commission] = await pool.query(`
-            SELECT COALESCE(SUM(commission_amount), 0) as total
-            FROM order_assignments
-            WHERE role = 'Editor' AND user_id = ?
+        const [otpSelesai] = await pool.query(`
+            SELECT COUNT(DISTINCT oc.order_id) as count
+            FROM order_contents oc
+            WHERE LOWER(oc.status) = 'otp selesai'
+        `);
+        const [ready] = await pool.query(`
+            SELECT COUNT(DISTINCT oc.order_id) as count
+            FROM order_contents oc
+            WHERE LOWER(oc.status) = 'siap iklan'
+        `);
+        const [commissionReady] = await pool.query(`
+            SELECT COALESCE(SUM(cl.amount), 0) as total
+            FROM commission_ledger cl
+            WHERE cl.user_id = ? AND cl.role = 'Editor' AND cl.source_event = 'content_ready'
         `, [userId]);
         const [contentMonth] = await pool.query(`
             SELECT COUNT(DISTINCT oc.id) as count
@@ -2345,9 +2571,9 @@ app.get('/api/dashboard/editor-stats', async (req, res) => {
               AND YEAR(oc.created_at) = YEAR(CURRENT_DATE())
         `, [userId]);
         res.json({
-            waitingClients: waiting[0].count || 0,
-            processingClients: processing[0].count || 0,
-            editorCommissionTotal: commission[0].total || 0,
+            otpSelesaiClients: otpSelesai[0].count || 0,
+            readyClients: ready[0].count || 0,
+            editorCommissionReadyTotal: commissionReady[0].total || 0,
             contentCreatedThisMonth: contentMonth[0].count || 0
         });
     } catch (e) {
@@ -2358,31 +2584,29 @@ app.get('/api/dashboard/editor-stats', async (req, res) => {
 
 app.get('/api/dashboard/advertiser-stats', async (req, res) => {
   try {
-    const userId = req.query.user_id;
-    if (!userId) return res.status(400).json({ error: 'user_id required' });
     const [ready] = await pool.query(`
         SELECT COUNT(DISTINCT o.id) as count
         FROM orders o
-        JOIN order_assignments oa ON o.id = oa.order_id AND oa.role = 'Advertiser' AND oa.user_id = ?
         JOIN order_contents oc ON oc.order_id = o.id
         WHERE LOWER(oc.status) = 'siap iklan'
-    `, [userId]);
-    const [monthlyAds] = await pool.query(`
-        SELECT COUNT(DISTINCT c.id) as count
-        FROM campaigns c
-        JOIN order_assignments oa ON oa.order_id = c.order_id AND oa.role = 'Advertiser' AND oa.user_id = ?
-        WHERE MONTH(c.created_at) = MONTH(CURRENT_DATE())
-          AND YEAR(c.created_at) = YEAR(CURRENT_DATE())
-    `, [userId]);
+    `);
+    const [tayang] = await pool.query(`
+        SELECT COUNT(DISTINCT o.id) as count
+        FROM orders o
+        JOIN order_contents oc ON oc.order_id = o.id
+        WHERE LOWER(oc.status) = 'iklan tayang'
+    `);
     const [commission] = await pool.query(`
-        SELECT COALESCE(SUM(commission_amount), 0) as total
-        FROM order_assignments
-        WHERE role = 'Advertiser' AND user_id = ?
-    `, [userId]);
+        SELECT COALESCE(SUM(oa.commission_amount), 0) as total
+        FROM order_assignments oa
+        JOIN order_contents oc ON oc.order_id = oa.order_id
+        WHERE oa.role = 'Advertiser'
+          AND LOWER(oc.status) = 'iklan tayang'
+    `);
     res.json({
       readyClients: ready[0].count || 0,
-      monthlyAds: monthlyAds[0].count || 0,
-      advertiserCommissionTotal: commission[0].total || 0
+      tayangClients: tayang[0].count || 0,
+      advertiserCommissionTayangTotal: commission[0].total || 0
     });
   } catch (e) {
     console.error('Advertiser stats error:', e);
@@ -2497,7 +2721,33 @@ app.get('/api/orders', async (req, res) => {
         let query = `
             SELECT o.*, c.name as client_name, c.business_name, c.whatsapp as client_whatsapp,
                    p.name as package_name, p.price as package_price,
-                   csu.name as cs_name, csu.email as cs_email, csu.phone as cs_phone
+                   csu.name as cs_name, csu.email as cs_email, csu.phone as cs_phone,
+                   (
+                       SELECT oc1.status
+                       FROM order_contents oc1
+                       WHERE oc1.order_id = o.id
+                       ORDER BY COALESCE(oc1.updated_at, oc1.created_at) DESC, oc1.id DESC
+                       LIMIT 1
+                   ) as content_status,
+                   (
+                       SELECT oc1.repair_issue
+                       FROM order_contents oc1
+                       WHERE oc1.order_id = o.id
+                       ORDER BY COALESCE(oc1.updated_at, oc1.created_at) DESC, oc1.id DESC
+                       LIMIT 1
+                   ) as repair_issue,
+                   (
+                       SELECT oc1.repair_fix
+                       FROM order_contents oc1
+                       WHERE oc1.order_id = o.id
+                       ORDER BY COALESCE(oc1.updated_at, oc1.created_at) DESC, oc1.id DESC
+                       LIMIT 1
+                   ) as repair_fix,
+                   (
+                       SELECT COUNT(*)
+                       FROM order_repair_logs rl
+                       WHERE rl.order_id = o.id
+                   ) as repair_count
             FROM orders o
             LEFT JOIN clients c ON o.client_id = c.id
             LEFT JOIN packages p ON o.package_id = p.id
@@ -2530,8 +2780,11 @@ app.get('/api/orders', async (req, res) => {
             if (cs === 'otp') target = 'Proses OTP';
             else if (cs === 'menunggu') target = 'Menunggu';
             else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = '__MENUNGGU_OTP_OR_LEGACY__';
+            else if (cs === 'otp_selesai' || cs === 'otp-selesai') target = 'OTP Selesai';
             else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
             else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
+            else if (cs === 'iklan_tayang' || cs === 'tayang') target = 'Iklan Tayang';
+            else if (cs === 'sudah_diperbaiki' || cs === 'done_bengkel') target = 'Sudah Diperbaiki';
             if (target) {
                 if (target === '__MENUNGGU_OTP_OR_LEGACY__') {
                     whereClauses.push(`(LOWER(oc.status) LIKE LOWER(?) OR LOWER(oc.status) = 'menunggu')`);
@@ -2590,8 +2843,11 @@ app.get('/api/orders', async (req, res) => {
             if (cs === 'otp') target = 'Proses OTP';
             else if (cs === 'menunggu') target = 'Menunggu';
             else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = '__MENUNGGU_OTP_OR_LEGACY__';
+            else if (cs === 'otp_selesai' || cs === 'otp-selesai') target = 'OTP Selesai';
             else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
             else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
+            else if (cs === 'iklan_tayang' || cs === 'tayang') target = 'Iklan Tayang';
+            else if (cs === 'sudah_diperbaiki' || cs === 'done_bengkel') target = 'Sudah Diperbaiki';
             if (target) {
                 if (target === '__MENUNGGU_OTP_OR_LEGACY__') {
                     countWhere.push(`(LOWER(oc.status) LIKE LOWER(?) OR LOWER(oc.status) = 'menunggu')`);
@@ -2765,19 +3021,23 @@ app.post('/api/orders', async (req, res) => {
         const serviceType = orderPayload.serviceType || orderPayload.service_type || null;
         const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? null;
         const metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+        const paymentInputStatus = orderPayload.paymentStatus || orderPayload.payment_status || body.paymentStatus || body.payment_status;
+        const paymentInputDpAmount = orderPayload.paymentDpAmount || orderPayload.payment_dp_amount || body.paymentDpAmount || body.payment_dp_amount;
 
         const startDate = orderPayload.startDate || orderPayload.start_date || (metaDataRaw && metaDataRaw.startDate) || null;
         const endDate = orderPayload.endDate || orderPayload.end_date || (metaDataRaw && metaDataRaw.endDate) || null;
 
+        await ensureOrdersExtraColumns();
         await ensureOrdersTimingColumns();
+        const paymentSummary = await buildOrderPaymentSummary(connection, packageId, paymentInputStatus, paymentInputDpAmount);
         await connection.beginTransaction();
 
         const startDateSource = startDate ? 'cs_estimate' : 'system';
 
         const [orderResult] = await connection.query(
-            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data, go_live_date, start_date_source)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
-            [clientId, packageId, status, repeatOrder, startDate, endDate, serviceType, metaData, startDateSource]
+            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data, payment_status, payment_total_amount, payment_dp_amount, payment_remaining_amount, go_live_date, start_date_source)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+            [clientId, packageId, status, repeatOrder, startDate, endDate, serviceType, metaData, paymentSummary.paymentStatus, paymentSummary.totalAmount, paymentSummary.dpAmount, paymentSummary.remainingAmount, startDateSource]
         );
 
         const orderId = orderResult.insertId;
@@ -2834,15 +3094,6 @@ app.post('/api/orders', async (req, res) => {
                 [orderId, csId, statusType, amount]
             );
             csAssigneeId = Number(csId || 0) || null;
-            await accrueCommissionLedger({
-                order_id: orderId,
-                user_id: csId,
-                role: 'CS',
-                content_type: statusType,
-                amount,
-                source_event: 'created_order',
-                source_event_key: `created_order:${orderId}:${csId}:CS:${statusType}`
-            }, connection);
         } else if (userRole === 'cs') {
             const creatorIdRaw = body.userId || body.user_id;
             const creatorId = creatorIdRaw ? parseInt(creatorIdRaw) : null;
@@ -2865,15 +3116,6 @@ app.post('/api/orders', async (req, res) => {
                     [orderId, creatorId, statusType, amount]
                 );
                 csAssigneeId = Number(creatorId || 0) || null;
-                await accrueCommissionLedger({
-                    order_id: orderId,
-                    user_id: creatorId,
-                    role: 'CS',
-                    content_type: statusType,
-                    amount,
-                    source_event: 'created_order',
-                    source_event_key: `created_order:${orderId}:${creatorId}:CS:${statusType}`
-                }, connection);
             }
         } else if (userRole === 'crm') {
             const creatorIdRaw = body.userId || body.user_id;
@@ -2916,21 +3158,14 @@ app.post('/api/orders', async (req, res) => {
                 csUserId: csAssigneeId
             });
         }
-        
-        await ensurePackagesSchema();
-        let pkgRows;
-        try {
-            [pkgRows] = await connection.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
-        } catch (e) {
-            const code = String((e && e.code) || '');
-            if (code === 'ER_BAD_FIELD_ERROR') {
-                [pkgRows] = await connection.query('SELECT price_monthly as price FROM packages WHERE id = ? LIMIT 1', [packageId]);
-            } else {
-                throw e;
-            }
+        await insertOrderPaymentTransaction(connection, {
+            orderId,
+            amount: paymentSummary.dpAmount,
+            category: paymentSummary.paymentStatus === 'Lunas' ? 'Pembayaran Order (Pelunasan)' : 'Pembayaran Order (DP)'
+        });
+        if (paymentSummary.paymentStatus === 'Lunas') {
+            await accrueCsCommissionOnOrderLunas(connection, orderId);
         }
-        const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
-        await connection.query('INSERT INTO transactions (order_id, type, amount, category) VALUES (?, "income", ?, "Pembayaran Order")', [orderId, incomeAmount]);
 
         const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
         await connection.query(
@@ -2983,6 +3218,8 @@ app.post('/api/orders/:id/renew', async (req, res) => {
 
         const serviceType = orderPayload.serviceType || orderPayload.service_type || baseOrder.service_type || null;
         const baseMetaData = baseOrder.meta_data;
+        const paymentInputStatus = orderPayload.paymentStatus || orderPayload.payment_status || body.paymentStatus || body.payment_status;
+        const paymentInputDpAmount = orderPayload.paymentDpAmount || orderPayload.payment_dp_amount || body.paymentDpAmount || body.payment_dp_amount;
         const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? baseMetaData ?? null;
         const createNewVideo = Boolean(orderPayload.createNewVideo ?? orderPayload.create_new_video ?? body.createNewVideo ?? body.create_new_video ?? false);
         const renewNoteRaw = orderPayload.renewNote ?? orderPayload.renew_note ?? body.renewNote ?? body.renew_note ?? '';
@@ -3012,14 +3249,15 @@ app.post('/api/orders/:id/renew', async (req, res) => {
         const startDate = orderPayload.startDate || orderPayload.start_date || body.startDate || body.start_date || null;
         const endDate = orderPayload.endDate || orderPayload.end_date || body.endDate || body.end_date || null;
         const renewalCount = Number(baseOrder.renewal_count || 0) + 1;
+        const paymentSummary = await buildOrderPaymentSummary(connection, packageId, paymentInputStatus, paymentInputDpAmount);
 
         await connection.beginTransaction();
 
         const startDateSource = startDate ? 'cs_estimate' : 'system';
         const [orderResult] = await connection.query(
-            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data, parent_order_id, renewal_count, go_live_date, start_date_source)
-             VALUES (?, ?, 'Perpanjang', 1, ?, ?, ?, ?, ?, ?, NULL, ?)`,
-            [baseOrder.client_id, packageId, startDate, endDate, serviceType, metaData, baseOrder.id, renewalCount, startDateSource]
+            `INSERT INTO orders (client_id, package_id, status, repeat_order, start_date, end_date, service_type, meta_data, payment_status, payment_total_amount, payment_dp_amount, payment_remaining_amount, parent_order_id, renewal_count, go_live_date, start_date_source)
+             VALUES (?, ?, 'Perpanjang', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+            [baseOrder.client_id, packageId, startDate, endDate, serviceType, metaData, paymentSummary.paymentStatus, paymentSummary.totalAmount, paymentSummary.dpAmount, paymentSummary.remainingAmount, baseOrder.id, renewalCount, startDateSource]
         );
         const newOrderId = orderResult.insertId;
 
@@ -3080,15 +3318,17 @@ app.post('/api/orders/:id/renew', async (req, res) => {
                 [newOrderId, assignedUserId, roleName, ruleType, amount]
             );
 
-            await accrueCommissionLedger({
-                order_id: newOrderId,
-                user_id: assignedUserId,
-                role: roleName,
-                content_type: ruleType,
-                amount,
-                source_event: 'renew_order',
-                source_event_key: `renew_order:${newOrderId}:${assignedUserId}:${roleName}:${ruleType}`
-            }, connection);
+            if (roleName !== 'CS') {
+                await accrueCommissionLedger({
+                    order_id: newOrderId,
+                    user_id: assignedUserId,
+                    role: roleName,
+                    content_type: ruleType,
+                    amount,
+                    source_event: 'renew_order',
+                    source_event_key: `renew_order:${newOrderId}:${assignedUserId}:${roleName}:${ruleType}`
+                }, connection);
+            }
         }
         if (csAssignment && csAssignment.user_id) {
             await upsertMappedEditorAssignmentForOrder(connection, {
@@ -3099,19 +3339,14 @@ app.post('/api/orders/:id/renew', async (req, res) => {
             });
         }
 
-        let pkgRows;
-        try {
-            [pkgRows] = await connection.query('SELECT price FROM packages WHERE id = ? LIMIT 1', [packageId]);
-        } catch (e) {
-            const code = String((e && e.code) || '');
-            if (code === 'ER_BAD_FIELD_ERROR') {
-                [pkgRows] = await connection.query('SELECT price_monthly as price FROM packages WHERE id = ? LIMIT 1', [packageId]);
-            } else {
-                throw e;
-            }
+        await insertOrderPaymentTransaction(connection, {
+            orderId: newOrderId,
+            amount: paymentSummary.dpAmount,
+            category: paymentSummary.paymentStatus === 'Lunas' ? 'Pembayaran Order (Pelunasan)' : 'Pembayaran Order (DP)'
+        });
+        if (paymentSummary.paymentStatus === 'Lunas') {
+            await accrueCsCommissionOnOrderLunas(connection, newOrderId);
         }
-        const incomeAmount = (pkgRows && pkgRows.length > 0 && pkgRows[0].price != null) ? Number(pkgRows[0].price) : 0;
-        await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [newOrderId, incomeAmount]);
 
         const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
         await connection.query(
@@ -3390,6 +3625,8 @@ app.get('/api/commissions/ledger', async (req, res) => {
 app.get('/api/commissions/approvals', async (req, res) => {
     try {
         const status = String((req.query && req.query.status) || 'pending');
+        const startDate = String((req.query && req.query.startDate) || '').trim();
+        const endDate = String((req.query && req.query.endDate) || '').trim();
         let sql = `
             SELECT cl.*, u.name as user_name, o.client_id
             FROM commission_ledger cl
@@ -3398,6 +3635,10 @@ app.get('/api/commissions/approvals', async (req, res) => {
             WHERE cl.status IN ('accrued','approved','rejected','paid')
         `;
         const params = [];
+        if (startDate && endDate) {
+            sql += ` AND DATE(cl.created_at) BETWEEN ? AND ?`;
+            params.push(startDate, endDate);
+        }
         if (status !== 'all') {
             const normalizedStatus = String(status || '').toLowerCase();
             if (normalizedStatus === 'paid') {
@@ -3483,6 +3724,113 @@ app.post('/api/commissions/:id/reject', async (req, res) => {
     } catch (e) {
         console.error('Reject commission error:', e);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.patch('/api/commissions/:id', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        const { id } = req.params;
+        const ledgerId = Number(id);
+        if (!Number.isFinite(ledgerId) || ledgerId <= 0) {
+            connection.release();
+            return res.status(400).json({ error: 'Invalid id' });
+        }
+
+        const body = req.body || {};
+        const amountRaw = body.amount;
+        const approvalStatusRaw = body.approval_status ?? body.approvalStatus ?? body.status;
+        const noteRaw = body.approval_note ?? body.approvalNote ?? body.note;
+        const editorId = body.editor_id ?? body.editorId ?? body.user_id ?? body.userId ?? null;
+
+        const hasAmount = amountRaw !== undefined;
+        const hasApprovalStatus = approvalStatusRaw !== undefined;
+        const hasNote = noteRaw !== undefined;
+        if (!hasAmount && !hasApprovalStatus && !hasNote) {
+            connection.release();
+            return res.status(400).json({ error: 'No fields to update' });
+        }
+
+        let amount = null;
+        if (hasAmount) {
+            amount = Number(amountRaw);
+            if (!Number.isFinite(amount) || amount < 0) {
+                connection.release();
+                return res.status(400).json({ error: 'Invalid amount' });
+            }
+        }
+
+        let approvalStatus = null;
+        if (hasApprovalStatus) {
+            approvalStatus = String(approvalStatusRaw || '').trim().toLowerCase();
+            if (!['pending', 'approved', 'rejected'].includes(approvalStatus)) {
+                connection.release();
+                return res.status(400).json({ error: 'Invalid approval_status' });
+            }
+        }
+
+        let approvalNote = null;
+        if (hasNote) {
+            approvalNote = noteRaw == null ? null : String(noteRaw);
+            if (approvalNote != null && approvalNote.length > 1000) {
+                connection.release();
+                return res.status(400).json({ error: 'Catatan terlalu panjang' });
+            }
+        }
+
+        await connection.beginTransaction();
+        const [rows] = await connection.query(
+            'SELECT id, amount, status, approval_status, approval_note, approved_by FROM commission_ledger WHERE id = ? LIMIT 1',
+            [ledgerId]
+        );
+        if (rows.length === 0) {
+            await connection.rollback();
+            connection.release();
+            return res.status(404).json({ error: 'Ledger not found' });
+        }
+
+        const existing = rows[0];
+        const existingRowStatus = String(existing.status || '').toLowerCase();
+        if (existingRowStatus === 'paid') {
+            await connection.rollback();
+            connection.release();
+            return res.status(400).json({ error: 'Komisi sudah paid dan tidak bisa diedit' });
+        }
+
+        const finalAmount = hasAmount ? amount : Number(existing.amount || 0);
+        const finalApprovalStatus = hasApprovalStatus
+            ? approvalStatus
+            : String(existing.approval_status || 'pending').toLowerCase();
+        const finalApprovalNote = hasNote ? approvalNote : (existing.approval_note ?? null);
+
+        const finalStatus = finalApprovalStatus === 'approved'
+            ? 'approved'
+            : (finalApprovalStatus === 'rejected' ? 'rejected' : 'accrued');
+        const finalApprovedBy = finalApprovalStatus === 'pending'
+            ? null
+            : (editorId != null ? editorId : (existing.approved_by ?? null));
+        const finalApprovedAt = finalApprovalStatus === 'pending' ? null : new Date();
+
+        await connection.query(
+            `UPDATE commission_ledger
+             SET amount = ?,
+                 approval_status = ?,
+                 status = ?,
+                 approval_note = ?,
+                 approved_by = ?,
+                 approved_at = ?
+             WHERE id = ?`,
+            [finalAmount, finalApprovalStatus, finalStatus, finalApprovalNote, finalApprovedBy, finalApprovedAt, ledgerId]
+        );
+
+        await connection.commit();
+        res.json({ success: true });
+    } catch (e) {
+        try { await connection.rollback(); } catch (_) {}
+        console.error('Edit commission error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        connection.release();
     }
 });
 
@@ -3879,53 +4227,130 @@ app.get('/api/commissions/payouts/:id', async (req, res) => {
 app.post('/api/orders/:id/payments', async (req, res) => {
     const connection = await pool.getConnection();
     try {
+        await ensureOrdersExtraColumns();
         const { id } = req.params;
         const body = req.body || {};
-        const amount = Number(body.amount || 0);
-        const method = body.method || 'transfer';
+        const amount = Math.max(0, normalizeMoney(body.amount, 0));
+        const trxDate = String(body.trx_date || body.trxDate || '').trim() || null;
         if (!id || !amount || amount <= 0) {
-            connection.release();
             return res.status(400).json({ error: 'amount is required and must be > 0' });
         }
         await connection.beginTransaction();
-        const [orders] = await connection.query('SELECT id, package_id, status FROM orders WHERE id = ? LIMIT 1', [id]);
+        const [orders] = await connection.query('SELECT id, package_id, status, payment_status, payment_total_amount, payment_dp_amount, payment_remaining_amount FROM orders WHERE id = ? LIMIT 1', [id]);
         if (orders.length === 0) {
             await connection.rollback();
-            connection.release();
             return res.status(404).json({ error: 'Order not found' });
         }
         const order = orders[0];
-        await connection.query('INSERT INTO transactions (order_id, type, amount) VALUES (?, "income", ?)', [id, amount]);
-        const [assignments] = await connection.query('SELECT user_id, role FROM order_assignments WHERE order_id = ?', [id]);
-        const statusLower = String(order.status || '').toLowerCase();
-        const contentType = statusLower.includes('perpanjang') ? 'extend' : (statusLower.includes('baru') || statusLower.includes('new') ? 'new' : 'general');
-        // Helper: get rule amount with fallback when content_type column doesn't exist
-        async function getRuleAmount(role, ctype) {
-            if (!order.package_id) return 0;
-            try {
-                const [rs] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [order.package_id, role, ctype]);
-                if (rs.length > 0 && rs[0].amount != null) return Number(rs[0].amount);
-                const [rg] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [order.package_id, role, 'general']);
-                if (rg.length > 0 && rg[0].amount != null) return Number(rg[0].amount);
-            } catch (e) {
-                const [r2] = await connection.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [order.package_id, role]);
-                if (r2.length > 0 && r2[0].amount != null) return Number(r2[0].amount);
-            }
-            return 0;
-        }
-        for (const a of assignments) {
-            const ruleAmount = await getRuleAmount(a.role, contentType);
-            await connection.query(
-                'INSERT INTO commission_ledger (order_id, user_id, role, content_type, basis_amount, rate_type, rate_value, amount, status, source_event) VALUES (?, ?, ?, ?, ?, "flat", ?, ?, "accrued", "payment_income")',
-                [id, a.user_id, a.role, contentType, amount, ruleAmount, ruleAmount]
-            );
+        const totalAmount = Number(order.payment_total_amount || 0) || await resolvePackagePrice(connection, order.package_id);
+        const previousStatus = normalizePaymentStatus(order.payment_status, 'Lunas');
+        const previousDp = Math.max(0, Number(order.payment_dp_amount || 0));
+        const previousRemaining = Math.max(0, Number(order.payment_remaining_amount || 0));
+        const baseRemaining = previousStatus === 'DP'
+            ? (previousRemaining > 0 ? previousRemaining : Math.max(totalAmount - previousDp, 0))
+            : 0;
+        const nextRemaining = Math.max(baseRemaining - amount, 0);
+        const nextDp = totalAmount > 0 ? Math.min(previousDp + amount, totalAmount) : (previousDp + amount);
+        const nextStatus = nextRemaining <= 0 ? 'Lunas' : 'DP';
+
+        await insertOrderPaymentTransaction(connection, {
+            orderId: id,
+            amount,
+            category: nextStatus === 'Lunas' ? 'Pembayaran Order (Pelunasan)' : 'Pembayaran Order (DP)',
+            trxDate
+        });
+        await connection.query(
+            'UPDATE orders SET payment_status = ?, payment_total_amount = ?, payment_dp_amount = ?, payment_remaining_amount = ? WHERE id = ?',
+            [nextStatus, totalAmount, nextDp, nextRemaining, id]
+        );
+        if (previousStatus !== 'Lunas' && nextStatus === 'Lunas') {
+            await accrueCsCommissionOnOrderLunas(connection, Number(id));
         }
         await connection.commit();
-        res.json({ success: true });
+        res.json({
+            success: true,
+            payment_status: nextStatus,
+            payment_total_amount: totalAmount,
+            payment_dp_amount: nextDp,
+            payment_remaining_amount: nextRemaining
+        });
     } catch (e) {
         try { await connection.rollback(); } catch(_) {}
         console.error('Payment endpoint error:', e);
         res.status(500).json({ error: e && e.message ? e.message : 'Internal server error' });
+    } finally {
+        connection.release();
+    }
+});
+app.post('/api/orders/:id/payment-status', async (req, res) => {
+    const connection = await pool.getConnection();
+    try {
+        // #region debug-point D:payment-status-entry
+        fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"payment-save-noop",runId:"pre-fix",hypothesisId:"D",location:"server.js:/api/orders/:id/payment-status:entry",msg:"[DEBUG] payment status endpoint entered",data:{orderId:String((req&&req.params&&req.params.id)||""),body:req.body||{}},ts:Date.now()})}).catch(()=>{});
+        // #endregion
+        await ensureOrdersExtraColumns();
+        const { id } = req.params;
+        const body = req.body || {};
+        const paymentStatus = normalizePaymentStatus(body.payment_status || body.paymentStatus || body.status || body.value, '');
+        if (!paymentStatus) {
+            return res.status(400).json({ error: 'Status pembayaran tidak valid' });
+        }
+        await connection.beginTransaction();
+        const [orders] = await connection.query(
+            'SELECT id, package_id, payment_status, payment_total_amount, payment_dp_amount, payment_remaining_amount FROM orders WHERE id = ? LIMIT 1',
+            [id]
+        );
+        if (!orders.length) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Order tidak ditemukan' });
+        }
+        const order = orders[0];
+        const totalAmount = Number(order.payment_total_amount || 0) || await resolvePackagePrice(connection, order.package_id);
+        const previousStatus = normalizePaymentStatus(order.payment_status, 'Lunas');
+        let dpAmount = Math.max(0, Number(order.payment_dp_amount || 0));
+        let remainingAmount = Math.max(0, Number(order.payment_remaining_amount || 0));
+
+        if (paymentStatus === 'Lunas') {
+            const pelunasanAmount = remainingAmount > 0 ? remainingAmount : Math.max(totalAmount - dpAmount, 0);
+            if (pelunasanAmount > 0) {
+                await insertOrderPaymentTransaction(connection, {
+                    orderId: id,
+                    amount: pelunasanAmount,
+                    category: 'Pembayaran Order (Pelunasan)'
+                });
+            }
+            dpAmount = totalAmount > 0 ? totalAmount : (dpAmount + pelunasanAmount);
+            remainingAmount = 0;
+        } else {
+            dpAmount = totalAmount > 0 ? Math.min(dpAmount, totalAmount) : dpAmount;
+            remainingAmount = totalAmount > 0 ? Math.max(totalAmount - dpAmount, 0) : remainingAmount;
+        }
+
+        await connection.query(
+            'UPDATE orders SET payment_status = ?, payment_total_amount = ?, payment_dp_amount = ?, payment_remaining_amount = ? WHERE id = ?',
+            [paymentStatus, totalAmount, dpAmount, remainingAmount, id]
+        );
+        if (previousStatus !== 'Lunas' && paymentStatus === 'Lunas') {
+            await accrueCsCommissionOnOrderLunas(connection, Number(id));
+        }
+        await connection.commit();
+        // #region debug-point D:payment-status-success
+        fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"payment-save-noop",runId:"pre-fix",hypothesisId:"D",location:"server.js:/api/orders/:id/payment-status:success",msg:"[DEBUG] payment status endpoint success",data:{orderId:String(id||""),paymentStatus,totalAmount,dpAmount,remainingAmount},ts:Date.now()})}).catch(()=>{});
+        // #endregion
+        res.json({
+            success: true,
+            payment_status: paymentStatus,
+            payment_total_amount: totalAmount,
+            payment_dp_amount: dpAmount,
+            payment_remaining_amount: remainingAmount
+        });
+    } catch (e) {
+        try { await connection.rollback(); } catch(_) {}
+        // #region debug-point D:payment-status-catch
+        fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"payment-save-noop",runId:"pre-fix",hypothesisId:"D",location:"server.js:/api/orders/:id/payment-status:catch",msg:"[DEBUG] payment status endpoint failed",data:{message:String(e&&e.message||e)},ts:Date.now()})}).catch(()=>{});
+        // #endregion
+        console.error('Update payment status error:', e);
+        res.status(500).json({ error: 'Internal server error' });
     } finally {
         connection.release();
     }
@@ -4196,29 +4621,120 @@ app.post('/api/orders/:id/content/otp', async (req, res) => {
 
 app.post('/api/orders/:id/content/status', async (req, res) => {
     try {
+        await ensureOrdersExtraColumns();
         const { id } = req.params;
         const body = req.body || {};
-        const nextStatus = String(body.status || '').trim();
-        const allowedStatuses = new Set([
-            'Menunggu OTP',
-            'Proses OTP',
-            'OTP Diterima',
-            'Proses CRM',
-            'Pending Klien',
-            'No Response',
-            'Proses Konten',
-            'Siap Iklan'
+        const nextStatusInput = String(body.status || '').trim();
+        const nextStatusKey = nextStatusInput.toLowerCase();
+        const allowedStatuses = new Map([
+            ['menunggu', 'Menunggu'],
+            ['menunggu otp', 'Menunggu OTP'],
+            ['proses otp', 'Proses OTP'],
+            ['otp diterima', 'OTP Diterima'],
+            ['otp selesai', 'OTP Selesai'],
+            ['proses crm', 'Proses CRM'],
+            ['pending klien', 'Pending Klien'],
+            ['no response', 'No Response'],
+            ['proses konten', 'Proses Konten'],
+            ['siap iklan', 'Siap Iklan'],
+            ['iklan tayang', 'Iklan Tayang'],
+            ['sudah diperbaiki', 'Sudah Diperbaiki']
         ]);
+        const nextStatus = allowedStatuses.get(nextStatusKey) || '';
 
-        if (!allowedStatuses.has(nextStatus)) {
+        if (!nextStatus) {
             return res.status(400).json({ error: 'Status tidak valid' });
+        }
+
+        if (nextStatus === 'Iklan Tayang') {
+            const [orderRows] = await pool.query(
+                'SELECT payment_status FROM orders WHERE id = ? LIMIT 1',
+                [id]
+            );
+            if (!orderRows.length) {
+                return res.status(404).json({ error: 'Order tidak ditemukan' });
+            }
+            const paymentStatus = normalizePaymentStatus(orderRows[0].payment_status, 'Lunas');
+            if (paymentStatus !== 'Lunas') {
+                return res.status(400).json({ error: 'Order belum lunas. Status Iklan Tayang hanya boleh untuk pembayaran lunas.' });
+            }
         }
 
         const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
         if (existing.length > 0) {
-            await pool.query('UPDATE order_contents SET status = ? WHERE order_id = ?', [nextStatus, id]);
+            try {
+                await pool.query('UPDATE order_contents SET status = ?, updated_at = NOW() WHERE order_id = ?', [nextStatus, id]);
+            } catch (e) {
+                const code = String((e && e.code) || '');
+                if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+                await pool.query('UPDATE order_contents SET status = ? WHERE order_id = ?', [nextStatus, id]);
+            }
         } else {
             await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, ?)', [id, nextStatus]);
+        }
+
+        if (nextStatus === 'OTP Selesai') {
+            try {
+                const crmUserIdRaw = body.userId || body.user_id;
+                let crmUserId = crmUserIdRaw ? parseInt(crmUserIdRaw) : null;
+                if (!crmUserId) {
+                    const [crmAssign] = await pool.query('SELECT user_id FROM order_assignments WHERE order_id = ? AND role = "CRM" LIMIT 1', [id]);
+                    if (crmAssign.length > 0) crmUserId = crmAssign[0].user_id;
+                }
+                if (crmUserId) {
+                    let amount = 0;
+                    const [ord] = await pool.query('SELECT package_id FROM orders WHERE id = ? LIMIT 1', [id]);
+                    const pkgId = ord.length > 0 ? ord[0].package_id : null;
+                    if (pkgId) {
+                        try {
+                            const [rs] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'CRM', 'otp']);
+                            if (rs.length > 0 && rs[0].amount != null) amount = Number(rs[0].amount);
+                            else {
+                                const [rg] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ? AND content_type = ?', [pkgId, 'CRM', 'general']);
+                                if (rg.length > 0 && rg[0].amount != null) amount = Number(rg[0].amount);
+                            }
+                        } catch (_) {
+                            const [r2] = await pool.query('SELECT amount FROM commission_rules WHERE package_id = ? AND role = ?', [pkgId, 'CRM']);
+                            if (r2.length > 0 && r2[0].amount != null) amount = Number(r2[0].amount);
+                        }
+                    }
+                    try {
+                        await pool.query(
+                            'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", "otp", ?) ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)',
+                            [id, crmUserId, amount]
+                        );
+                    } catch (e) {
+                        const code = String((e && e.code) || '');
+                        if (code !== 'ER_DUP_ENTRY' && code !== 'ER_PARSE_ERROR') throw e;
+                        const [existingAssign] = await pool.query(
+                            'SELECT id FROM order_assignments WHERE order_id = ? AND role = "CRM" AND content_type = "otp" LIMIT 1',
+                            [id]
+                        );
+                        if (existingAssign.length > 0) {
+                            await pool.query(
+                                'UPDATE order_assignments SET user_id = ?, commission_amount = ? WHERE id = ?',
+                                [crmUserId, amount, existingAssign[0].id]
+                            );
+                        } else {
+                            await pool.query(
+                                'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "CRM", "otp", ?)',
+                                [id, crmUserId, amount]
+                            );
+                        }
+                    }
+                    await accrueCommissionLedger({
+                        order_id: id,
+                        user_id: crmUserId,
+                        role: 'CRM',
+                        content_type: 'otp',
+                        amount,
+                        source_event: 'otp_selesai',
+                        source_event_key: `otp_selesai:${id}:${crmUserId}:CRM:otp`
+                    });
+                }
+            } catch (e) {
+                console.error('CRM commission on OTP Selesai error:', e);
+            }
         }
 
         res.json({ success: true, status: nextStatus });
@@ -4231,15 +4747,267 @@ app.post('/api/orders/:id/content/status', async (req, res) => {
 app.post('/api/orders/:id/content/ready', async (req, res) => {
     try {
         const { id } = req.params;
+        const body = req.body || {};
+        const editorUserIdRaw = body.userId || body.user_id;
+        const editorUserRole = String(body.userRole || body.user_role || '').toLowerCase();
         const [existing] = await pool.query('SELECT id FROM order_contents WHERE order_id = ?', [id]);
         if (existing.length > 0) {
-            await pool.query('UPDATE order_contents SET status = "Siap Iklan" WHERE order_id = ?', [id]);
+            try {
+                await pool.query('UPDATE order_contents SET status = "Siap Iklan", updated_at = NOW() WHERE order_id = ?', [id]);
+            } catch (e) {
+                const code = String((e && e.code) || '');
+                if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+                await pool.query('UPDATE order_contents SET status = "Siap Iklan" WHERE order_id = ?', [id]);
+            }
         } else {
             await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Siap Iklan")', [id]);
         }
+
+        try {
+            const orderId = Number(id);
+            const [ord] = await pool.query('SELECT package_id, status FROM orders WHERE id = ? LIMIT 1', [orderId]);
+            if (ord.length > 0) {
+                const packageId = ord[0].package_id || null;
+                const orderStatus = String(ord[0].status || '');
+                let editorUserId = editorUserIdRaw ? Number(editorUserIdRaw) : null;
+                let amount = 0;
+                let contentType = String(orderStatus || '').toLowerCase() === 'perpanjang' ? 'extend' : 'general';
+
+                if (editorUserId && editorUserRole === 'editor') {
+                    amount = await resolveCommissionAmount(pool, packageId, 'Editor', contentType);
+                    const [existingAssign] = await pool.query(
+                        'SELECT id FROM order_assignments WHERE order_id = ? AND role = "Editor" LIMIT 1',
+                        [orderId]
+                    );
+                    if (existingAssign.length > 0) {
+                        await pool.query(
+                            'UPDATE order_assignments SET user_id = ?, content_type = ?, commission_amount = ? WHERE id = ?',
+                            [editorUserId, contentType, amount, existingAssign[0].id]
+                        );
+                    } else {
+                        await pool.query(
+                            'INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount) VALUES (?, ?, "Editor", ?, ?)',
+                            [orderId, editorUserId, contentType, amount]
+                        );
+                    }
+                } else {
+                    const [csAssign] = await pool.query('SELECT user_id FROM order_assignments WHERE order_id = ? AND role = "CS" LIMIT 1', [orderId]);
+                    const csUserId = csAssign.length > 0 ? csAssign[0].user_id : null;
+                    editorUserId = csUserId ? await upsertMappedEditorAssignmentForOrder(pool, {
+                        orderId,
+                        packageId,
+                        orderStatus,
+                        csUserId
+                    }) : null;
+                    if (editorUserId) {
+                        const [editorAssign] = await pool.query(
+                            'SELECT commission_amount, content_type FROM order_assignments WHERE order_id = ? AND role = "Editor" LIMIT 1',
+                            [orderId]
+                        );
+                        amount = editorAssign.length > 0 ? Number(editorAssign[0].commission_amount || 0) : 0;
+                        contentType = editorAssign.length > 0 ? String(editorAssign[0].content_type || contentType) : contentType;
+                    }
+                }
+
+                if (editorUserId) {
+                    await accrueCommissionLedger({
+                        order_id: orderId,
+                        user_id: editorUserId,
+                        role: 'Editor',
+                        content_type: contentType,
+                        amount,
+                        source_event: 'content_ready',
+                        source_event_key: `content_ready:${orderId}:${editorUserId}:Editor:${contentType}`
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('Editor commission on content ready error:', e);
+        }
+
         res.json({ success: true });
     } catch (e) {
         console.error('Set Ready error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/orders/:id/bengkel/done', async (req, res) => {
+    try {
+        await ensureOrderContentsWorkflowSchema();
+        await ensureOrderRepairHistorySchema();
+        const { id } = req.params;
+        const body = req.body || {};
+        const repairIssue = String(body.repair_issue || body.repairIssue || '').trim();
+        const repairFix = String(body.repair_fix || body.repairFix || '').trim();
+        let bengkelUserId = Number(body.user_id || body.userId || 0);
+
+        if (!repairIssue || !repairFix) {
+            return res.status(400).json({ error: 'Keterangan perbaikan wajib diisi' });
+        }
+
+        if (!bengkelUserId) {
+            const [existingAssign] = await pool.query(
+                'SELECT user_id FROM order_assignments WHERE order_id = ? AND role = "Team Bengkel" LIMIT 1',
+                [id]
+            );
+            if (existingAssign.length > 0) bengkelUserId = Number(existingAssign[0].user_id || 0);
+        }
+
+        const [orderRows] = await pool.query('SELECT package_id FROM orders WHERE id = ? LIMIT 1', [id]);
+        if (orderRows.length === 0) return res.status(404).json({ error: 'Order tidak ditemukan' });
+        const packageId = orderRows[0].package_id || null;
+
+        let amount = 0;
+        if (packageId) {
+            amount = await resolveCommissionAmount(pool, packageId, 'Team Bengkel', 'general');
+        }
+
+        if (bengkelUserId) {
+            try {
+                await pool.query(
+                    `INSERT INTO order_assignments (order_id, user_id, role, content_type, commission_amount)
+                     VALUES (?, ?, 'Team Bengkel', 'general', ?)
+                     ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), commission_amount = VALUES(commission_amount)`,
+                    [id, bengkelUserId, amount]
+                );
+            } catch (e) {
+                const [existingAssign] = await pool.query(
+                    'SELECT id FROM order_assignments WHERE order_id = ? AND role = "Team Bengkel" LIMIT 1',
+                    [id]
+                );
+                if (existingAssign.length > 0) {
+                    await pool.query(
+                        'UPDATE order_assignments SET user_id = ?, content_type = "general", commission_amount = ? WHERE id = ?',
+                        [bengkelUserId, amount, existingAssign[0].id]
+                    );
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        const [existing] = await pool.query(
+            'SELECT id, status, repair_issue, repair_fix FROM order_contents WHERE order_id = ? LIMIT 1',
+            [id]
+        );
+        const [repairStats] = await pool.query(
+            'SELECT COALESCE(MAX(repair_no), 0) AS max_repair_no, COUNT(*) AS repair_count FROM order_repair_logs WHERE order_id = ?',
+            [id]
+        );
+        const existingContent = existing.length > 0 ? existing[0] : null;
+        const historyCount = Number(repairStats[0].repair_count || 0);
+        const legacyRepairExists = historyCount === 0 && existingContent && (
+            String(existingContent.status || '').toLowerCase().includes('sudah diperbaiki') ||
+            String(existingContent.repair_issue || '').trim() ||
+            String(existingContent.repair_fix || '').trim()
+        );
+        const repairNo = historyCount > 0
+            ? Number(repairStats[0].max_repair_no || 0) + 1
+            : (legacyRepairExists ? 2 : 1);
+
+        await pool.query(
+            `INSERT INTO order_repair_logs (order_id, repair_no, repair_issue, repair_fix, user_id)
+             VALUES (?, ?, ?, ?, ?)`,
+            [id, repairNo, repairIssue, repairFix, bengkelUserId || null]
+        );
+
+        if (existing.length > 0) {
+            try {
+                await pool.query(
+                    'UPDATE order_contents SET status = "Sudah Diperbaiki", repair_issue = ?, repair_fix = ?, repair_user_id = ?, updated_at = NOW() WHERE order_id = ?',
+                    [repairIssue, repairFix, bengkelUserId || null, id]
+                );
+            } catch (e) {
+                const code = String((e && e.code) || '');
+                if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+                await pool.query(
+                    'UPDATE order_contents SET status = "Sudah Diperbaiki" WHERE order_id = ?',
+                    [id]
+                );
+            }
+        } else {
+            try {
+                await pool.query(
+                    'INSERT INTO order_contents (order_id, status, repair_issue, repair_fix, repair_user_id) VALUES (?, "Sudah Diperbaiki", ?, ?, ?)',
+                    [id, repairIssue, repairFix, bengkelUserId || null]
+                );
+            } catch (e) {
+                const code = String((e && e.code) || '');
+                if (code !== 'ER_BAD_FIELD_ERROR') throw e;
+                await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, "Sudah Diperbaiki")', [id]);
+            }
+        }
+
+        if (bengkelUserId) {
+            await accrueCommissionLedger({
+                order_id: Number(id),
+                user_id: bengkelUserId,
+                role: 'Team Bengkel',
+                content_type: 'general',
+                amount,
+                source_event: 'bengkel_done',
+                source_event_key: `bengkel_done:${id}:${bengkelUserId}:Team Bengkel:general:${repairNo}`
+            });
+        }
+
+        res.json({ success: true, status: 'Sudah Diperbaiki', repair_no: repairNo });
+    } catch (e) {
+        console.error('Bengkel done error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/orders/:id/repairs', async (req, res) => {
+    try {
+        await ensureOrderRepairHistorySchema();
+        const { id } = req.params;
+        const [rows] = await pool.query(
+            `SELECT rl.id, rl.order_id, rl.repair_no, rl.repair_issue, rl.repair_fix, rl.user_id, rl.created_at,
+                    u.name AS user_name
+             FROM order_repair_logs rl
+             LEFT JOIN users u ON u.id = rl.user_id
+             WHERE rl.order_id = ?
+             ORDER BY rl.repair_no ASC, rl.created_at ASC`,
+            [id]
+        );
+        if (rows.length > 0) {
+            return res.json({ data: rows });
+        }
+
+        const [legacy] = await pool.query(
+            'SELECT status, repair_issue, repair_fix, repair_user_id, updated_at, created_at FROM order_contents WHERE order_id = ? LIMIT 1',
+            [id]
+        );
+        if (legacy.length > 0) {
+            const row = legacy[0];
+            const hasLegacyRepair = String(row.status || '').toLowerCase().includes('sudah diperbaiki') ||
+                String(row.repair_issue || '').trim() ||
+                String(row.repair_fix || '').trim();
+            if (hasLegacyRepair) {
+                let userName = null;
+                if (row.repair_user_id) {
+                    const [users] = await pool.query('SELECT name FROM users WHERE id = ? LIMIT 1', [row.repair_user_id]);
+                    userName = users.length > 0 ? users[0].name : null;
+                }
+                return res.json({
+                    data: [{
+                        id: null,
+                        order_id: Number(id),
+                        repair_no: 1,
+                        repair_issue: row.repair_issue || '',
+                        repair_fix: row.repair_fix || '',
+                        user_id: row.repair_user_id || null,
+                        user_name: userName,
+                        created_at: row.updated_at || row.created_at || null,
+                        is_legacy: true
+                    }]
+                });
+            }
+        }
+        res.json({ data: [] });
+    } catch (e) {
+        console.error('Order repairs error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -4432,6 +5200,7 @@ app.get('/api/openai-proxy/health', async (req, res) => {
 
 app.get('/api/cash/transactions', async (req, res) => {
     try {
+        await ensureTransactionsCategoryColumn();
         const today = new Date();
         const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
         const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
@@ -4445,7 +5214,7 @@ app.get('/api/cash/transactions', async (req, res) => {
                 SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) + SUM(CASE WHEN type = 'commission_pay' THEN amount ELSE 0 END) AS total_expense
              FROM transactions
              WHERE type IN ('income','expense','commission_pay')
-               AND DATE(COALESCE(trx_date, created_at)) BETWEEN ? AND ?`,
+               AND DATE(COALESCE(updated_at, created_at)) BETWEEN ? AND ?`,
             [startDate, endDate]
         );
 
@@ -4470,21 +5239,28 @@ app.get('/api/cash/transactions', async (req, res) => {
                 t.amount,
                 COALESCE(t.category,
                     CASE
-                        WHEN t.type = 'income' AND t.order_id IS NOT NULL THEN 'Pembayaran Order'
+                        WHEN t.type = 'income' AND t.order_id IS NOT NULL THEN 'Pembayaran Order (Pelunasan)'
                         WHEN t.type = 'commission_pay' THEN 'Komisi'
                         ELSE 'Lainnya'
                     END) AS category,
                 t.note,
                 t.created_at,
+                t.updated_at,
                 t.trx_date,
+                t.employee_user_id,
                 DATE(COALESCE(t.trx_date, t.created_at)) AS trx_date_value,
-                c.name AS client_name
+                DATE(COALESCE(t.updated_at, t.created_at)) AS display_date_value,
+                COALESCE(t.updated_at, t.created_at) AS display_datetime,
+                c.name AS client_name,
+                u.name AS employee_name,
+                u.role AS employee_role
              FROM transactions t
              LEFT JOIN orders o ON t.order_id = o.id
              LEFT JOIN clients c ON o.client_id = c.id
+             LEFT JOIN users u ON t.employee_user_id = u.id
              WHERE t.type IN ('income','expense','commission_pay')
-               AND DATE(COALESCE(t.trx_date, t.created_at)) BETWEEN ? AND ?
-             ORDER BY DATE(COALESCE(t.trx_date, t.created_at)) DESC, t.created_at DESC`,
+               AND DATE(COALESCE(t.updated_at, t.created_at)) BETWEEN ? AND ?
+             ORDER BY COALESCE(t.updated_at, t.created_at) DESC, t.id DESC`,
             [startDate, endDate]
         );
 
@@ -4505,12 +5281,14 @@ app.get('/api/cash/transactions', async (req, res) => {
 
 app.post('/api/cash/transactions', async (req, res) => {
     try {
+        await ensureTransactionsCategoryColumn();
         const type = String(req.body.type || '').trim();
         const amount = Number(req.body.amount);
         const category = req.body.category ? String(req.body.category).trim() : null;
         const note = req.body.note ? String(req.body.note).trim() : null;
         const trxDate = String(req.body.trx_date || '').trim() || new Date().toISOString().slice(0, 10);
         const orderId = req.body.order_id ? Number(req.body.order_id) : null;
+        const employeeUserId = req.body.employee_user_id ? Number(req.body.employee_user_id) : null;
 
         if (!['income', 'expense'].includes(type)) {
             return res.status(400).json({ error: 'Invalid type' });
@@ -4518,16 +5296,288 @@ app.post('/api/cash/transactions', async (req, res) => {
         if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
         }
+        if (employeeUserId && !Number.isFinite(employeeUserId)) {
+            return res.status(400).json({ error: 'Invalid employee_user_id' });
+        }
 
         const p = await getPool();
         const [result] = await p.query(
-            'INSERT INTO transactions (type, amount, category, note, trx_date, order_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-            [type, amount, category, note, trxDate, orderId]
+            'INSERT INTO transactions (type, amount, category, note, trx_date, order_id, employee_user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+            [type, amount, category, note, trxDate, orderId, employeeUserId]
         );
 
         res.json({ success: true, id: result.insertId });
     } catch (e) {
         console.error('Cash transaction create error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.patch('/api/cash/transactions/:id', async (req, res) => {
+    try {
+        await ensureTransactionsCategoryColumn();
+        const id = Number(req.params.id);
+        const type = String(req.body.type || '').trim();
+        const amount = Number(req.body.amount);
+        const category = req.body.category ? String(req.body.category).trim() : null;
+        const note = req.body.note ? String(req.body.note).trim() : null;
+        const trxDate = String(req.body.trx_date || '').trim() || new Date().toISOString().slice(0, 10);
+        const orderId = req.body.order_id ? Number(req.body.order_id) : null;
+        const employeeUserId = req.body.employee_user_id ? Number(req.body.employee_user_id) : null;
+
+        if (!id) {
+            return res.status(404).json({ error: 'Not found' });
+        }
+        if (!['income', 'expense'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid type' });
+        }
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({ error: 'Invalid amount' });
+        }
+        if (employeeUserId && !Number.isFinite(employeeUserId)) {
+            return res.status(400).json({ error: 'Invalid employee_user_id' });
+        }
+
+        const p = await getPool();
+        const [rows] = await p.query(
+            "SELECT id FROM transactions WHERE id = ? AND type IN ('income','expense') LIMIT 1",
+            [id]
+        );
+        if (!rows.length) {
+            return res.status(404).json({ error: 'Not found' });
+        }
+
+        await p.query(
+            `UPDATE transactions
+             SET type = ?, amount = ?, category = ?, note = ?, trx_date = ?, order_id = ?, employee_user_id = ?, updated_at = NOW()
+             WHERE id = ?`,
+            [type, amount, category, note, trxDate, orderId, employeeUserId, id]
+        );
+
+        res.json({ success: true, id });
+    } catch (e) {
+        console.error('Cash transaction update error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/payroll/summary', async (req, res) => {
+    try {
+        await ensureTransactionsCategoryColumn();
+        const month = String(req.query.month || '').trim();
+        let startDate = '';
+        let endDate = '';
+        if (/^\d{4}-\d{2}$/.test(month)) {
+            const year = Number(month.slice(0, 4));
+            const monthIndex = Number(month.slice(5, 7)) - 1;
+            startDate = new Date(year, monthIndex, 1).toISOString().slice(0, 10);
+            endDate = new Date(year, monthIndex + 1, 0).toISOString().slice(0, 10);
+        } else {
+            const today = new Date();
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+        }
+
+        const p = await getPool();
+        const [employees] = await p.query(
+            `SELECT id, name, email, role
+             FROM users
+             WHERE LOWER(COALESCE(role, '')) NOT IN ('super_admin', 'superadmin')
+             ORDER BY name ASC`
+        );
+
+        const [transactionRows] = await p.query(
+            `SELECT
+                t.id,
+                t.employee_user_id,
+                t.type,
+                t.category,
+                t.amount,
+                t.note,
+                t.order_id,
+                t.created_at,
+                t.updated_at,
+                t.trx_date,
+                DATE(COALESCE(t.trx_date, t.created_at)) AS date_value,
+                COALESCE(t.updated_at, t.created_at) AS datetime_value
+             FROM transactions t
+             WHERE t.employee_user_id IS NOT NULL
+               AND t.type = 'expense'
+               AND DATE(COALESCE(t.trx_date, t.created_at)) BETWEEN ? AND ?
+             ORDER BY DATE(COALESCE(t.trx_date, t.created_at)) DESC, t.id DESC`,
+            [startDate, endDate]
+        );
+
+        const [commissionRows] = await p.query(
+            `SELECT
+                cl.id,
+                cl.user_id,
+                cl.order_id,
+                cl.role,
+                cl.source_event,
+                cl.amount,
+                cl.status,
+                cl.approval_status,
+                cl.approved_at,
+                cl.created_at,
+                DATE(COALESCE(cl.approved_at, cl.created_at)) AS date_value,
+                COALESCE(cl.approved_at, cl.created_at) AS datetime_value,
+                c.name AS client_name,
+                pck.name AS package_name
+             FROM commission_ledger cl
+             LEFT JOIN orders o ON cl.order_id = o.id
+             LEFT JOIN clients c ON o.client_id = c.id
+             LEFT JOIN packages pck ON o.package_id = pck.id
+             WHERE cl.user_id IS NOT NULL
+               AND cl.approval_status = 'approved'
+               AND DATE(COALESCE(cl.approved_at, cl.created_at)) BETWEEN ? AND ?
+             ORDER BY COALESCE(cl.approved_at, cl.created_at) DESC, cl.id DESC`,
+            [startDate, endDate]
+        );
+
+        const [serviceRows] = await p.query(
+            `SELECT
+                COALESCE(SUM(CASE WHEN type = 'expense' AND category = 'Pembayaran Layanan' THEN amount ELSE 0 END), 0) AS service_payment,
+                COALESCE(SUM(CASE WHEN type = 'expense' AND category = 'Tools/SaaS' THEN amount ELSE 0 END), 0) AS tools_payment,
+                COALESCE(SUM(CASE WHEN type = 'expense' AND category = 'Internet' THEN amount ELSE 0 END), 0) AS internet_payment
+             FROM transactions
+             WHERE DATE(COALESCE(trx_date, created_at)) BETWEEN ? AND ?`,
+            [startDate, endDate]
+        );
+
+        const payrollMap = new Map();
+        const ensurePayrollEntry = (userId) => {
+            const normalizedUserId = Number(userId);
+            if (!payrollMap.has(normalizedUserId)) {
+                payrollMap.set(normalizedUserId, {
+                    base_salary: 0,
+                    bonus: 0,
+                    commission: 0,
+                    kasbon: 0,
+                    benefit_total: 0,
+                    income_items: [],
+                    expense_items: [],
+                    benefit_items: []
+                });
+            }
+            return payrollMap.get(normalizedUserId);
+        };
+
+        transactionRows.forEach((row) => {
+            const entry = ensurePayrollEntry(row.employee_user_id);
+            const category = String(row.category || '').trim();
+            const amount = Number(row.amount || 0);
+            const payload = {
+                source_type: 'transaction',
+                transaction_id: row.id,
+                order_id: row.order_id,
+                category,
+                amount,
+                note: row.note,
+                date_value: row.date_value,
+                datetime_value: row.datetime_value
+            };
+
+            if (category === 'Gaji/Payroll') {
+                entry.base_salary += amount;
+                entry.income_items.push(payload);
+            } else if (category === 'Bonus') {
+                entry.bonus += amount;
+                entry.income_items.push(payload);
+            } else if (category === 'Kasbon') {
+                entry.kasbon += amount;
+                entry.expense_items.push(payload);
+            } else {
+                entry.benefit_total += amount;
+                entry.benefit_items.push(payload);
+            }
+        });
+
+        commissionRows.forEach((row) => {
+            const entry = ensurePayrollEntry(row.user_id);
+            const amount = Number(row.amount || 0);
+            entry.commission += amount;
+            entry.income_items.push({
+                source_type: 'commission',
+                ledger_id: row.id,
+                order_id: row.order_id,
+                category: 'Komisi Approved',
+                amount,
+                role: row.role,
+                source_event: row.source_event,
+                status: row.status,
+                approval_status: row.approval_status,
+                client_name: row.client_name,
+                package_name: row.package_name,
+                date_value: row.date_value,
+                datetime_value: row.datetime_value
+            });
+        });
+
+        const rows = employees
+            .map((employee) => {
+                const payroll = payrollMap.get(Number(employee.id)) || {
+                    base_salary: 0,
+                    bonus: 0,
+                    commission: 0,
+                    kasbon: 0,
+                    benefit_total: 0,
+                    income_items: [],
+                    expense_items: [],
+                    benefit_items: []
+                };
+                const totalReceived = payroll.base_salary + payroll.bonus + payroll.commission - payroll.kasbon;
+                return {
+                    user_id: employee.id,
+                    name: employee.name,
+                    email: employee.email,
+                    role: employee.role,
+                    base_salary: payroll.base_salary,
+                    bonus: payroll.bonus,
+                    commission: payroll.commission,
+                    kasbon: payroll.kasbon,
+                    benefit_total: payroll.benefit_total,
+                    total_received: totalReceived,
+                    details: {
+                        income_items: payroll.income_items,
+                        expense_items: payroll.expense_items,
+                        benefit_items: payroll.benefit_items
+                    }
+                };
+            })
+            .filter((row) => row.base_salary > 0 || row.bonus > 0 || row.commission > 0 || row.kasbon > 0 || row.benefit_total > 0);
+
+        const totals = rows.reduce((acc, row) => {
+            acc.base_salary += Number(row.base_salary || 0);
+            acc.bonus += Number(row.bonus || 0);
+            acc.commission += Number(row.commission || 0);
+            acc.kasbon += Number(row.kasbon || 0);
+            acc.total_received += Number(row.total_received || 0);
+            return acc;
+        }, { base_salary: 0, bonus: 0, commission: 0, kasbon: 0, total_received: 0 });
+
+        const serviceSummary = {
+            service_payment: Number((serviceRows[0] && serviceRows[0].service_payment) || 0),
+            tools_payment: Number((serviceRows[0] && serviceRows[0].tools_payment) || 0),
+            internet_payment: Number((serviceRows[0] && serviceRows[0].internet_payment) || 0)
+        };
+        serviceSummary.total_service_cost =
+            serviceSummary.service_payment +
+            serviceSummary.tools_payment +
+            serviceSummary.internet_payment;
+
+        res.json({
+            period: { month: month || startDate.slice(0, 7), start_date: startDate, end_date: endDate },
+            commission_rule: {
+                included_when: 'approved',
+                included_date_field: 'approved_at'
+            },
+            totals,
+            service_summary: serviceSummary,
+            rows
+        });
+    } catch (e) {
+        console.error('Payroll summary fetch error:', e);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

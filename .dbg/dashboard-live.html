@@ -277,25 +277,6 @@
         html.theme-openai body[data-active="overview"][data-role="crm"] #btn-cs-new-order {
             display: none !important;
         }
-        html.theme-openai body[data-active="overview"][data-role="crm"] #btn-header-range,
-        html.theme-openai body[data-active="overview"][data-role="crm"] #btn-export-report,
-        html.theme-openai body[data-active="overview"][data-role="editor"] #btn-header-range,
-        html.theme-openai body[data-active="overview"][data-role="editor"] #btn-export-report,
-        html.theme-openai body[data-active="overview"][data-role="editor"] #btn-cs-new-order-top,
-        html.theme-openai body[data-active="overview"][data-role="advertiser"] #btn-header-range,
-        html.theme-openai body[data-active="overview"][data-role="advertiser"] #btn-export-report,
-        html.theme-openai body[data-active="overview"][data-role="advertiser"] #btn-cs-new-order-top,
-        html.theme-openai body[data-active="overview"][data-role="team bengkel"] #btn-header-range,
-        html.theme-openai body[data-active="overview"][data-role="team bengkel"] #btn-export-report,
-        html.theme-openai body[data-active="overview"][data-role="team bengkel"] #btn-cs-new-order-top,
-        html.theme-openai body[data-active="overview"][data-role="bengkel"] #btn-header-range,
-        html.theme-openai body[data-active="overview"][data-role="bengkel"] #btn-export-report,
-        html.theme-openai body[data-active="overview"][data-role="bengkel"] #btn-cs-new-order-top,
-        html.theme-openai body[data-active="overview"][data-role="keuangan"] #btn-header-range,
-        html.theme-openai body[data-active="overview"][data-role="keuangan"] #btn-export-report,
-        html.theme-openai body[data-active="overview"][data-role="keuangan"] #btn-cs-new-order-top {
-            display: none !important;
-        }
         html.theme-openai body[data-active="overview"][data-role="crm"] #dash-status-filter {
             display: none !important;
         }
@@ -321,7 +302,7 @@
                     <div class="flex items-center gap-3">
                         <button id="btn-header-range" class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-secondary/80 bg-white/5 hover:bg-white/10 transition-colors">
                             <span class="material-symbols-outlined text-sm">calendar_month</span>
-                            <span>Hari ini â€¢ 07:00â€“23:59</span>
+                            <span>Hari ini • 07:00–23:59</span>
                         </button>
                         <button id="btn-export-report" class="hidden sm:inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium text-white pill hover:brightness-110 transition">
                             <span class="material-symbols-outlined text-sm">ios_share</span>
@@ -699,7 +680,7 @@
                     </section>
 
                     <!-- My Clients Table -->
-                    <section id="bengkel-custom-table" class="hidden glass-panel rounded-2xl overflow-hidden">
+                    <section class="glass-panel rounded-2xl overflow-hidden">
                         <div class="p-6 border-b border-white/5 flex justify-between items-center">
                             <h4 class="text-lg font-bold text-white">Klien Saya</h4>
                             <a href="clients.html" class="text-xs font-semibold text-primary hover:underline">Lihat Semua</a>
@@ -968,12 +949,12 @@
                                 <span class="material-symbols-outlined text-6xl text-orange-400">build</span>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Antrian Bengkel</p>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Order Ditangani</p>
                                 <h3 id="bengkel-active-count" class="text-3xl font-bold text-white">0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-orange-400 bg-orange-400/10 w-fit px-2 py-1 rounded-lg">
                                 <span class="material-symbols-outlined text-sm">handyman</span>
-                                <span>Status Iklan Tayang</span>
+                                <span>Sedang diproses</span>
                             </div>
                         </div>
 
@@ -983,12 +964,12 @@
                                 <span class="material-symbols-outlined text-6xl text-emerald-400">check_circle</span>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Sudah Diperbaiki</p>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Selesai Bulan Ini</p>
                                 <h3 id="bengkel-completed-count" class="text-3xl font-bold text-white">0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-400/10 w-fit px-2 py-1 rounded-lg">
                                 <span class="material-symbols-outlined text-sm">done_all</span>
-                                <span>Total selesai</span>
+                                <span>Tugas selesai</span>
                             </div>
                         </div>
 
@@ -998,16 +979,40 @@
                                 <span class="material-symbols-outlined text-6xl text-emerald-400">payments</span>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-400 font-medium mb-1">Komisi Bengkel</p>
+                                <p class="text-sm text-slate-400 font-medium mb-1">Komisi Bulan Ini</p>
                                 <h3 id="bengkel-commission-total" class="text-3xl font-bold text-emerald-400">Rp 0</h3>
                             </div>
                             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
                                 <span class="material-symbols-outlined text-sm">calendar_month</span>
-                                <span>Dari tiap pencatatan perbaikan</span>
+                                <span>Periode saat ini</span>
                             </div>
                         </div>
                     </section>
 
+                    <!-- Bengkel Tasks Table -->
+                    <section class="glass-panel rounded-2xl overflow-hidden">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                            <h4 class="text-lg font-bold text-white">Daftar Tugas Bengkel</h4>
+                            <a href="orders.html" class="text-xs font-semibold text-primary hover:underline">Lihat Semua</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5">
+                                    <tr>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Project</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Klien</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bengkel-tasks-body" class="divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Memuat antrian...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
 
                 <!-- Keuangan Dashboard -->
@@ -1092,124 +1097,32 @@
         <div id="include-footer"></div>
     </div>
     <script>
-        function placeSharedOrdersTableForRole(roleLower) {
-            const ordersSection = document.getElementById('dashboard-recent-orders');
-            const adminContainer = document.getElementById('admin-dashboard-content');
-            const bengkelContainer = document.getElementById('bengkel-dashboard-content');
-            const crmCards = document.getElementById('crm-cards');
-            if (!ordersSection || !adminContainer || !bengkelContainer) return;
-            ordersSection.style.display = '';
-            if (roleLower === 'team bengkel' || roleLower === 'bengkel') {
-                bengkelContainer.appendChild(ordersSection);
-                return;
-            }
-            if (crmCards && crmCards.parentElement === adminContainer) {
-                crmCards.insertAdjacentElement('afterend', ordersSection);
-                return;
-            }
-            adminContainer.appendChild(ordersSection);
-        }
-
-        function configureSharedOrdersTableForRole(roleLower) {
-            const headDefault = document.getElementById('dash-thead-default');
-            const headOrders = document.getElementById('dash-thead-orders');
-            const tbody = document.getElementById('orders-table-body');
-            if (!headDefault || !headOrders || !tbody) return;
-
-            if (roleLower === 'team bengkel' || roleLower === 'bengkel') {
-                headOrders.classList.add('hidden');
-                headDefault.classList.remove('hidden');
-                headDefault.innerHTML = `
-                    <tr>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Proses</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Jumlah Perbaikan</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Catatan Perbaikan</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
-                    </tr>
-                `;
-                return;
-            }
-
-            if (roleLower === 'cs') {
-                headOrders.classList.add('hidden');
-                headDefault.classList.remove('hidden');
-                headDefault.innerHTML = `
-                    <tr>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Proses</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Pembayaran</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-10"></th>
-                    </tr>
-                `;
-                return;
-            }
-
-            headDefault.innerHTML = `
-                <tr>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Proses</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-16 text-center">#</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-10"></th>
-                </tr>
-            `;
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
             const role = localStorage.getItem('role') || 'super_admin';
             const userId = localStorage.getItem('user_id') || localStorage.getItem('userId');
             const isAdmin = (role || '').toLowerCase() === 'super_admin';
-            const roleLower = (role || '').toLowerCase();
-            const canShowTopActions = roleLower === 'cs' || roleLower === 'super_admin';
-            placeSharedOrdersTableForRole((role || '').toLowerCase());
-            configureSharedOrdersTableForRole((role || '').toLowerCase());
             document.body.setAttribute('data-role', String(role || '').toLowerCase());
             ['card-revenue','card-commissions','card-ads-spend'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = isAdmin ? '' : 'none';
             });
-            const btnRange = document.getElementById('btn-header-range');
-            const btnExport = document.getElementById('btn-export-report');
-            const btnNewTop = document.getElementById('btn-cs-new-order-top');
-            if (btnRange) btnRange.style.display = canShowTopActions ? '' : 'none';
-            if (btnExport) btnExport.style.display = canShowTopActions ? 'inline-flex' : 'none';
-            if (btnNewTop) {
-                if (canShowTopActions) {
-                    btnNewTop.classList.remove('hidden');
-                    btnNewTop.style.display = 'inline-flex';
-                } else {
-                    btnNewTop.classList.add('hidden');
-                    btnNewTop.style.display = 'none';
-                }
-            }
 
-            if ((role || '').toLowerCase() === 'cs') {
+            if (role === 'CS') {
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 const recentOrders = document.getElementById('dashboard-recent-orders');
-                if (recentOrders) recentOrders.style.display = '';
+                if (recentOrders) recentOrders.style.display = 'none';
                 const fin = document.getElementById('financial-overview');
                 if (fin) fin.style.display = 'none';
+                const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                if (btnNewTop) { btnNewTop.classList.remove('hidden'); btnNewTop.style.display = 'inline-flex'; }
                 const btnNew = document.getElementById('btn-cs-new-order');
                 if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
+                const btnRange = document.getElementById('btn-header-range');
+                if (btnRange) btnRange.style.display = 'none';
+                const btnExport = document.getElementById('btn-export-report');
+                if (btnExport) btnExport.style.display = 'none';
                 await loadAdminOrders(1);
                 await loadCSCards(userId);
             } else if (role.toLowerCase() === 'editor') {
@@ -1238,23 +1151,20 @@
                 document.getElementById('advertiser-dashboard-content').classList.remove('hidden');
                 document.getElementById('bengkel-dashboard-content').classList.add('hidden');
                 document.getElementById('keuangan-dashboard-content').classList.add('hidden');
+                const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                if (btnNewTop) { btnNewTop.classList.add('hidden'); btnNewTop.style.display = 'none'; }
                 const btnNew = document.getElementById('btn-cs-new-order');
                 if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
                 
                 await loadAdminOrders(1);
                 await loadAdvertiserData(userId);
-            } else if (role === 'Team Bengkel' || role.toLowerCase() === 'team bengkel' || role.toLowerCase() === 'bengkel') {
+            } else if (role === 'Team Bengkel' || role.toLowerCase() === 'team bengkel') {
                 // Bengkel View
-                const adminGrid3 = document.querySelector('#admin-dashboard-content > section');
-                if (adminGrid3) adminGrid3.style.display = 'none';
-                document.getElementById('admin-dashboard-content').classList.add('hidden');
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
                 document.getElementById('cs-dashboard-content').classList.add('hidden');
                 document.getElementById('editor-dashboard-content').classList.add('hidden');
                 document.getElementById('advertiser-dashboard-content').classList.add('hidden');
                 document.getElementById('bengkel-dashboard-content').classList.remove('hidden');
-                document.getElementById('keuangan-dashboard-content').classList.add('hidden');
-                const btnNew = document.getElementById('btn-cs-new-order');
-                if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
 
                 // Load Bengkel Data
                 await loadBengkelData(userId);
@@ -1270,6 +1180,8 @@
                 document.getElementById('keuangan-dashboard-content').classList.add('hidden');
                 const crmCards = document.getElementById('crm-cards');
                 if (crmCards) crmCards.classList.remove('hidden');
+                const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                if (btnNewTop) { btnNewTop.classList.add('hidden'); btnNewTop.style.display = 'none'; }
                 const btnNewInline = document.getElementById('btn-cs-new-order');
                 if (btnNewInline) { btnNewInline.classList.add('hidden'); btnNewInline.style.display = 'none'; }
                 dashStatus = 'all';
@@ -1303,6 +1215,11 @@
                 // Load Admin Data
                 await loadAdminData();
                 await loadAdminOrders(1);
+                // Show Input Order Baru for super_admin
+                if (isAdmin) {
+                    const btnNewTop = document.getElementById('btn-cs-new-order-top');
+                    if (btnNewTop) { btnNewTop.classList.remove('hidden'); btnNewTop.style.display = 'inline-flex'; }
+                }
             }
         });
 
@@ -1446,6 +1363,9 @@
              try {
                 const statsRes = await fetch(`/api/dashboard/advertiser-stats?user_id=${encodeURIComponent(userId || '')}`);
                 const stats = await statsRes.json();
+                //#region debug-point advertiser-stats-client
+                fetch('http://127.0.0.1:7777/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: 'advertiser-card-numbers', point: 'advertiser-stats-client', hypothesisId: 'h1-h4-h5', userId: String(userId || ''), responseOk: !!statsRes.ok, stats }) }).catch(() => {});
+                //#endregion
                 const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
                 const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
                 setText('advertiser-ready-count', stats.readyClients || 0);
@@ -1499,13 +1419,36 @@
                 // Stats
                 const statsRes = await fetch(`/api/dashboard/stats?role=Bengkel&user_id=${userId}`);
                 const stats = await statsRes.json();
-                const fmtCurrency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
-                const activeEl = document.getElementById('bengkel-active-count');
-                const completedEl = document.getElementById('bengkel-completed-count');
-                const commissionEl = document.getElementById('bengkel-commission-total');
-                if (activeEl) activeEl.textContent = String(stats.pendingTasks || 0);
-                if (completedEl) completedEl.textContent = String(stats.completedTasks || 0);
-                if (commissionEl) commissionEl.textContent = fmtCurrency.format(stats.commissionThisMonth || 0);
+                document.getElementById('bengkel-queue-count').textContent = stats.pendingTasks || 0;
+                
+                // Tasks
+                const tasksRes = await fetch(`/api/orders?assigned_to=${userId}&role=Team Bengkel&limit=5`);
+                const tasksData = await tasksRes.json();
+                const tasks = tasksData.data;
+
+                const tbody = document.getElementById('bengkel-tasks-body');
+                 if (tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada tugas teknis</td></tr>';
+                } else {
+                    let html = '';
+                    tasks.forEach(t => {
+                        html += `
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-6 py-4 text-sm font-medium text-white">#${t.id}</td>
+                                <td class="px-6 py-4 text-sm text-slate-300">
+                                    <div>${t.client_name || '-'}</div>
+                                    <div class="text-[10px] text-slate-500">${t.package_name || ''}</div>
+                                </td>
+                                <td class="px-6 py-4 text-xs font-bold text-amber-500 uppercase">Pending</td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="orderdetail.html?id=${t.id}" class="text-xs bg-secondary hover:bg-secondary/80 text-white px-3 py-1.5 rounded transition-colors">Detail</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                }
+
              } catch(e) {
                  console.error('Error loading Bengkel data', e);
              }
@@ -1583,7 +1526,6 @@
                 else if (roleNow === 'crm') qs = `content_status=menunggu_otp&limit=${limit}`;
                 else if (roleNow === 'editor') qs = `content_status=otp_selesai&limit=${limit}`;
                 else if (roleNow === 'advertiser') qs = `content_status=ready&limit=${limit}`;
-                else if (roleNow === 'team bengkel' || roleNow === 'bengkel') qs = `limit=${limit}`;
                 const res = await fetch(`/api/orders?${qs}`);
                 const json = await res.json();
                 const data = Array.isArray(json) ? json : (json.data || []);
@@ -1603,15 +1545,8 @@
                         created_at: o.created_at,
                         startDate: o.start_date || o.created_at,
                         status: o.status,
-                        paymentStatus: o.payment_status || o.paymentStatus || 'Lunas',
-                        paymentTotalAmount: Number(o.payment_total_amount || 0),
-                        paymentDpAmount: Number(o.payment_dp_amount || 0),
-                        paymentRemainingAmount: Number(o.payment_remaining_amount || 0),
                         content_status: o.content_status,
                         process_status: o.process_status,
-                        repairIssue: o.repair_issue || '',
-                        repairFix: o.repair_fix || '',
-                        repairCount: Number(o.repair_count || 0),
                         clientName: o.client_name || o.clientName || '',
                         businessName: o.business_name || o.businessName || '',
                         clientWhatsapp: o.client_whatsapp || o.clientWhatsapp || o.whatsapp || '',
@@ -1653,20 +1588,6 @@
             const s = String(value || '').trim().replace(/\s+/g, ' ');
             if (!s) return '';
             return s.split(' ').slice(0, 2).join(' ');
-        }
-
-        function dashNormalizePaymentStatus(value) {
-            const raw = String(value || '').trim().toLowerCase();
-            if (raw === 'dp' || raw === 'down payment' || raw === 'partial' || raw === 'partially_paid') return 'DP';
-            return 'Lunas';
-        }
-
-        function dashPaymentBadgeHtml(value) {
-            const normalized = dashNormalizePaymentStatus(value);
-            const classes = normalized === 'DP'
-                ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30'
-                : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-            return `<span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight whitespace-nowrap ${classes}">${normalized}</span>`;
         }
 
         async function markOtpSelesai(orderId) {
@@ -1735,127 +1656,6 @@
             }
         }
 
-        function openBengkelDoneModal(orderId) {
-            const modal = document.getElementById('bengkel-done-modal');
-            const orderInput = document.getElementById('bengkel-done-order-id');
-            const issueInput = document.getElementById('bengkel-repair-issue');
-            const fixInput = document.getElementById('bengkel-repair-fix');
-            const titleEl = document.getElementById('bengkel-done-modal-title');
-            const descEl = document.getElementById('bengkel-done-modal-desc');
-            const row = Array.isArray(window.dashAllOrders)
-                ? window.dashAllOrders.find((item) => String(item.id) === String(orderId))
-                : null;
-            let repairCount = Number(row && row.repairCount || 0);
-            if (!repairCount) {
-                const processVal = String(row && (row.content_status || row.process_status) || '').toLowerCase();
-                if (processVal.includes('sudah diperbaiki') && ((row && row.repairIssue) || (row && row.repairFix))) repairCount = 1;
-            }
-            const nextRepairNo = repairCount + 1;
-            if (orderInput) orderInput.value = String(orderId || '');
-            if (issueInput) issueInput.value = '';
-            if (fixInput) fixInput.value = '';
-            if (titleEl) titleEl.textContent = `Catat Perbaikan ke-${nextRepairNo}`;
-            if (descEl) descEl.textContent = 'Isi keterangan apa yang diperbaiki dan bagaimana memperbaikinya.';
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeBengkelDoneModal() {
-            const modal = document.getElementById('bengkel-done-modal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        async function openBengkelRepairDetail(orderId) {
-            const modal = document.getElementById('bengkel-detail-modal');
-            const titleEl = document.getElementById('bengkel-detail-title');
-            const listEl = document.getElementById('bengkel-detail-list');
-            if (titleEl) titleEl.textContent = `Detail Perbaikan Order #${orderId}`;
-            if (listEl) listEl.innerHTML = '<div class="rounded-2xl border border-slate-200 px-4 py-5 text-sm text-slate-500">Memuat riwayat perbaikan...</div>';
-            if (modal) modal.classList.remove('hidden');
-            try {
-                const resp = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/repairs');
-                const rj = await resp.json();
-                if (!resp.ok || rj.error) throw new Error(rj.error || 'Gagal memuat detail perbaikan');
-                const items = Array.isArray(rj.data) ? rj.data : [];
-                if (!listEl) return;
-                if (items.length === 0) {
-                    listEl.innerHTML = '<div class="rounded-2xl border border-dashed border-slate-300 px-4 py-5 text-sm text-slate-500">Belum ada riwayat perbaikan.</div>';
-                    return;
-                }
-                let rowsHtml = '';
-                items.forEach((item) => {
-                    const when = item.created_at ? new Date(item.created_at).toLocaleString('id-ID') : '-';
-                    const who = String(item.user_name || '').trim() || '-';
-                    rowsHtml += `
-                        <tr class="border-b border-slate-100 align-top last:border-0">
-                            <td class="px-4 py-3 text-sm font-bold text-slate-900 whitespace-nowrap">Ke-${item.repair_no || '-'}</td>
-                            <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">${when}</td>
-                            <td class="px-4 py-3 text-sm text-slate-700">${item.repair_issue || '-'}</td>
-                            <td class="px-4 py-3 text-sm text-slate-700">${item.repair_fix || '-'}</td>
-                            <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">${who}</td>
-                        </tr>
-                    `;
-                });
-                listEl.innerHTML = `
-                    <div class="overflow-x-auto rounded-2xl border border-slate-200">
-                        <table class="min-w-full text-left">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Perbaikan</th>
-                                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Tanggal</th>
-                                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Apa Yang Diperbaiki</th>
-                                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Cara Perbaikan</th>
-                                    <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Dikerjakan Oleh</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rowsHtml}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } catch (e) {
-                if (listEl) listEl.innerHTML = `<div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-5 text-sm text-rose-600">${e && e.message ? e.message : e}</div>`;
-            }
-        }
-
-        function closeBengkelRepairDetail() {
-            const modal = document.getElementById('bengkel-detail-modal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        async function submitBengkelDone() {
-            const roleLower = (localStorage.getItem('role') || '').toLowerCase();
-            if (roleLower !== 'team bengkel' && roleLower !== 'bengkel') return;
-            const orderId = String(document.getElementById('bengkel-done-order-id')?.value || '').trim();
-            const repairIssue = String(document.getElementById('bengkel-repair-issue')?.value || '').trim();
-            const repairFix = String(document.getElementById('bengkel-repair-fix')?.value || '').trim();
-            const userId = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
-            if (!orderId) return;
-            if (!repairIssue || !repairFix) {
-                alert('Keterangan apa yang diperbaiki dan bagaimana memperbaikinya wajib diisi.');
-                return;
-            }
-            try {
-                const resp = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/bengkel/done', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        repair_issue: repairIssue,
-                        repair_fix: repairFix
-                    })
-                });
-                const rj = await resp.json();
-                if (!resp.ok || rj.error) throw new Error(rj.error || 'Gagal update status');
-                closeBengkelDoneModal();
-                if (rj && rj.repair_no) alert(`Perbaikan ke-${rj.repair_no} berhasil disimpan.`);
-                await loadBengkelData(userId);
-                await loadAdminOrders(1);
-            } catch (e) {
-                alert('Gagal update status: ' + (e && e.message ? e.message : e));
-            }
-        }
-
         function applyDashboardFilters(page) {
             dashCurrentPage = page || dashCurrentPage;
             const raw = window.dashAllOrders || [];
@@ -1904,7 +1704,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (pageItems.length === 0) {
-                    const colSpan = roleLower === 'team bengkel' || roleLower === 'bengkel' ? 10 : 10;
+                    const colSpan = roleLower === 'crm' ? 10 : 10;
                     tbody.innerHTML = `<tr><td colspan="${colSpan}" class="px-6 py-8 text-center text-slate-500 italic">Belum ada pesanan</td></tr>`;
                 } else {
                     pageItems.forEach(order => {
@@ -1917,11 +1717,10 @@
                             const packageName = String(order.packageName || order.package_name || '-').trim() || '-';
                             const clientWa = String(order.clientWhatsapp || order.client_whatsapp || order.whatsapp || '-').trim() || '-';
                             const csName = dashShortTwoWords(order.csName || order.cs_name || '');
-                            const paymentBadge = dashPaymentBadgeHtml(order.paymentStatus);
                             tr.innerHTML = ''
                                 + `<td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>`
                                 + `<td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>`
-                                + `<td class="px-6 py-4"><div class="flex items-center gap-2"><span class="text-slate-900">${clientName || '-'}</span>${paymentBadge}</div></td>`
+                                + `<td class="px-6 py-4"><span class="text-slate-900">${clientName || '-'}</span></td>`
                                 + `<td class="px-6 py-4"><span class="text-slate-500">${businessName || '-'}</span></td>`
                                 + `<td class="px-6 py-4"><span class="text-slate-600">${packageName}</span></td>`
                                 + `<td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">-</span></td>`
@@ -1941,17 +1740,9 @@
                             const clientWa = order.clientWhatsapp || order.client_whatsapp || '-';
                             const csName = String(order.csName || order.cs_name || '').trim();
                             const csMeta = String(order.csPhone || order.cs_phone || order.csEmail || order.cs_email || '').trim();
-                            const csDisplay = csName ? (csMeta ? (csName + ' â€¢ ' + csMeta) : csName) : '-';
+                            const csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
                             const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
                             const roleNow = (localStorage.getItem('role') || '').toLowerCase();
-                            const processLower = String(order.content_status || order.process_status || '').toLowerCase();
-                            const paymentStatus = dashNormalizePaymentStatus(order.paymentStatus);
-                            const paymentBadge = dashPaymentBadgeHtml(paymentStatus);
-                            let repairCountDisplay = Number(order.repairCount || 0);
-                            if (!repairCountDisplay && processLower.includes('sudah diperbaiki') && (order.repairIssue || order.repairFix)) {
-                                repairCountDisplay = 1;
-                            }
-                            const detailBtn = `<button type="button" data-bengkel-detail="${order.id}" class="inline-flex items-center justify-center rounded-lg border border-white/15 px-3 py-2 text-[11px] font-bold text-white hover:bg-white/5 transition-colors">Detail</button>`;
                             const actionHtml = roleNow === 'editor'
                                 ? `<div class="inline-flex items-center justify-end gap-2">
                                       <button type="button" data-ready-iklan="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">Siap Iklan</button>
@@ -1959,103 +1750,37 @@
                                    </div>`
                                 : roleNow === 'advertiser'
                                 ? `<div class="inline-flex items-center justify-end gap-2">
-                                      ${paymentStatus === 'Lunas'
-                                        ? `<button type="button" data-iklan-tayang="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">Iklan Tayang</button>`
-                                        : `<button type="button" disabled class="inline-flex items-center justify-center rounded-lg bg-slate-600 px-3 py-2 text-[11px] font-bold text-white/80 cursor-not-allowed">Belum Lunas</button>`}
+                                      <button type="button" data-iklan-tayang="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">Iklan Tayang</button>
                                       <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>
                                    </div>`
-                                : (roleNow === 'team bengkel' || roleNow === 'bengkel')
-                                ? `<div class="inline-flex items-center justify-end gap-2">
-                                      <button type="button" data-bengkel-done="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">Catat Perbaikan</button>
-                                      ${detailBtn}
-                                   </div>`
-                                : roleNow === 'cs'
-                                ? `<a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>`
                                 : `<a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>`;
-                            const repairNote = [
-                                order.repairIssue ? `Apa: ${order.repairIssue}` : '',
-                                order.repairFix ? `Cara: ${order.repairFix}` : ''
-                            ].filter(Boolean).join('<br>');
-                            tr.innerHTML = (roleNow === 'team bengkel' || roleNow === 'bengkel')
-                                ? `
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center gap-2">
-                                            <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
-                                            <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
-                                                <option value="">Ubah...</option>
-                                            </select>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
-                                                <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
-                                                ${paymentBadge}
-                                            </div>
-                                            <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                                    <td class="px-6 py-4"><span class="inline-flex items-center rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-bold text-white">${repairCountDisplay}</span></td>
-                                    <td class="px-6 py-4 text-xs leading-5 text-slate-300">${repairNote || '-'}</td>
-                                    <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
-                                    <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
-                                    <td class="px-6 py-4 text-right">${actionHtml}</td>
-                                `
-                                : roleNow === 'cs'
-                                ? `
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                            tr.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
                                         <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
-                                                <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
-                                            </div>
-                                            <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">${paymentBadge}</td>
-                                    <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                                    <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
-                                    <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
-                                    <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
-                                    <td class="px-6 py-4 text-right">${actionHtml}</td>
-                                `
-                                : `
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
+                                            <option value="">Ubah...</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
+                                <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
                                         <div class="flex items-center gap-2">
-                                            <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
-                                            <select id="proc-${order.id}" class="appearance-none bg-white/5 border border-white/10 text-white text-[11px] font-medium rounded-lg pl-3 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer">
-                                                <option value="">Ubah...</option>
-                                            </select>
+                                            <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
+                                            <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
                                         </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
-                                    <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
-                                                <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
-                                                ${paymentBadge}
-                                            </div>
-                                            <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                                    <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
-                                    <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
-                                    <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
-                                    <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
-                                    <td class="px-6 py-4 text-right">${actionHtml}</td>
-                                `;
+                                        <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
+                                <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
+                                <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
+                                <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
+                                <td class="px-6 py-4 text-right">${actionHtml}</td>
+                            `;
                         }
                         tbody.appendChild(tr);
                         if (roleLower === 'crm') {
@@ -2085,24 +1810,6 @@
                                     e.stopPropagation();
                                     const id = btn.getAttribute('data-iklan-tayang');
                                     markIklanTayang(id);
-                                });
-                            }
-                        }
-                        if (roleLower === 'team bengkel' || roleLower === 'bengkel') {
-                            const btn = tr.querySelector('[data-bengkel-done]');
-                            if (btn) {
-                                btn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const id = btn.getAttribute('data-bengkel-done');
-                                    openBengkelDoneModal(id);
-                                });
-                            }
-                            const detailBtnEl = tr.querySelector('[data-bengkel-detail]');
-                            if (detailBtnEl) {
-                                detailBtnEl.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const id = detailBtnEl.getAttribute('data-bengkel-detail');
-                                    openBengkelRepairDetail(id);
                                 });
                             }
                         }
@@ -2143,13 +1850,6 @@
                                         return;
                                       }
                                    }
-                                   if (role === 'team bengkel' || role === 'bengkel') {
-                                    const show = procVal.includes('iklan tayang') || procVal.includes('sudah diperbaiki');
-                                    if (!show) {
-                                        tr.style.display = 'none';
-                                        return;
-                                    }
-                                   }
                                 } catch (_) {}
                                 if (typeEl) {
                                   const t = String(st.type || '').toLowerCase();
@@ -2166,9 +1866,7 @@
                                   if (p.includes('menunggu otp') || p.includes('menunggu')) cls = 'bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-400/50';
                                   else if (p.includes('mulai konten') || p.includes('proses konten')) cls = 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/50';
                                   else if (p.includes('siap iklan')) cls = 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-200 dark:border-cyan-400/50';
-                                  else if (p.includes('iklan tayang')) cls = 'bg-sky-100 text-sky-800 border border-sky-300 dark:bg-sky-500/20 dark:text-sky-200 dark:border-sky-400/50';
                                   else if (p.includes('proses iklan')) cls = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-400/50';
-                                  else if (p.includes('sudah diperbaiki')) cls = 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-400/50';
                                   else if (p.includes('aktif')) cls = 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-400/50';
                                   else if (p.includes('tidak aktif')) cls = 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-400/50';
                                   statusEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none ' + cls;
@@ -2178,7 +1876,7 @@
                                 if (sel) {
                                     const roleLower = (localStorage.getItem('role') || '').toLowerCase();
                                     const p = String(st.process || '').toLowerCase();
-                                    if (roleLower === 'crm' || roleLower === 'editor' || roleLower === 'advertiser' || roleLower === 'team bengkel' || roleLower === 'bengkel') {
+                                    if (roleLower === 'crm' || roleLower === 'editor' || roleLower === 'advertiser') {
                                         sel.style.display = 'none';
                                     } else {
                                         sel.innerHTML = '<option value="">Ubah...</option>';
@@ -2344,56 +2042,6 @@
             }
         }
     </script>
-    <div id="bengkel-done-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-slate-950/70" onclick="closeBengkelDoneModal()"></div>
-        <div class="relative z-10 flex min-h-full items-center justify-center p-4">
-            <div class="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <h3 id="bengkel-done-modal-title" class="text-xl font-bold text-slate-900">Catat Perbaikan</h3>
-                        <p id="bengkel-done-modal-desc" class="mt-1 text-sm text-slate-500">Isi keterangan apa yang diperbaiki dan bagaimana memperbaikinya.</p>
-                    </div>
-                    <button type="button" class="text-slate-400 hover:text-slate-600" onclick="closeBengkelDoneModal()">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <input type="hidden" id="bengkel-done-order-id" value="">
-                <div class="mt-6 space-y-4">
-                    <label class="block">
-                        <span class="mb-2 block text-sm font-semibold text-slate-700">Apa yang diperbaiki</span>
-                        <textarea id="bengkel-repair-issue" rows="3" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#ef7225] focus:ring-2 focus:ring-[#ef7225]/20" placeholder="Contoh: headline iklan, audience, visual, atau copy iklan"></textarea>
-                    </label>
-                    <label class="block">
-                        <span class="mb-2 block text-sm font-semibold text-slate-700">Bagaimana memperbaikinya</span>
-                        <textarea id="bengkel-repair-fix" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#ef7225] focus:ring-2 focus:ring-[#ef7225]/20" placeholder="Contoh: ganti audience, revisi visual, ubah CTA, optimasi placement"></textarea>
-                    </label>
-                </div>
-                <div class="mt-6 flex items-center justify-end gap-3">
-                    <button type="button" class="h-[44px] min-w-[120px] rounded-2xl border border-slate-200 px-5 text-sm font-semibold text-slate-500 hover:bg-slate-50" onclick="closeBengkelDoneModal()">Batal</button>
-                    <button type="button" class="h-[44px] min-w-[120px] rounded-2xl bg-[#ef7225] px-5 text-sm font-semibold text-white hover:bg-[#d96521]" onclick="submitBengkelDone()">Simpan</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="bengkel-detail-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-slate-950/70" onclick="closeBengkelRepairDetail()"></div>
-        <div class="relative z-10 flex min-h-full items-center justify-center p-4">
-            <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <h3 id="bengkel-detail-title" class="text-xl font-bold text-slate-900">Detail Perbaikan</h3>
-                        <p class="mt-1 text-sm text-slate-500">Riwayat seluruh perbaikan yang pernah dicatat untuk order ini.</p>
-                    </div>
-                    <button type="button" class="text-slate-400 hover:text-slate-600" onclick="closeBengkelRepairDetail()">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <div id="bengkel-detail-list" class="mt-6 space-y-3"></div>
-                <div class="mt-6 flex items-center justify-end">
-                    <button type="button" class="h-[44px] min-w-[120px] rounded-2xl border border-slate-200 px-5 text-sm font-semibold text-slate-500 hover:bg-slate-50" onclick="closeBengkelRepairDetail()">Tutup</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
+

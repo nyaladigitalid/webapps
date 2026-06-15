@@ -5,6 +5,8 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Nyala Digital Apps - Finance Dashboard</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -542,6 +544,14 @@ html.theme-openai body.finance-clean .finance-approval-btn-reject {
 html.theme-openai body.finance-clean .finance-approval-btn-reject:hover {
   background: #fee2e2 !important;
 }
+html.theme-openai body.finance-clean .finance-approval-btn-edit {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+}
+html.theme-openai body.finance-clean .finance-approval-btn-edit:hover {
+  background: #dbeafe !important;
+}
 html.theme-openai body.finance-clean .finance-approval-footer {
   display: flex !important;
   align-items: center !important;
@@ -602,6 +612,10 @@ html.theme-openai body.finance-clean .finance-cash-table th:nth-child(1),
 html.theme-openai body.finance-clean .finance-cash-table td:nth-child(1) {
   width: 148px !important;
 }
+html.theme-openai body.finance-clean .finance-cash-table th:nth-child(2),
+html.theme-openai body.finance-clean .finance-cash-table td:nth-child(2) {
+  width: 260px !important;
+}
 html.theme-openai body.finance-clean .finance-cash-table th:nth-child(3),
 html.theme-openai body.finance-clean .finance-cash-table td:nth-child(3) {
   width: 164px !important;
@@ -624,6 +638,16 @@ html.theme-openai body.finance-clean .finance-cash-description {
   overflow-wrap: anywhere !important;
   word-break: break-word !important;
   line-height: 1.4 !important;
+}
+html.theme-openai body.finance-clean .finance-payroll-detail-cell {
+  background: rgba(15, 23, 42, 0.04) !important;
+}
+html.theme-openai body.finance-clean .finance-payroll-detail-table th,
+html.theme-openai body.finance-clean .finance-payroll-detail-table td {
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  vertical-align: top !important;
 }
 html.theme-openai body.finance-clean .finance-summary-table .finance-main-row td {
   white-space: nowrap !important;
@@ -830,6 +854,10 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             <span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
             Buku Kas
           </button>
+          <button type="button" data-finance-tab-btn="payroll" class="finance-tab-btn shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]">badge</span>
+            Gaji
+          </button>
         </div>
       </div>
       <div class="space-y-5">
@@ -892,14 +920,12 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         </div>
         <div class="flex gap-2 items-end w-full md:w-auto">
              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">From</label>
-                <input type="date" id="finance-start-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
+                <label class="block text-xs font-medium text-slate-400 mb-1">Bulan</label>
+                <input type="month" id="finance-month-input" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+                <input type="hidden" id="finance-start-date">
+                <input type="hidden" id="finance-end-date">
              </div>
-             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">To</label>
-                <input type="date" id="finance-end-date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-             </div>
-             <button onclick="applyFilters()" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
+             <button onclick="loadFinanceOrders()" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
                 <span class="material-symbols-outlined text-lg">filter_list</span>
              </button>
         </div>
@@ -1011,22 +1037,10 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
                         </select>
                     </div>
                     <div class="finance-approval-field">
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Periode</label>
-                        <select id="approval-period-select" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary">
-                            <option value="this_month">Bulan Ini</option>
-                            <option value="last_month">Bulan Lalu</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-                    <div id="approval-custom-dates" class="hidden flex flex-wrap gap-2 items-end">
-                        <div class="finance-approval-field">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Dari</label>
-                            <input id="approval-start-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
-                        </div>
-                        <div class="finance-approval-field">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Sampai</label>
-                            <input id="approval-end-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
-                        </div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Bulan</label>
+                        <input id="approval-month-input" type="month" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+                        <input id="approval-start-date" type="hidden">
+                        <input id="approval-end-date" type="hidden">
                     </div>
                     <div class="finance-approval-field">
                         <label class="block text-xs font-medium text-slate-400 mb-1">Status Approval</label>
@@ -1148,22 +1162,10 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
       </div>
       <div class="flex flex-wrap gap-2 items-end w-full md:w-auto">
         <div>
-          <label class="block text-xs font-medium text-slate-400 mb-1">Periode</label>
-          <select id="cash-period-select" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
-            <option value="this_month">Bulan Ini</option>
-            <option value="last_month">Bulan Lalu</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-        <div id="cash-custom-dates" class="hidden flex flex-wrap gap-2 items-end">
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Dari</label>
-            <input id="cash-start-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1">Sampai</label>
-            <input id="cash-end-date" type="date" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
-          </div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Bulan</label>
+          <input id="cash-month-input" type="month" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+          <input id="cash-start-date" type="hidden">
+          <input id="cash-end-date" type="hidden">
         </div>
         <button id="cash-apply-period" type="button" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
           <span class="material-symbols-outlined text-lg">filter_list</span>
@@ -1205,6 +1207,120 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     </div>
   </div>
 </section>
+
+<section id="finance-tab-payroll" data-finance-tab-panel="payroll" class="hidden space-y-5">
+  <div class="finance-kpi-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Gaji Pokok</span>
+        <div class="finance-kpi-icon rounded-lg bg-sky-500/10 text-sky-500">
+          <span class="material-symbols-outlined">payments</span>
+        </div>
+      </div>
+      <h3 id="payroll-kpi-base" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Akumulasi gaji pokok bulan terpilih</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Bonus</span>
+        <div class="finance-kpi-icon rounded-lg bg-emerald-500/10 text-emerald-500">
+          <span class="material-symbols-outlined">workspace_premium</span>
+        </div>
+      </div>
+      <h3 id="payroll-kpi-bonus" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Tambahan bonus per karyawan</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Komisi Approved</span>
+        <div class="finance-kpi-icon rounded-lg bg-indigo-500/10 text-indigo-500">
+          <span class="material-symbols-outlined">receipt_long</span>
+        </div>
+      </div>
+      <h3 id="payroll-kpi-commission" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Komisi masuk di bulan saat approval</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Kasbon</span>
+        <div class="finance-kpi-icon rounded-lg bg-amber-500/10 text-amber-500">
+          <span class="material-symbols-outlined">credit_card</span>
+        </div>
+      </div>
+      <h3 id="payroll-kpi-kasbon" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Potongan kasbon bulan terpilih</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Pembayaran Layanan</span>
+        <div class="finance-kpi-icon rounded-lg bg-violet-500/10 text-violet-500">
+          <span class="material-symbols-outlined">cloud_sync</span>
+        </div>
+      </div>
+      <h3 id="payroll-kpi-service" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">GPT, internet, tools, dan layanan lain</p>
+    </div>
+    <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+      <div class="finance-kpi-head flex justify-between items-start gap-3">
+        <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Diterima</span>
+        <div class="finance-kpi-icon rounded-lg bg-primary/10 text-primary">
+          <span class="material-symbols-outlined">account_balance_wallet</span>
+        </div>
+      </div>
+      <h3 id="payroll-kpi-received" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+      <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Gaji pokok + bonus + komisi - kasbon</p>
+    </div>
+  </div>
+
+  <div class="finance-summary-breakdown space-y-3">
+    <div class="finance-summary-controls flex flex-col md:flex-row gap-4 justify-between items-end">
+      <div class="flex-1 w-full md:w-auto">
+        <label class="block text-xs font-medium text-slate-400 mb-1">Cari karyawan</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm">search</span>
+          <input id="payroll-search-input" type="text" placeholder="Nama, email, role..." class="pl-9 bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary w-full md:w-80">
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 items-end w-full md:w-auto">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Bulan</label>
+          <input id="payroll-month-input" type="month" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+        </div>
+        <button id="payroll-apply-filter" type="button" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
+          <span class="material-symbols-outlined text-lg">filter_list</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
+      Data gaji muncul jika Anda input pengeluaran di Buku Kas dengan kategori Gaji/Payroll, Bonus, atau Kasbon lalu pilih Karyawan. Komisi otomatis ikut ke payroll saat statusnya sudah approved, memakai bulan approval. Untuk benefit seperti Chat GPT, internet, atau tools, pilih Karyawan lalu isi Catatan agar tercatat jelas di slip gaji.
+    </div>
+
+    <div class="glass-card rounded-xl overflow-hidden border border-white/10">
+      <table class="finance-table finance-summary-table w-full text-left border-collapse">
+        <thead class="bg-white/5">
+          <tr>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Karyawan</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Role</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Gaji Pokok</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Bonus</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Komisi</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Kasbon</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Diterima</th>
+            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">Detail</th>
+          </tr>
+        </thead>
+        <tbody id="payroll-body" class="divide-y divide-white/5">
+          <tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Memuat data...</td></tr>
+        </tbody>
+      </table>
+      <div class="finance-summary-pagination px-6 py-4 border-t border-white/5 flex items-center justify-between bg-white/2">
+        <span id="payroll-footer-info" class="text-xs text-slate-400 font-medium">Menampilkan 0 data</span>
+        <span id="payroll-period-info" class="text-xs text-slate-400 font-medium">Bulan ini</span>
+      </div>
+    </div>
+  </div>
+</section>
     </main>
   </div>
   <div id="include-footer"></div>
@@ -1232,14 +1348,57 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         <label class="block text-xs font-semibold text-slate-400 mb-2">Kategori</label>
         <select id="cash-modal-category" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary"></select>
       </div>
+      <div id="cash-modal-employee-wrap" class="hidden">
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Karyawan</label>
+        <select id="cash-modal-employee" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary">
+          <option value="">Pilih karyawan...</option>
+        </select>
+        <p class="mt-2 text-xs text-slate-400">Opsional. Untuk benefit karyawan seperti pembayaran layanan, tools, atau internet, pilih karyawan di sini.</p>
+      </div>
       <div>
         <label class="block text-xs font-semibold text-slate-400 mb-2">Catatan</label>
-        <textarea id="cash-modal-note" rows="3" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary"></textarea>
+        <textarea id="cash-modal-note" rows="3" placeholder="Contoh: Chat GPT bulan Juni, Canva Pro, Internet kantor untuk Isna" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary"></textarea>
+        <p class="mt-2 text-xs text-slate-400">Isi detail benefit di catatan supaya muncul jelas di slip gaji.</p>
       </div>
       <div id="cash-modal-error" class="hidden rounded-2xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300"></div>
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
-        <button id="cash-save-transaction" class="inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 transition">Simpan</button>
+        <button id="cash-save-transaction" class="inline-flex items-center justify-center rounded-2xl bg-[#ef7225] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#d96521] transition min-w-[120px] h-[44px]">Simpan</button>
         <button id="cash-cancel-transaction" class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10 transition">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="commission-edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 p-4">
+  <div class="glass-panel w-full max-w-xl rounded-3xl border border-white/10 p-6 shadow-2xl">
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Edit Komisi</h3>
+        <p class="text-sm text-slate-500">Ubah nilai komisi, status, dan catatan.</p>
+      </div>
+      <button id="commission-edit-close" class="rounded-full bg-white/5 p-2 text-slate-300 hover:bg-white/10 transition"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Nominal Komisi</label>
+        <input id="commission-edit-amount" type="number" min="0" step="1" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Status</label>
+        <select id="commission-edit-status" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary">
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-2">Catatan</label>
+        <textarea id="commission-edit-note" rows="3" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:ring-primary focus:border-primary"></textarea>
+      </div>
+      <div id="commission-edit-error" class="hidden rounded-2xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300"></div>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3">
+        <button id="commission-edit-save" class="inline-flex items-center justify-center rounded-2xl bg-[#ef7225] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#d96521] transition min-w-[120px] h-[44px]">Simpan</button>
+        <button id="commission-edit-cancel" class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10 transition">Batal</button>
       </div>
     </div>
   </div>
@@ -1278,30 +1437,24 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Set default dates (current month)
-        const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        
-        // Format YYYY-MM-DD for input[type=date]
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-
         const financeStartDate = document.getElementById('finance-start-date');
         const financeEndDate = document.getElementById('finance-end-date');
+        const financeMonthInput = document.getElementById('finance-month-input');
+        const approvalMonthInput = document.getElementById('approval-month-input');
+        const cashMonthInput = document.getElementById('cash-month-input');
 
-        if(financeStartDate) financeStartDate.value = formatDate(firstDay);
-        if(financeEndDate) financeEndDate.value = formatDate(lastDay);
+        if (financeMonthInput) financeMonthInput.value = getCurrentMonthValue();
+        if (approvalMonthInput) approvalMonthInput.value = getCurrentMonthValue();
+        if (cashMonthInput) cashMonthInput.value = getCurrentMonthValue();
+
+        const [initialFinanceStart, initialFinanceEnd] = getMonthDateRange(financeMonthInput?.value || getCurrentMonthValue());
+        if(financeStartDate) financeStartDate.value = initialFinanceStart;
+        if(financeEndDate) financeEndDate.value = initialFinanceEnd;
 
         initFinanceTabs();
         loadFinanceOrders(); // Load main finance table
         const approvalStatusFilter = document.getElementById('approval-status-filter');
         const approvalUserFilter = document.getElementById('approval-user-filter');
-        const approvalPeriodSelect = document.getElementById('approval-period-select');
         const approvalStartDateInput = document.getElementById('approval-start-date');
         const approvalEndDateInput = document.getElementById('approval-end-date');
         if (approvalStatusFilter) {
@@ -1316,31 +1469,17 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
                 applyApprovalFilters({ reload: false });
             });
         }
-        if (approvalPeriodSelect) {
-            approvalPeriodSelect.addEventListener('change', () => {
-                updateApprovalCustomDatesVisibility();
-                if (approvalPeriodSelect.value !== 'custom') {
-                    const [start, end] = getDefaultCashPeriod(approvalPeriodSelect.value);
-                    setApprovalDateInputs(start, end);
-                    approvalCurrentPage = 1;
-                    applyApprovalFilters({ reload: false });
-                }
+        if (financeMonthInput) {
+            financeMonthInput.addEventListener('change', () => {
+                loadFinanceOrders();
             });
         }
-        if (approvalStartDateInput) {
-            approvalStartDateInput.addEventListener('change', () => {
+        if (approvalMonthInput) {
+            approvalMonthInput.addEventListener('change', () => {
+                const [start, end] = getMonthDateRange(approvalMonthInput.value || getCurrentMonthValue());
+                setApprovalDateInputs(start, end);
                 approvalCurrentPage = 1;
-                if ((approvalPeriodSelect?.value || '') === 'custom' && approvalStartDateInput.value && approvalEndDateInput?.value) {
-                    applyApprovalFilters({ reload: false });
-                }
-            });
-        }
-        if (approvalEndDateInput) {
-            approvalEndDateInput.addEventListener('change', () => {
-                approvalCurrentPage = 1;
-                if ((approvalPeriodSelect?.value || '') === 'custom' && approvalStartDateInput?.value && approvalEndDateInput.value) {
-                    applyApprovalFilters({ reload: false });
-                }
+                applyApprovalFilters({ reload: true });
             });
         }
         if (approvalApplyFiltersBtn) {
@@ -1401,12 +1540,12 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
                 updateApprovalSelectionUI();
             });
         }
-        const [approvalStart, approvalEnd] = getDefaultCashPeriod('this_month');
+        const [approvalStart, approvalEnd] = getMonthDateRange(approvalMonthInput?.value || getCurrentMonthValue());
         setApprovalDateInputs(approvalStart, approvalEnd);
-        updateApprovalCustomDatesVisibility();
         applyApprovalFilters({ reload: true });
         loadLedgerAndPayout();
         initCashTab();
+        initPayrollTab();
     });
 
     let allFinanceOrders = [];
@@ -1423,12 +1562,11 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     let approvalPageEnd = 0;
     let approvalAppliedStatus = 'all';
     let approvalAppliedUser = 'all';
-    let approvalAppliedPeriod = 'this_month';
+    let approvalAppliedPeriod = 'month';
     let approvalAppliedStartDate = '';
     let approvalAppliedEndDate = '';
     const approvalUserFilter = document.getElementById('approval-user-filter');
-    const approvalPeriodSelect = document.getElementById('approval-period-select');
-    const approvalCustomDates = document.getElementById('approval-custom-dates');
+    const approvalMonthInput = document.getElementById('approval-month-input');
     const approvalStartDateInput = document.getElementById('approval-start-date');
     const approvalEndDateInput = document.getElementById('approval-end-date');
     const approvalApplyFiltersBtn = document.getElementById('approval-apply-filters');
@@ -1437,8 +1575,7 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     const currentFinanceUserId = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
     const canApproveCommission = ['keuangan', 'super_admin', 'superadmin', 'finance'].includes(currentFinanceRole);
     const canPayoutCommission = canApproveCommission;
-    const cashPeriodSelect = document.getElementById('cash-period-select');
-    const cashCustomDates = document.getElementById('cash-custom-dates');
+    const cashMonthInput = document.getElementById('cash-month-input');
     const cashStartDateInput = document.getElementById('cash-start-date');
     const cashEndDateInput = document.getElementById('cash-end-date');
     const cashApplyPeriod = document.getElementById('cash-apply-period');
@@ -1458,6 +1595,8 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     const cashModalDate = document.getElementById('cash-modal-date');
     const cashModalAmount = document.getElementById('cash-modal-amount');
     const cashModalCategory = document.getElementById('cash-modal-category');
+    const cashModalEmployeeWrap = document.getElementById('cash-modal-employee-wrap');
+    const cashModalEmployee = document.getElementById('cash-modal-employee');
     const cashModalNote = document.getElementById('cash-modal-note');
     const cashModalError = document.getElementById('cash-modal-error');
     const cashSaveTransaction = document.getElementById('cash-save-transaction');
@@ -1465,6 +1604,16 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     const cashModalClose = document.getElementById('cash-modal-close');
     const cashBtnAddIncome = document.getElementById('cash-btn-add-income');
     const cashBtnAddExpense = document.getElementById('cash-btn-add-expense');
+    const commissionEditModal = document.getElementById('commission-edit-modal');
+    const commissionEditAmount = document.getElementById('commission-edit-amount');
+    const commissionEditStatus = document.getElementById('commission-edit-status');
+    const commissionEditNote = document.getElementById('commission-edit-note');
+    const commissionEditError = document.getElementById('commission-edit-error');
+    const commissionEditSave = document.getElementById('commission-edit-save');
+    const commissionEditCancel = document.getElementById('commission-edit-cancel');
+    const commissionEditClose = document.getElementById('commission-edit-close');
+    let commissionEditingId = null;
+    let cashEditingId = null;
     let cashCurrentMode = 'income';
     let cashCurrentTransactions = [];
     let cashCurrentStartDate = '';
@@ -1473,24 +1622,55 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     let cashFilteredCount = 0;
     let cashPageStart = 0;
     let cashPageEnd = 0;
+    let payrollRows = [];
+    let payrollFilteredRows = [];
+    let payrollEmployeeOptions = [];
     const cashCategories = {
-        income: [{ value: 'Pemasukan Lain', label: 'Pemasukan Lain' }],
+        income: [
+            { value: 'Pembayaran Order (DP)', label: 'Pembayaran Order (DP)' },
+            { value: 'Pembayaran Order (Pelunasan)', label: 'Pembayaran Order (Pelunasan)' },
+            { value: 'Pemasukan Lain', label: 'Pemasukan Lain' }
+        ],
         expense: [
             { value: 'Ad Spend', label: 'Ad Spend' },
             { value: 'Komisi', label: 'Komisi' },
             { value: 'Operasional', label: 'Operasional' },
+            { value: 'Kasbon', label: 'Kasbon' },
+            { value: 'Bonus', label: 'Bonus' },
             { value: 'Gaji/Payroll', label: 'Gaji/Payroll' },
+            { value: 'Pembayaran Layanan', label: 'Pembayaran Layanan' },
             { value: 'Tools/SaaS', label: 'Tools/SaaS' },
+            { value: 'Internet', label: 'Internet' },
             { value: 'Lainnya', label: 'Lainnya' }
         ]
     };
+    const payrollMonthInput = document.getElementById('payroll-month-input');
+    const payrollApplyFilter = document.getElementById('payroll-apply-filter');
+    const payrollSearchInput = document.getElementById('payroll-search-input');
+    const payrollBody = document.getElementById('payroll-body');
+    const payrollFooterInfo = document.getElementById('payroll-footer-info');
+    const payrollPeriodInfo = document.getElementById('payroll-period-info');
+    const payrollKpiBase = document.getElementById('payroll-kpi-base');
+    const payrollKpiBonus = document.getElementById('payroll-kpi-bonus');
+    const payrollKpiCommission = document.getElementById('payroll-kpi-commission');
+    const payrollKpiKasbon = document.getElementById('payroll-kpi-kasbon');
+    const payrollKpiService = document.getElementById('payroll-kpi-service');
+    const payrollKpiReceived = document.getElementById('payroll-kpi-received');
+    let currentPayrollMonthLabel = '';
+    let payrollLogoDataUrlPromise = null;
 
     async function loadFinanceOrders() {
         const tbody = document.getElementById('finance-orders-body');
         tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500 italic">Memuat data...</td></tr>';
         
         try {
-            const res = await fetch('/api/finance/orders');
+            const financeMonthInput = document.getElementById('finance-month-input');
+            const financeStartDate = document.getElementById('finance-start-date');
+            const financeEndDate = document.getElementById('finance-end-date');
+            const [startDate, endDate] = getMonthDateRange(financeMonthInput?.value || getCurrentMonthValue());
+            if (financeStartDate) financeStartDate.value = startDate;
+            if (financeEndDate) financeEndDate.value = endDate;
+            const res = await fetch(`/api/finance/orders?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
             const data = await res.json();
             
             if (data.error) throw new Error(data.error);
@@ -1739,6 +1919,61 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
     }
 
+    function getCurrentMonthValue() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function getMonthDateRange(monthValue) {
+        const safeMonth = /^\d{4}-\d{2}$/.test(String(monthValue || '').trim())
+            ? String(monthValue).trim()
+            : getCurrentMonthValue();
+        const [yearStr, monthStr] = safeMonth.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        const start = new Date(year, month - 1, 1);
+        const end = new Date(year, month, 0);
+        return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+    }
+
+    function shouldShowCashEmployee(mode) {
+        return mode === 'expense';
+    }
+
+    async function loadPayrollEmployeeOptions() {
+        try {
+            const res = await fetch('/api/users');
+            const rows = await res.json();
+            const users = Array.isArray(rows) ? rows : [];
+            payrollEmployeeOptions = users
+                .filter((user) => {
+                    const role = String(user.role || '').toLowerCase();
+                    return role !== 'super_admin' && role !== 'superadmin';
+                })
+                .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id-ID'));
+
+            if (cashModalEmployee) {
+                const currentValue = String(cashModalEmployee.value || '').trim();
+                cashModalEmployee.innerHTML = '<option value="">Pilih karyawan...</option>' + payrollEmployeeOptions
+                    .map((user) => `<option value="${escapeHtml(user.id)}">${escapeHtml(user.name || '-')} - ${escapeHtml(user.role || '-')}</option>`)
+                    .join('');
+                cashModalEmployee.value = payrollEmployeeOptions.some((user) => String(user.id) === currentValue) ? currentValue : '';
+            }
+        } catch (_) {
+            payrollEmployeeOptions = [];
+            if (cashModalEmployee) {
+                cashModalEmployee.innerHTML = '<option value="">Pilih karyawan...</option>';
+            }
+        }
+    }
+
+    function updateCashEmployeeVisibility() {
+        if (!cashModalEmployeeWrap) return;
+        const shouldShow = shouldShowCashEmployee(cashCurrentMode);
+        cashModalEmployeeWrap.classList.toggle('hidden', !shouldShow);
+        if (!shouldShow && cashModalEmployee) cashModalEmployee.value = '';
+    }
+
     function formatCashDateTime(dateValue, fallbackDateTime = '') {
         const rawDate = String(dateValue || '').trim();
         const rawDateTime = String(fallbackDateTime || '').trim();
@@ -1768,31 +2003,9 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         return { formattedDate, formattedTime, combinedDateTime };
     }
 
-    function getDefaultCashPeriod(mode) {
-        const today = new Date();
-        if (mode === 'last_month') {
-            const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            const end = new Date(today.getFullYear(), today.getMonth(), 0);
-            return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
-        }
-        const start = new Date(today.getFullYear(), today.getMonth(), 1);
-        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
-    }
-
-    function updateCashCustomDatesVisibility() {
-        if (!cashCustomDates || !cashPeriodSelect) return;
-        cashCustomDates.classList.toggle('hidden', cashPeriodSelect.value !== 'custom');
-    }
-
     function setCashDateInputs(start, end) {
         if (cashStartDateInput) cashStartDateInput.value = start;
         if (cashEndDateInput) cashEndDateInput.value = end;
-    }
-
-    function updateApprovalCustomDatesVisibility() {
-        if (!approvalCustomDates || !approvalPeriodSelect) return;
-        approvalCustomDates.classList.toggle('hidden', approvalPeriodSelect.value !== 'custom');
     }
 
     function setApprovalDateInputs(start, end) {
@@ -1804,26 +2017,13 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         const shouldReload = Boolean(options.reload);
         const nextStatus = String(document.getElementById('approval-status-filter')?.value || 'all').trim().toLowerCase();
         const nextUser = String(approvalUserFilter?.value || 'all').trim();
-        const nextPeriod = String(approvalPeriodSelect?.value || 'this_month').trim().toLowerCase();
-
-        let nextStartDate = String(approvalStartDateInput?.value || '').trim();
-        let nextEndDate = String(approvalEndDateInput?.value || '').trim();
-
-        if (nextPeriod === 'custom') {
-            if (!nextStartDate || !nextEndDate) {
-                alert('Silakan pilih tanggal mulai dan selesai.');
-                return;
-            }
-        } else {
-            const [start, end] = getDefaultCashPeriod(nextPeriod);
-            nextStartDate = start;
-            nextEndDate = end;
-            setApprovalDateInputs(start, end);
-        }
+        const nextMonth = String(approvalMonthInput?.value || getCurrentMonthValue()).trim();
+        const [nextStartDate, nextEndDate] = getMonthDateRange(nextMonth);
+        setApprovalDateInputs(nextStartDate, nextEndDate);
 
         approvalAppliedStatus = nextStatus;
         approvalAppliedUser = nextUser;
-        approvalAppliedPeriod = nextPeriod;
+        approvalAppliedPeriod = 'month';
         approvalAppliedStartDate = nextStartDate;
         approvalAppliedEndDate = nextEndDate;
         approvalCurrentPage = 1;
@@ -1853,7 +2053,6 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         const rows = Array.isArray(approvalAllRows) ? approvalAllRows : [];
         const search = (document.getElementById('approval-search')?.value || '').trim().toLowerCase();
         const selectedUser = String(approvalAppliedUser || 'all').trim().toLowerCase();
-        const selectedPeriod = String(approvalAppliedPeriod || 'this_month').trim().toLowerCase();
         const startDate = String(approvalAppliedStartDate || '').trim();
         const endDate = String(approvalAppliedEndDate || '').trim();
 
@@ -1868,13 +2067,8 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
                 rowDate = Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toISOString().slice(0, 10);
             }
 
-            if (selectedPeriod === 'custom') {
-                if (startDate && rowDate && rowDate < startDate) return false;
-                if (endDate && rowDate && rowDate > endDate) return false;
-            } else {
-                const [periodStart, periodEnd] = getDefaultCashPeriod(selectedPeriod);
-                if (rowDate && (rowDate < periodStart || rowDate > periodEnd)) return false;
-            }
+            if (startDate && rowDate && rowDate < startDate) return false;
+            if (endDate && rowDate && rowDate > endDate) return false;
 
             if (!search) return true;
             const byOrder = String(r.order_id || '').toLowerCase().includes(search.replace('#', ''));
@@ -1957,9 +2151,10 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             const category = String(tx.category || '').toLowerCase();
             const note = String(tx.note || '').toLowerCase();
             const client = String(tx.client_name || '').toLowerCase();
+            const employeeName = String(tx.employee_name || '').toLowerCase();
             const orderId = String(tx.order_id || '').toLowerCase();
             const orderName = String(getFinanceOrderDisplayName(tx.order_id, tx.order_name || tx.client_name || tx.package_name || '') || '').toLowerCase();
-            return category.includes(query) || note.includes(query) || client.includes(query) || orderId.includes(query) || orderName.includes(query);
+            return category.includes(query) || note.includes(query) || client.includes(query) || employeeName.includes(query) || orderId.includes(query) || orderName.includes(query);
         });
         cashFilteredCount = filtered.length;
         if (!cashFilteredCount) {
@@ -1981,7 +2176,10 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         updateCashPaginationUI();
 
         cashTransactionsBody.innerHTML = paged.map((tx) => {
-            const { combinedDateTime } = formatCashDateTime(tx.trx_date_value || '', tx.created_at || tx.trx_date_value || '');
+            const { combinedDateTime } = formatCashDateTime(
+                tx.display_date_value || tx.trx_date_value || '',
+                tx.display_datetime || tx.updated_at || tx.created_at || tx.trx_date_value || ''
+            );
             const note = escapeHtml(tx.note || '-');
             const category = escapeHtml(tx.category || '-');
             const orderId = String(tx.order_id || '').trim();
@@ -1989,13 +2187,19 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             const detailParts = [];
             if (orderId) detailParts.push(`#${escapeHtml(orderId)}`);
             if (resolvedOrderName) detailParts.push(escapeHtml(resolvedOrderName));
+            if (tx.employee_name) detailParts.push(`Karyawan: ${escapeHtml(tx.employee_name)}`);
             if (note && note !== '-') detailParts.push(note);
             const description = detailParts.length ? detailParts.join(' / ') : note;
             const incomeValue = tx.type === 'income' ? formatRupiah(Number(tx.amount || 0)) : '';
             const expenseValue = tx.type !== 'income' ? formatRupiah(Number(tx.amount || 0)) : '';
             const isCommission = tx.type === 'commission_pay';
             const badgeClass = isCommission ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200';
-            const actionButton = isCommission ? '<span class="text-xs text-slate-500">-</span>' : `<button data-id="${tx.id}" class="cash-delete-transaction inline-flex items-center justify-center rounded-lg bg-red-500 h-[38px] min-w-[38px] px-3 text-xs font-bold text-white hover:bg-red-600 transition"><span class="material-symbols-outlined text-[18px] text-white">delete</span></button>`;
+            const actionButton = isCommission
+                ? '<span class="text-xs text-slate-500">-</span>'
+                : `<div class="inline-flex items-center gap-2">
+                        <button data-id="${tx.id}" class="cash-edit-transaction inline-flex items-center justify-center rounded-lg bg-amber-500 h-[38px] min-w-[38px] px-3 text-xs font-bold text-white hover:bg-amber-600 transition"><span class="material-symbols-outlined text-[18px] text-white">edit</span></button>
+                        <button data-id="${tx.id}" class="cash-delete-transaction inline-flex items-center justify-center rounded-lg bg-red-500 h-[38px] min-w-[38px] px-3 text-xs font-bold text-white hover:bg-red-600 transition"><span class="material-symbols-outlined text-[18px] text-white">delete</span></button>
+                   </div>`;
             return `
                 <tr>
                   <td class="finance-cash-date px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-200">${escapeHtml(combinedDateTime || '-')}</td>
@@ -2006,6 +2210,13 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
                   <td class="px-6 py-4 text-center">${actionButton}</td>
                 </tr>`;
         }).join('');
+        document.querySelectorAll('.cash-edit-transaction').forEach((button) => {
+            button.addEventListener('click', () => {
+                const id = button.getAttribute('data-id');
+                if (!id) return;
+                openCashEditModal(id);
+            });
+        });
         document.querySelectorAll('.cash-delete-transaction').forEach((button) => {
             button.addEventListener('click', async () => {
                 const id = button.getAttribute('data-id');
@@ -2026,21 +2237,130 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
 
     function openCashModal(mode) {
         if (!cashTransactionModal) return;
+        cashEditingId = null;
         cashCurrentMode = mode;
         cashModalTitle.textContent = mode === 'income' ? 'Catat Pemasukan' : 'Catat Pengeluaran';
         cashModalCategory.innerHTML = cashCategories[mode].map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join('');
         cashModalDate.value = new Date().toISOString().slice(0, 10);
         cashModalAmount.value = '';
+        if (cashModalEmployee) cashModalEmployee.value = '';
         cashModalNote.value = '';
         cashModalError.classList.add('hidden');
+        updateCashEmployeeVisibility();
         cashTransactionModal.classList.remove('hidden');
         cashTransactionModal.classList.add('flex');
     }
 
     function closeCashModal() {
         if (!cashTransactionModal) return;
+        cashEditingId = null;
         cashTransactionModal.classList.add('hidden');
         cashTransactionModal.classList.remove('flex');
+    }
+
+    function openCashEditModal(id) {
+        const targetId = String(id || '').trim();
+        const row = (cashCurrentTransactions || []).find((item) => String(item.id || '').trim() === targetId);
+        if (!row || !cashTransactionModal) {
+            alert('Data transaksi tidak ditemukan.');
+            return;
+        }
+        if (String(row.type || '').trim() === 'commission_pay') {
+            alert('Transaksi komisi tidak bisa diedit dari Buku Kas.');
+            return;
+        }
+
+        cashEditingId = targetId;
+        cashCurrentMode = String(row.type || 'expense').trim();
+        cashModalTitle.textContent = cashCurrentMode === 'income' ? 'Edit Pemasukan' : 'Edit Pengeluaran';
+        cashModalCategory.innerHTML = cashCategories[cashCurrentMode].map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`).join('');
+        cashModalDate.value = String(row.trx_date_value || '').trim() || new Date().toISOString().slice(0, 10);
+        cashModalAmount.value = String(Number(row.amount || 0));
+        if (cashModalEmployee) cashModalEmployee.value = row.employee_user_id ? String(row.employee_user_id) : '';
+        cashModalCategory.value = String(row.category || '');
+        cashModalNote.value = String(row.note || '');
+        cashModalError.classList.add('hidden');
+        updateCashEmployeeVisibility();
+        cashTransactionModal.classList.remove('hidden');
+        cashTransactionModal.classList.add('flex');
+    }
+
+    function openCommissionEditModal(id) {
+        if (!canApproveCommission) {
+            alert('Hanya role keuangan/super admin yang bisa edit komisi.');
+            return;
+        }
+        if (!commissionEditModal) return;
+        const targetId = String(id || '').trim();
+        const row = (approvalAllRows || []).find((r) => String(r.id || '').trim() === targetId);
+        if (!row) {
+            alert('Data komisi tidak ditemukan.');
+            return;
+        }
+        const rowStatus = String(row.status || '').toLowerCase();
+        if (rowStatus === 'paid') {
+            alert('Komisi sudah paid dan tidak bisa diedit.');
+            return;
+        }
+        commissionEditingId = targetId;
+        if (commissionEditAmount) commissionEditAmount.value = String(Number(row.amount || 0));
+        const currentStatus = String(row.approval_status || 'pending').toLowerCase();
+        if (commissionEditStatus) commissionEditStatus.value = ['pending', 'approved', 'rejected'].includes(currentStatus) ? currentStatus : 'pending';
+        if (commissionEditNote) commissionEditNote.value = String(row.approval_note || '');
+        if (commissionEditError) commissionEditError.classList.add('hidden');
+        commissionEditModal.classList.remove('hidden');
+        commissionEditModal.classList.add('flex');
+    }
+
+    function closeCommissionEditModal() {
+        if (!commissionEditModal) return;
+        commissionEditModal.classList.add('hidden');
+        commissionEditModal.classList.remove('flex');
+        commissionEditingId = null;
+    }
+
+    async function saveCommissionEdit() {
+        if (!commissionEditingId) return;
+        if (!commissionEditAmount || !commissionEditStatus || !commissionEditNote || !commissionEditError) return;
+
+        const amount = Number(commissionEditAmount.value);
+        const status = String(commissionEditStatus.value || '').toLowerCase();
+        const note = commissionEditNote.value.trim();
+
+        if (!Number.isFinite(amount) || amount < 0) {
+            commissionEditError.textContent = 'Nominal komisi harus 0 atau lebih.';
+            commissionEditError.classList.remove('hidden');
+            return;
+        }
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            commissionEditError.textContent = 'Status tidak valid.';
+            commissionEditError.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            if (commissionEditSave) commissionEditSave.disabled = true;
+            const res = await fetch(`/api/commissions/${encodeURIComponent(commissionEditingId)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount,
+                    approval_status: status,
+                    approval_note: note,
+                    editor_id: currentFinanceUserId || null
+                })
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Gagal menyimpan perubahan komisi');
+            closeCommissionEditModal();
+            await loadCommissionApprovals();
+            await loadLedgerAndPayout();
+        } catch (e) {
+            commissionEditError.textContent = e.message;
+            commissionEditError.classList.remove('hidden');
+        } finally {
+            if (commissionEditSave) commissionEditSave.disabled = false;
+        }
     }
 
     async function saveCashTransaction() {
@@ -2048,21 +2368,34 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         const category = cashModalCategory.value;
         const note = cashModalNote.value.trim();
         const trxDate = cashModalDate.value;
+        const employeeUserId = cashModalEmployee ? String(cashModalEmployee.value || '').trim() : '';
         if (!amount || amount <= 0) {
             cashModalError.textContent = 'Nominal harus lebih besar dari 0.';
             cashModalError.classList.remove('hidden');
             return;
         }
         try {
-            const response = await fetch('/api/cash/transactions', {
-                method: 'POST',
+            const url = cashEditingId
+                ? `/api/cash/transactions/${encodeURIComponent(cashEditingId)}`
+                : '/api/cash/transactions';
+            const method = cashEditingId ? 'PATCH' : 'POST';
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: cashCurrentMode, amount, category, note, trx_date: trxDate })
+                body: JSON.stringify({
+                    type: cashCurrentMode,
+                    amount,
+                    category,
+                    note,
+                    trx_date: trxDate,
+                    employee_user_id: employeeUserId || null
+                })
             });
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Gagal menyimpan transaksi');
+            if (!response.ok) throw new Error(data.error || (cashEditingId ? 'Gagal mengubah transaksi' : 'Gagal menyimpan transaksi'));
             closeCashModal();
-            loadCashTransactions();
+            await loadCashTransactions();
+            await loadPayrollSummary();
         } catch (error) {
             cashModalError.textContent = error.message;
             cashModalError.classList.remove('hidden');
@@ -2074,28 +2407,515 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             const response = await fetch(`/api/cash/transactions/${id}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Gagal menghapus transaksi');
             await loadCashTransactions();
+            await loadPayrollSummary();
         } catch (error) {
             alert(error.message);
         }
     }
 
-    function initCashTab() {
-        if (!cashPeriodSelect) return;
-        cashPeriodSelect.addEventListener('change', updateCashCustomDatesVisibility);
-        cashApplyPeriod.addEventListener('click', () => {
-            if (cashPeriodSelect.value === 'custom') {
-                if (!cashStartDateInput.value || !cashEndDateInput.value) {
-                    alert('Silakan pilih tanggal mulai dan selesai.');
-                    return;
-                }
-                cashCurrentStartDate = cashStartDateInput.value;
-                cashCurrentEndDate = cashEndDateInput.value;
-            } else {
-                const [start, end] = getDefaultCashPeriod(cashPeriodSelect.value);
-                cashCurrentStartDate = start;
-                cashCurrentEndDate = end;
-                setCashDateInputs(start, end);
+    function renderPayrollSummary(totals = {}, serviceSummary = {}) {
+        if (payrollKpiBase) payrollKpiBase.textContent = formatRupiah(Number(totals.base_salary || 0));
+        if (payrollKpiBonus) payrollKpiBonus.textContent = formatRupiah(Number(totals.bonus || 0));
+        if (payrollKpiCommission) payrollKpiCommission.textContent = formatRupiah(Number(totals.commission || 0));
+        if (payrollKpiKasbon) payrollKpiKasbon.textContent = formatRupiah(Number(totals.kasbon || 0));
+        if (payrollKpiService) payrollKpiService.textContent = formatRupiah(Number(serviceSummary.total_service_cost || 0));
+        if (payrollKpiReceived) payrollKpiReceived.textContent = formatRupiah(Number(totals.total_received || 0));
+    }
+
+    function formatPayrollSourceEventLabel(value) {
+        const normalized = String(value || '').trim().toLowerCase();
+        const labels = {
+            order_lunas: 'Order Lunas',
+            otp_selesai: 'OTP Selesai',
+            content_ready: 'Siap Iklan',
+            bengkel_done: 'Sudah Diperbaiki'
+        };
+        if (labels[normalized]) return labels[normalized];
+        const fallback = String(value || '-').replace(/_/g, ' ');
+        return fallback.replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function formatPayrollItemDate(item = {}) {
+        const { combinedDateTime } = formatCashDateTime(item.date_value || '', item.datetime_value || item.date_value || '');
+        return combinedDateTime || '-';
+    }
+
+    function getPayrollItemSourceText(item = {}) {
+        const metaParts = [];
+        if (item.source_type === 'commission') {
+            metaParts.push('Komisi');
+            if (item.role) metaParts.push(escapeHtml(item.role));
+            if (item.source_event) metaParts.push(escapeHtml(formatPayrollSourceEventLabel(item.source_event)));
+            if (item.order_id) metaParts.push(`#${escapeHtml(String(item.order_id))}`);
+            if (item.client_name) metaParts.push(escapeHtml(item.client_name));
+            if (item.package_name) metaParts.push(escapeHtml(item.package_name));
+            metaParts.push(escapeHtml(String(item.status || 'approved').toUpperCase()));
+        } else {
+            if (item.category) metaParts.push(escapeHtml(item.category));
+            if (item.order_id) metaParts.push(`#${escapeHtml(String(item.order_id))}`);
+            if (item.note) metaParts.push(escapeHtml(item.note));
+        }
+        return metaParts.join(' / ') || '-';
+    }
+
+    function getPayrollBenefitItems(row = {}) {
+        const explicitItems = Array.isArray(row?.details?.benefit_items) ? row.details.benefit_items : [];
+        if (explicitItems.length) return explicitItems;
+        const benefitTotal = Number(row?.benefit_total || 0);
+        if (benefitTotal > 0) {
+            return [{
+                source_type: 'transaction',
+                category: 'Benefit Karyawan',
+                note: 'Benefit tercatat tanpa rincian item',
+                amount: benefitTotal,
+                date_value: String(payrollMonthInput?.value || '').trim() || currentPayrollMonthLabel || '',
+                datetime_value: ''
+            }];
+        }
+        return [];
+    }
+
+    function renderPayrollDetailList(items = [], type = 'income') {
+        const amountClass = type === 'income' ? 'text-emerald-600' : 'text-amber-600';
+        if (!Array.isArray(items) || !items.length) {
+            return `
+                <div class="overflow-hidden rounded-xl border border-white/10">
+                  <table class="finance-table finance-payroll-detail-table w-full text-left border-collapse">
+                    <thead class="bg-white/5">
+                      <tr>
+                        <th class="text-xs font-bold uppercase tracking-wider text-slate-400">Tanggal</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-slate-400">Sumber</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Nominal</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                      <tr>
+                        <td colspan="3" class="text-center text-slate-500">Belum ada data ${type === 'income' ? 'pendapatan' : 'potongan'}.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+            `;
+        }
+        const rows = items.map((item) => {
+            return `
+                <tr>
+                  <td class="text-slate-300">${escapeHtml(formatPayrollItemDate(item))}</td>
+                  <td class="text-slate-100">${getPayrollItemSourceText(item)}</td>
+                  <td class="text-right font-bold ${amountClass}">${formatRupiah(Number(item.amount || 0))}</td>
+                </tr>
+            `;
+        }).join('');
+        return `
+            <div class="overflow-hidden rounded-xl border border-white/10">
+              <table class="finance-table finance-payroll-detail-table w-full text-left border-collapse">
+                <thead class="bg-white/5">
+                  <tr>
+                    <th class="text-xs font-bold uppercase tracking-wider text-slate-400">Tanggal</th>
+                    <th class="text-xs font-bold uppercase tracking-wider text-slate-400">Sumber</th>
+                    <th class="text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Nominal</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  ${rows}
+                </tbody>
+              </table>
+            </div>
+        `;
+    }
+
+    function getPayrollPrintTableHtml(title, items = [], amountClass = 'income') {
+        const amountColor = amountClass === 'expense' ? '#b45309' : '#047857';
+        const emptyLabel = title.toLowerCase().includes('benefit') ? 'Belum ada benefit tercatat.' : `Belum ada data ${title.toLowerCase()}.`;
+        const rows = Array.isArray(items) && items.length
+            ? items.map((item, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${escapeHtml(formatPayrollItemDate(item))}</td>
+                  <td>${getPayrollItemSourceText(item)}</td>
+                  <td style="text-align:right; color:${amountColor}; font-weight:700;">${escapeHtml(formatRupiah(Number(item.amount || 0)))}</td>
+                </tr>
+              `).join('')
+            : `<tr><td colspan="4" style="text-align:center; color:#64748b;">${emptyLabel}</td></tr>`;
+
+        return `
+            <div style="margin-top:16px;">
+              <h3 style="margin:0 0 8px; font-size:14px; color:#0f172a;">${escapeHtml(title)}</h3>
+              <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                <thead>
+                  <tr style="background:#f8fafc;">
+                    <th style="border:1px solid #cbd5e1; padding:8px; text-align:left;">No</th>
+                    <th style="border:1px solid #cbd5e1; padding:8px; text-align:left;">Tanggal</th>
+                    <th style="border:1px solid #cbd5e1; padding:8px; text-align:left;">Sumber</th>
+                    <th style="border:1px solid #cbd5e1; padding:8px; text-align:right;">Nominal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows}
+                </tbody>
+              </table>
+            </div>
+        `;
+    }
+
+    function sanitizePayrollPdfFileName(value = '') {
+        return String(value || 'bukti-gaji')
+            .replace(/[\\/:*?"<>|]+/g, '-')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '')
+            .toLowerCase();
+    }
+
+    async function getPayrollLogoDataUrl() {
+        if (!payrollLogoDataUrlPromise) {
+            payrollLogoDataUrlPromise = (async () => {
+                const response = await fetch('/img/logo.png');
+                if (!response.ok) throw new Error('Logo Nyala Digital tidak berhasil dimuat.');
+                const blob = await response.blob();
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(String(reader.result || ''));
+                    reader.onerror = () => reject(new Error('Gagal membaca file logo.'));
+                    reader.readAsDataURL(blob);
+                });
+            })();
+        }
+        return payrollLogoDataUrlPromise;
+    }
+
+    function getPayrollPdfRows(items = []) {
+        if (!Array.isArray(items) || !items.length) {
+            return [['-', '-', 'Belum ada data', '-']];
+        }
+        return items.map((item, index) => [
+            String(index + 1),
+            formatPayrollItemDate(item),
+            String(getPayrollItemSourceText(item) || '-'),
+            formatRupiah(Number(item.amount || 0))
+        ]);
+    }
+
+    function renderPayrollPdfSection(doc, options = {}) {
+        const {
+            title = '',
+            startY = 40,
+            marginX = 40,
+            head = [],
+            body = [],
+            headFillColor = [248, 250, 252],
+            headTextColor = [15, 23, 42]
+        } = options;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(15, 23, 42);
+        doc.text(String(title || '-'), marginX, startY);
+
+        doc.autoTable({
+            startY: startY + 10,
+            margin: { left: marginX, right: marginX },
+            head: [head],
+            body,
+            theme: 'grid',
+            styles: {
+                font: 'helvetica',
+                fontSize: 9,
+                cellPadding: 5,
+                textColor: [15, 23, 42],
+                overflow: 'linebreak',
+                lineColor: [226, 232, 240],
+                lineWidth: 0.6
+            },
+            headStyles: {
+                fillColor: headFillColor,
+                textColor: headTextColor,
+                fontStyle: 'bold'
+            },
+            alternateRowStyles: {
+                fillColor: [250, 250, 250]
+            },
+            columnStyles: {
+                0: { cellWidth: 28 },
+                3: { halign: 'right', cellWidth: 100 }
             }
+        });
+
+        return doc.lastAutoTable.finalY;
+    }
+
+    async function downloadPayrollPdf(userId) {
+        const targetId = String(userId || '').trim();
+        if (!targetId) return;
+        const row = (payrollRows || []).find((item) => String(item.user_id || '').trim() === targetId);
+        if (!row) {
+            alert('Data gaji karyawan tidak ditemukan.');
+            return;
+        }
+
+        if (!window.jspdf || typeof window.jspdf.jsPDF !== 'function') {
+            alert('Library PDF belum tersedia. Silakan refresh halaman lalu coba lagi.');
+            return;
+        }
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginX = 40;
+            let cursorY = 36;
+
+            try {
+                const logoDataUrl = await getPayrollLogoDataUrl();
+                if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', marginX, cursorY, 56, 56);
+            } catch (_) {
+                // Fallback ke teks brand jika logo gagal dimuat
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(239, 114, 37);
+            doc.setFontSize(11);
+            doc.text('NYALA DIGITAL', marginX + 72, cursorY + 12);
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(20);
+            doc.text('Bukti Gaji Karyawan', marginX + 72, cursorY + 34);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(71, 85, 105);
+            doc.text(`Periode: ${currentPayrollMonthLabel || String(payrollMonthInput?.value || '-')}`, marginX + 72, cursorY + 52);
+
+            cursorY += 76;
+
+            doc.autoTable({
+                startY: cursorY,
+                margin: { left: marginX, right: marginX },
+                head: [['Data Karyawan', 'Keterangan']],
+                body: [
+                    ['Nama Karyawan', String(row.name || '-')],
+                    ['Role', String(row.role || '-')],
+                    ['Email', String(row.email || '-')]
+                ],
+                theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 10, cellPadding: 7, textColor: [15, 23, 42], lineColor: [226, 232, 240], lineWidth: 0.6 },
+                headStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42] },
+                alternateRowStyles: { fillColor: [250, 250, 250] }
+            });
+
+            cursorY = doc.lastAutoTable.finalY + 14;
+
+            doc.autoTable({
+                startY: cursorY,
+                margin: { left: marginX, right: marginX },
+                head: [['Keterangan', 'Nominal']],
+                body: [
+                    ['Gaji Pokok', formatRupiah(Number(row.base_salary || 0))],
+                    ['Bonus', formatRupiah(Number(row.bonus || 0))],
+                    ['Komisi Approved', formatRupiah(Number(row.commission || 0))],
+                    ['Kasbon / Potongan', formatRupiah(Number(row.kasbon || 0))]
+                ],
+                theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 10, cellPadding: 7, textColor: [15, 23, 42], lineColor: [226, 232, 240], lineWidth: 0.6 },
+                headStyles: { fillColor: [248, 250, 252], textColor: [15, 23, 42] },
+                alternateRowStyles: { fillColor: [250, 250, 250] },
+                columnStyles: { 1: { halign: 'right' } }
+            });
+
+            cursorY = doc.lastAutoTable.finalY + 14;
+
+            doc.setFillColor(15, 23, 42);
+            doc.roundedRect(marginX, cursorY, pageWidth - (marginX * 2), 56, 10, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('Total Gaji Diterima', marginX + 16, cursorY + 22);
+            doc.setFontSize(24);
+            doc.text(formatRupiah(Number(row.total_received || 0)), pageWidth - marginX - 16, cursorY + 38, { align: 'right' });
+
+            cursorY += 86;
+
+            cursorY = renderPayrollPdfSection(doc, {
+                title: 'Pendapatan',
+                startY: cursorY,
+                marginX,
+                head: ['No', 'Tanggal', 'Sumber Pendapatan', 'Nominal'],
+                body: getPayrollPdfRows(Array.isArray(row.details?.income_items) ? row.details.income_items : []),
+                headFillColor: [236, 253, 245],
+                headTextColor: [4, 120, 87]
+            });
+
+            cursorY += 18;
+
+            cursorY = renderPayrollPdfSection(doc, {
+                title: 'Pengeluaran / Potongan',
+                startY: cursorY,
+                marginX,
+                head: ['No', 'Tanggal', 'Sumber Pengeluaran / Potongan', 'Nominal'],
+                body: getPayrollPdfRows(Array.isArray(row.details?.expense_items) ? row.details.expense_items : []),
+                headFillColor: [255, 247, 237],
+                headTextColor: [180, 83, 9]
+            });
+
+            cursorY += 18;
+
+            cursorY = renderPayrollPdfSection(doc, {
+                title: 'Benefit / Fasilitas',
+                startY: cursorY,
+                marginX,
+                head: ['No', 'Tanggal', 'Benefit / Fasilitas', 'Nominal'],
+                body: getPayrollPdfRows(getPayrollBenefitItems(row)),
+                headFillColor: [239, 246, 255],
+                headTextColor: [3, 105, 161]
+            });
+
+            const fileName = sanitizePayrollPdfFileName(`bukti-gaji-${row.name || 'karyawan'}-${currentPayrollMonthLabel || payrollMonthInput?.value || ''}`) || 'bukti-gaji';
+            doc.save(`${fileName}.pdf`);
+        } catch (error) {
+            alert(error?.message || 'Gagal membuat file PDF.');
+        }
+    }
+
+    function renderPayrollTable(rows = [], monthLabel = '') {
+        if (!payrollBody) return;
+        currentPayrollMonthLabel = monthLabel || String(payrollMonthInput?.value || '');
+        const query = String(payrollSearchInput?.value || '').trim().toLowerCase();
+        payrollFilteredRows = (Array.isArray(rows) ? rows : []).filter((row) => {
+            if (!query) return true;
+            const haystack = [
+                String(row.name || ''),
+                String(row.email || ''),
+                String(row.role || '')
+            ].join(' ').toLowerCase();
+            return haystack.includes(query);
+        });
+
+        if (!payrollFilteredRows.length) {
+            payrollBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Belum ada data gaji pada periode ini. Input dulu transaksi kategori Gaji/Payroll, Bonus, atau Kasbon dan pilih karyawan. Komisi akan muncul setelah approved.</td></tr>';
+            if (payrollFooterInfo) payrollFooterInfo.textContent = 'Menampilkan 0 data';
+            if (payrollPeriodInfo) payrollPeriodInfo.textContent = monthLabel || 'Belum ada periode';
+            return;
+        }
+
+        payrollBody.innerHTML = payrollFilteredRows.map((row) => {
+            const incomeItems = Array.isArray(row.details?.income_items) ? row.details.income_items : [];
+            const expenseItems = Array.isArray(row.details?.expense_items) ? row.details.expense_items : [];
+            const benefitItems = getPayrollBenefitItems(row);
+            return `
+                <tr class="finance-main-row">
+                  <td class="px-6 py-4">
+                    <div class="font-semibold text-slate-700 dark:text-slate-100">${escapeHtml(row.name || '-')}</div>
+                    <div class="text-xs text-slate-500">${escapeHtml(row.email || '-')}</div>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">${escapeHtml(row.role || '-')}</td>
+                  <td class="px-6 py-4 text-sm text-right font-semibold text-slate-700 dark:text-slate-100">${formatRupiah(Number(row.base_salary || 0))}</td>
+                  <td class="px-6 py-4 text-sm text-right font-semibold text-emerald-600">${formatRupiah(Number(row.bonus || 0))}</td>
+                  <td class="px-6 py-4 text-sm text-right font-semibold text-indigo-600">${formatRupiah(Number(row.commission || 0))}</td>
+                  <td class="px-6 py-4 text-sm text-right font-semibold text-amber-600">${formatRupiah(Number(row.kasbon || 0))}</td>
+                  <td class="px-6 py-4 text-sm text-right font-bold text-primary">${formatRupiah(Number(row.total_received || 0))}</td>
+                  <td class="px-6 py-4 text-center">
+                    <div class="inline-flex flex-wrap items-center justify-center gap-2">
+                      <button type="button" data-user-id="${escapeHtml(String(row.user_id || ''))}" class="payroll-detail-toggle inline-flex items-center justify-center gap-1 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600" aria-expanded="false">
+                        <span class="material-symbols-outlined text-[16px]">expand_more</span>
+                        Detail
+                      </button>
+                      <button type="button" data-user-id="${escapeHtml(String(row.user_id || ''))}" class="payroll-print-toggle inline-flex items-center justify-center gap-1 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-amber-600">
+                        <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="payroll-detail-row hidden" data-user-id="${escapeHtml(String(row.user_id || ''))}">
+                  <td colspan="8" class="finance-payroll-detail-cell px-6 py-4">
+                    <div class="grid gap-4 lg:grid-cols-2">
+                      <div class="space-y-3">
+                        <div class="text-xs font-bold uppercase tracking-wider text-emerald-300">Pendapatan</div>
+                        ${renderPayrollDetailList(incomeItems, 'income')}
+                      </div>
+                      <div class="space-y-3">
+                        <div class="text-xs font-bold uppercase tracking-wider text-amber-300">Pengeluaran / Potongan</div>
+                        ${renderPayrollDetailList(expenseItems, 'expense')}
+                      </div>
+                      <div class="space-y-3 lg:col-span-2">
+                        <div class="text-xs font-bold uppercase tracking-wider text-sky-300">Benefit / Fasilitas</div>
+                        ${renderPayrollDetailList(benefitItems, 'income')}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+            `;
+        }).join('');
+
+        document.querySelectorAll('.payroll-detail-toggle').forEach((button) => {
+            button.addEventListener('click', () => {
+                const userId = String(button.getAttribute('data-user-id') || '').trim();
+                if (!userId) return;
+                const detailRow = payrollBody.querySelector(`.payroll-detail-row[data-user-id="${userId}"]`);
+                if (!detailRow) return;
+                const isHidden = detailRow.classList.contains('hidden');
+                detailRow.classList.toggle('hidden', !isHidden);
+                button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                const icon = button.querySelector('.material-symbols-outlined');
+                if (icon) icon.textContent = isHidden ? 'expand_less' : 'expand_more';
+            });
+        });
+        document.querySelectorAll('.payroll-print-toggle').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const userId = button.getAttribute('data-user-id');
+                if (!userId) return;
+                await downloadPayrollPdf(userId);
+            });
+        });
+
+        if (payrollFooterInfo) payrollFooterInfo.textContent = `Menampilkan ${payrollFilteredRows.length} karyawan`;
+        if (payrollPeriodInfo) payrollPeriodInfo.textContent = monthLabel || 'Bulan terpilih';
+    }
+
+    async function loadPayrollSummary() {
+        if (!payrollBody || !payrollMonthInput) return;
+        const month = String(payrollMonthInput.value || getCurrentMonthValue()).trim();
+        payrollBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Memuat data...</td></tr>';
+        try {
+            const res = await fetch(`/api/payroll/summary?month=${encodeURIComponent(month)}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Gagal memuat ringkasan gaji');
+            payrollRows = Array.isArray(data.rows) ? data.rows : [];
+            const monthLabel = String((data.period && data.period.month) || month);
+            renderPayrollSummary(data.totals || {}, data.service_summary || {});
+            renderPayrollTable(payrollRows, monthLabel);
+        } catch (error) {
+            payrollRows = [];
+            renderPayrollSummary({}, {});
+            payrollBody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-red-400">${escapeHtml(error.message || 'Terjadi kesalahan')}</td></tr>`;
+            if (payrollFooterInfo) payrollFooterInfo.textContent = 'Menampilkan 0 data';
+        }
+    }
+
+    function initPayrollTab() {
+        if (!payrollMonthInput) return;
+        payrollMonthInput.value = getCurrentMonthValue();
+        if (payrollApplyFilter) payrollApplyFilter.addEventListener('click', loadPayrollSummary);
+        payrollMonthInput.addEventListener('change', loadPayrollSummary);
+        if (payrollSearchInput) payrollSearchInput.addEventListener('input', () => renderPayrollTable(payrollRows, String(payrollMonthInput.value || '')));
+        if (cashModalCategory) cashModalCategory.addEventListener('change', updateCashEmployeeVisibility);
+        loadPayrollEmployeeOptions();
+        loadPayrollSummary();
+    }
+
+    function initCashTab() {
+        if (!cashMonthInput) return;
+        cashMonthInput.addEventListener('change', () => {
+            const [start, end] = getMonthDateRange(cashMonthInput.value || getCurrentMonthValue());
+            cashCurrentStartDate = start;
+            cashCurrentEndDate = end;
+            setCashDateInputs(start, end);
+            cashCurrentPage = 1;
+            loadCashTransactions();
+        });
+        cashApplyPeriod.addEventListener('click', () => {
+            const [start, end] = getMonthDateRange(cashMonthInput.value || getCurrentMonthValue());
+            cashCurrentStartDate = start;
+            cashCurrentEndDate = end;
+            setCashDateInputs(start, end);
             cashCurrentPage = 1;
             loadCashTransactions();
         });
@@ -2127,12 +2947,14 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         if (cashSaveTransaction) cashSaveTransaction.addEventListener('click', saveCashTransaction);
         if (cashCancelTransaction) cashCancelTransaction.addEventListener('click', closeCashModal);
         if (cashModalClose) cashModalClose.addEventListener('click', closeCashModal);
-        const [start, end] = getDefaultCashPeriod('this_month');
+        if (commissionEditSave) commissionEditSave.addEventListener('click', saveCommissionEdit);
+        if (commissionEditCancel) commissionEditCancel.addEventListener('click', closeCommissionEditModal);
+        if (commissionEditClose) commissionEditClose.addEventListener('click', closeCommissionEditModal);
+        const [start, end] = getMonthDateRange(cashMonthInput.value || getCurrentMonthValue());
         cashCurrentStartDate = start;
         cashCurrentEndDate = end;
         cashCurrentPage = 1;
         setCashDateInputs(start, end);
-        updateCashCustomDatesVisibility();
         loadCashTransactions();
     }
 
@@ -2149,7 +2971,12 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         const status = approvalAppliedStatus || 'all';
         tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500 italic">Memuat approval...</td></tr>';
         try {
-            const res = await fetch(`/api/commissions/approvals?status=${encodeURIComponent(status)}`);
+            const params = new URLSearchParams({
+                status: status,
+                startDate: String(approvalAppliedStartDate || '').trim(),
+                endDate: String(approvalAppliedEndDate || '').trim()
+            });
+            const res = await fetch(`/api/commissions/approvals?${params.toString()}`);
             const rows = await res.json();
             approvalAllRows = Array.isArray(rows) ? rows : [];
             populateApprovalUserFilter(approvalAllRows);
@@ -2237,6 +3064,7 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             const rowStatus = String(r.status || '').toLowerCase();
             const canApproveAction = canApproveCommission && approvalStatus === 'pending' && rowStatus !== 'paid';
             const canPayoutAction = false;
+            const canEditAction = canApproveCommission && rowStatus !== 'paid';
             const rowMode = canApproveAction ? 'pending' : '';
             const orderLabel = escapeHtml(r.order_id || '-');
             const rawOrderName = String(getFinanceOrderDisplayName(r.order_id, r.order_name || r.client_name || r.package_name || '-')).trim();
@@ -2250,6 +3078,16 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             const statusBadge = rowStatus === 'paid'
                 ? '<span class="finance-chip finance-chip-approved">paid</span>'
                 : approvalBadge(r.approval_status);
+            const editButton = canEditAction
+                ? `<button onclick="openCommissionEditModal(${r.id})" class="finance-approval-btn finance-approval-btn-edit">Edit</button>`
+                : '';
+            const approveRejectButtons = canApproveAction ? `
+                <button onclick="approveCommission(${r.id})" class="finance-approval-btn finance-approval-btn-approve">Approve</button>
+                <button onclick="rejectCommission(${r.id})" class="finance-approval-btn finance-approval-btn-reject">Reject</button>
+            ` : '';
+            const actionsHtml = (editButton || approveRejectButtons)
+                ? `<div class="finance-approval-actions">${editButton}${approveRejectButtons}</div>`
+                : '<span class="text-slate-500 text-xs">-</span>';
             return `
             <tr class="hover:bg-white/5 transition-colors">
                 <td class="px-6 py-4 text-center">
@@ -2269,12 +3107,7 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
                 <td class="px-6 py-4 text-right text-sm font-bold text-emerald-400">${formatRupiah(Number(r.amount || 0))}</td>
                 <td class="finance-approval-note px-6 py-4 text-xs text-slate-600 dark:text-slate-300" title="${noteLabel}">${noteLabel}</td>
                 <td class="px-6 py-4 text-right">
-                    ${canApproveAction ? `
-                        <div class="finance-approval-actions">
-                            <button onclick="approveCommission(${r.id})" class="finance-approval-btn finance-approval-btn-approve">Approve</button>
-                            <button onclick="rejectCommission(${r.id})" class="finance-approval-btn finance-approval-btn-reject">Reject</button>
-                        </div>
-                    ` : '<span class="text-slate-500 text-xs">-</span>'}
+                    ${actionsHtml}
                 </td>
             </tr>
             `;
@@ -2531,6 +3364,8 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
 
     window.approveCommission = approveCommission;
     window.rejectCommission = rejectCommission;
+    window.openCommissionEditModal = openCommissionEditModal;
+    window.openCashEditModal = openCashEditModal;
 
 </script>
 </body></html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Nyala Digital Apps - Histori Komisi CS</title>
+  <title>Nyala Digital Apps - Histori Komisi Saya</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -57,7 +57,7 @@
           <div class="px-4 md:px-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 class="text-xl md:text-2xl font-semibold tracking-tight">Histori Komisi Saya</h1>
-              <p class="text-secondary/80 text-sm mt-1">Riwayat komisi untuk akun CS yang sedang login.</p>
+              <p id="history-subtitle" class="text-secondary/80 text-sm mt-1">Riwayat komisi untuk akun yang sedang login.</p>
             </div>
           </div>
 
@@ -120,13 +120,24 @@
     document.addEventListener("DOMContentLoaded", function () {
       const role = String(localStorage.getItem("role") || "").toLowerCase();
       const userId = localStorage.getItem("user_id");
-      if (role !== "cs") {
-        window.location.href = "commission.html";
+      const allowedRoles = new Set(["cs", "editor", "advertiser", "team bengkel", "bengkel"]);
+      if (!allowedRoles.has(role)) {
+        window.location.href = "dashboard.html";
         return;
       }
       if (!userId) {
         window.location.href = "login.html";
         return;
+      }
+
+      const subtitle = document.getElementById("history-subtitle");
+      if (subtitle) {
+        const roleLabel = role === "cs"
+          ? "CS"
+          : (role === "editor"
+            ? "Editor"
+            : ((role === "team bengkel" || role === "bengkel") ? "Bengkel" : "Advertiser"));
+        subtitle.textContent = `Riwayat komisi untuk akun ${roleLabel} yang sedang login.`;
       }
 
       const body = document.getElementById("history-body");
@@ -240,7 +251,7 @@
         body.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500 italic">Memuat data...</td></tr>';
         try {
           const ledgerUrl = "/api/commissions/ledger?user_id=" + encodeURIComponent(userId);
-          const ordersUrl = "/api/orders?assigned_to=" + encodeURIComponent(userId) + "&role=CS&limit=10000";
+          const ordersUrl = "/api/orders?limit=10000";
           const [ledgerRes, ordersRes] = await Promise.all([fetch(ledgerUrl), fetch(ordersUrl)]);
           if (!ledgerRes.ok || !ordersRes.ok) throw new Error("Gagal memuat histori");
 
