@@ -184,12 +184,14 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const ROLE_MENUS = {
     super_admin: ["overview","orders","products","commissions","users","finance","team","editor_assignments","audit","analytics","campaigns","crm","data_crm","clients","meta_config","cpr_calculator","simulator_cs"],
-    cs: ["overview","orders","commissions","crm","simulator_cs"],
+    cs: ["overview","orders","commissions","simulator_cs"],
     keuangan: ["overview","finance","orders","commissions","clients"],
     advertiser: ["overview","commissions"],
     crm: ["overview","data_crm","orders"],
     editor: ["overview","commissions"],
-    "team bengkel": ["overview", "commissions"]
+    "team bengkel": ["overview", "commissions"],
+    produksi: ["overview", "commissions", "cpr_calculator"],
+    marketing: ["overview", "commissions", "meta_config"]
   };
 
   function applySidebarByRole(role) {
@@ -216,7 +218,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const commissionLink = document.querySelector('.layout-sidebar nav a[data-menu="commissions"]');
     if (!commissionLink) return;
     const commissionLabel = commissionLink.querySelector("span:last-child");
-    if (safeRole === "cs" || safeRole === "editor" || safeRole === "advertiser" || safeRole === "team bengkel" || safeRole === "bengkel") {
+    if (safeRole === "cs" || safeRole === "editor" || safeRole === "advertiser" || safeRole === "team bengkel" || safeRole === "bengkel" || safeRole === "produksi" || safeRole === "marketing") {
       commissionLink.setAttribute("href", "commission-history.html");
       if (commissionLabel) commissionLabel.textContent = "Komisi Saya";
     } else {
@@ -227,11 +229,22 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   function checkPageAccess(role) {
     const active = document.body.dataset.active;
+    const normalizedRole = String(role || "").toLowerCase();
+
+    // Workaround for browser cached files (especially orderdetail.html)
+    // If we are on orderdetail.html, always allow all logged-in roles.
+    const isOrderDetail = window.location.pathname.endsWith('orderdetail.html') || document.getElementById('od-title');
+    if (isOrderDetail) {
+      const allRoles = ["super_admin", "super admin", "cs", "keuangan", "crm", "editor", "advertiser", "team bengkel", "bengkel", "produksi", "marketing"];
+      if (allRoles.includes(normalizedRole)) {
+        return; // Always allowed
+      }
+    }
+
     const explicitAllowedRoles = String(document.body.dataset.allowedRoles || "")
       .split(",")
       .map(v => v.trim().toLowerCase())
       .filter(Boolean);
-    const normalizedRole = String(role || "").toLowerCase();
 
     if (explicitAllowedRoles.length > 0) {
       if (!explicitAllowedRoles.includes(normalizedRole)) {
@@ -246,16 +259,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     const allowed = ROLE_MENUS[normalizedRole] || ROLE_MENUS.super_admin;
     if (!allowed.includes(active)) {
         console.warn(`Access denied for role ${role} on page ${active}`);
-        // Redirect to the first allowed page
-        // Map menu key to file - simple heuristic or map
-        // For now, default to index.html which usually redirects to dashboard (overview)
-        // But if overview is not allowed (e.g. some role?), we need a fallback.
-        // Assuming overview is allowed for everyone or safe fallback.
-        // Actually, let's just alert and go back or home.
         alert("Anda tidak memiliki akses ke halaman ini.");
         window.location.href = "dashboard.html"; 
     }
   }
+
 
   function updateProfileInfo() {
     const userName = localStorage.getItem('user_name') || 'User';

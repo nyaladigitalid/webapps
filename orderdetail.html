@@ -803,7 +803,7 @@ tailwind.config = {
         }
     </style>
 </head>
-<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="orders" data-allowed-roles="super_admin,cs,keuangan,crm,editor,advertiser,team bengkel,bengkel">
+<body class="bg-background-light text-slate-900 dark:bg-background-dark dark:text-white min-h-screen glass-surface" data-active="orders" data-allowed-roles="super_admin,cs,keuangan,crm,editor,advertiser,team bengkel,bengkel,produksi,marketing">
 <div class="hidden dark:block fixed inset-0 pointer-events-none opacity-30">
   <div class="absolute inset-0 bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:40px_40px]"></div>
 </div>
@@ -1342,6 +1342,76 @@ tailwind.config = {
             </div>
         </div>
 
+        <!-- Performance Panel -->
+        <div id="panel-performance" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl w-full mx-auto space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">analytics</span>
+                            Ringkasan Performa Iklan Klien
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Laporan kinerja iklan kumulatif (lifetime) dari campaign aktif</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openClientPerformanceReportPage()" class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:brightness-110 flex items-center gap-1.5 transition-all shadow-sm shadow-primary/20">
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+                            Buka Halaman Laporan (PDF)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview KPI Cards -->
+                <div class="grid grid-cols-1 gap-4" id="perf-kpi-loading-indicator">
+                    <!-- Loading state inside tab -->
+                    <div class="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                        <span class="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
+                        <span class="text-xs">Mengambil ringkasan performa...</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 hidden" id="perf-kpi-container">
+                    <div class="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-5">
+                        <span class="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider block mb-1">Jangkauan</span>
+                        <span id="perf-preview-impressions" class="text-2xl font-black text-slate-950 dark:text-white font-mono">0</span>
+                        <span class="text-[10px] text-slate-400 block mt-1">Tampilan Iklan</span>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-5">
+                        <span class="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider block mb-1">Hasil</span>
+                        <span id="perf-preview-results" class="text-2xl font-black text-slate-950 dark:text-white font-mono">0</span>
+                        <span id="perf-preview-results-type" class="text-[10px] text-slate-400 block mt-1">klik Whatsapp</span>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-5">
+                        <span class="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider block mb-1">Linkklik</span>
+                        <span id="perf-preview-clicks" class="text-2xl font-black text-slate-950 dark:text-white font-mono">0</span>
+                        <span class="text-[10px] text-slate-400 block mt-1">Total Klik Link</span>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl p-5">
+                        <span class="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider block mb-1">Rasio Klik (CTR)</span>
+                        <span id="perf-preview-ctr" class="text-2xl font-black text-slate-950 dark:text-white font-mono">0.00%</span>
+                        <span class="text-[10px] text-slate-400 block mt-1">Rasio Ketertarikan</span>
+                    </div>
+                </div>
+
+                <!-- Daily WA Updates Card -->
+                <div class="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6" id="perf-wa-report-action-card">
+                    <div class="space-y-1 max-w-xl">
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-primary text-lg">sms</span>
+                            Laporan Harian WhatsApp (Daily WA Report)
+                        </h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                            Butuh mengirim update performa harian secara ringkas kepada klien? Gunakan generator pesan untuk menyalin laporan performa per tanggal langsung ke format WhatsApp.
+                        </p>
+                    </div>
+                    <button onclick="triggerWaReportGenerator()" class="px-5 py-2.5 bg-emerald-500 text-white text-xs font-bold rounded-xl hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 whitespace-nowrap self-start md:self-center">
+                        <span class="material-symbols-outlined text-sm">chat</span>
+                        Buat Laporan WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+
       </div>
     </main>
   </div>
@@ -1593,6 +1663,7 @@ document.addEventListener("DOMContentLoaded", function(){
     if (tabName === 'content') loadContentStatus(orderId);
     if (tabName === 'team') loadTeamAssignments(orderId);
     if (tabName === 'keuangan') loadCommissions(orderId);
+    if (tabName === 'performance') loadPerformanceReport(orderId);
   };
 
   async function loadCommissions(orderId) {
@@ -1657,12 +1728,12 @@ document.addEventListener("DOMContentLoaded", function(){
     var allLabels = Array.from(tabs).map(function(btn){ return (btn.textContent || '').trim(); });
     var show = {
       super_admin: allLabels,
-      cs: ['Data Klien','Konten','Campaign','Tim'],
-      keuangan: ['Data Klien','Konten','Campaign','Keuangan','Log'],
+      cs: ['Data Klien','Konten','Campaign','Tim','Performa'],
+      keuangan: ['Data Klien','Konten','Campaign','Performa','Keuangan','Log'],
       editor: ['Data Klien','Konten'],
       advertiser: ['Data Klien','Konten','Campaign','Performa','Log'],
       crm: ['Data Klien','Konten','Campaign','Performa','Log']
-    }[roleKey] || ['Data Klien','Konten','Campaign'];
+    }[roleKey] || ['Data Klien','Konten','Campaign','Performa'];
     tabs.forEach(function(btn){
       var label = (btn.textContent || '').trim();
       btn.style.display = show.indexOf(label) === -1 ? 'none' : '';
@@ -2356,6 +2427,9 @@ async function loadCampaigns(orderId) {
                             <button onclick="openImprovementModal(${camp.id}, '${camp.campaign_name}')" class="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors" title="Perbaikan Kampanye (Bengkel)">
                                 <span class="material-symbols-outlined text-lg">edit</span>
                             </button>
+                            <button onclick="triggerDirectCampaignReport(${camp.id}, '${camp.campaign_id}', '${camp.campaign_name.replace(/'/g, "\\'")}')" class="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-colors" title="Salin Laporan WA">
+                                <span class="material-symbols-outlined text-lg">chat</span>
+                            </button>
                             ${camp.improvements && camp.improvements.length > 0 ? `
                                 <button onclick="toggleImprovements(${camp.id})" class="p-1.5 text-slate-500 hover:bg-slate-500/10 rounded-lg transition-colors" title="Lihat Riwayat Perbaikan">
                                     <span id="icon-expand-${camp.id}" class="material-symbols-outlined text-lg transition-transform">expand_more</span>
@@ -2381,6 +2455,7 @@ async function loadCampaigns(orderId) {
                                         <th class="px-4 py-2 w-24">Tanggal</th>
                                         <th class="px-4 py-2 w-32">Oleh</th>
                                         <th class="px-4 py-2">Detail Perbaikan</th>
+                                        <th class="px-4 py-2 w-28 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-white/5 text-slate-600 dark:text-slate-400">
@@ -2399,6 +2474,12 @@ async function loadCampaigns(orderId) {
                                             </td>
                                             <td class="px-4 py-2 italic">
                                                 "${imp.details}"
+                                            </td>
+                                            <td class="px-4 py-2 text-center">
+                                                <button onclick="compareImprovementPerformance(${camp.id}, '${imp.improvement_date}', '${imp.details.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 rounded text-[10px] font-bold hover:brightness-110 transition-all flex items-center gap-1 mx-auto" title="Bandingkan performa sebelum & sesudah">
+                                                    <span class="material-symbols-outlined text-[10px]">analytics</span>
+                                                    Bandingkan
+                                                </button>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -2804,7 +2885,291 @@ async function processCampaignCreation(btn) {
   </div>
 </div>
 
+<!-- Compare Performance Modal -->
+<div class="relative z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="compare-perf-modal">
+  <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"></div>
+  <div class="fixed inset-0 z-50 w-screen overflow-y-auto">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-slate-200 dark:border-white/10 flex flex-col">
+        <!-- Modal Header -->
+        <div class="bg-slate-50 dark:bg-white/5 px-6 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-xl">analytics</span>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Bandingkan Performa Perbaikan</h3>
+          </div>
+          <button onclick="closeComparePerfModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+          <!-- Campaign Info & Verdict -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10">
+            <div>
+              <p class="text-xs text-slate-500">Nama Kampanye</p>
+              <h4 id="compare-campaign-name" class="text-sm font-semibold text-slate-900 dark:text-white">-</h4>
+              <p class="text-[11px] text-slate-400 mt-1">Perbaikan: <span id="compare-repair-desc" class="italic">-</span></p>
+            </div>
+            <div class="flex flex-col items-start md:items-end">
+              <p class="text-xs text-slate-500 mb-1">Status Perbaikan</p>
+              <span id="compare-verdict-badge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-slate-100 text-slate-600 border-slate-300 dark:bg-white/5 dark:text-slate-300 dark:border-white/10">
+                ANALYZING
+              </span>
+            </div>
+          </div>
+
+          <!-- Loading state -->
+          <div id="compare-loading" class="flex flex-col items-center justify-center py-12 gap-3">
+            <span class="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+            <p class="text-xs text-slate-500">Mengambil data performa dari Meta Ads...</p>
+          </div>
+
+          <!-- Error state -->
+          <div id="compare-error" class="hidden flex flex-col items-center justify-center py-12 gap-3 text-red-500 text-center">
+            <span class="material-symbols-outlined text-4xl text-red-500">warning</span>
+            <p id="compare-error-text" class="text-sm font-medium max-w-md"></p>
+          </div>
+
+          <!-- Content state -->
+          <div id="compare-content" class="hidden space-y-6">
+            <!-- Info Periode -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div class="p-3 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5">
+                <span class="text-slate-500 font-medium block mb-1">Sebelum Perbaikan (<span id="compare-days-before">7</span> hari)</span>
+                <span id="compare-range-before" class="font-bold text-slate-800 dark:text-slate-200">-</span>
+              </div>
+              <div class="p-3 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5">
+                <span class="text-slate-500 font-medium block mb-1">Setelah Perbaikan (<span id="compare-days-after">7</span> hari)</span>
+                <span id="compare-range-after" class="font-bold text-slate-800 dark:text-slate-200">-</span>
+              </div>
+            </div>
+
+            <!-- Comparison Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Result Card -->
+              <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                    <span>Hasil (Leads / Chat)</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">chat</span>
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                    <span id="compare-before-results" class="text-xl font-bold font-mono text-slate-500">-</span>
+                    <span class="text-xs text-slate-400">vs</span>
+                    <span id="compare-after-results" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                  </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Perubahan</span>
+                  <span id="compare-diff-results" class="font-bold">-</span>
+                </div>
+              </div>
+
+              <!-- CPR Card -->
+              <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                    <span>Biaya per Hasil (CPR)</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">payments</span>
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                    <span id="compare-before-cpr" class="text-xl font-bold font-mono text-slate-500">-</span>
+                    <span class="text-xs text-slate-400">vs</span>
+                    <span id="compare-after-cpr" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                  </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Perubahan</span>
+                  <span id="compare-diff-cpr" class="font-bold">-</span>
+                </div>
+              </div>
+
+              <!-- CTR Card -->
+              <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                    <span>Rasio Klik (CTR)</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">ads_click</span>
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                    <span id="compare-before-ctr" class="text-xl font-bold font-mono text-slate-500">-</span>
+                    <span class="text-xs text-slate-400">vs</span>
+                    <span id="compare-after-ctr" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                  </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Perubahan</span>
+                  <span id="compare-diff-ctr" class="font-bold">-</span>
+                </div>
+              </div>
+
+              <!-- Spend Card -->
+              <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                    <span>Biaya Iklan (Spend)</span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm">monetization_on</span>
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                    <span id="compare-before-spend" class="text-xl font-bold font-mono text-slate-500">-</span>
+                    <span class="text-xs text-slate-400">vs</span>
+                    <span id="compare-after-spend" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                  </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Perubahan</span>
+                  <span id="compare-diff-spend" class="font-bold">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="bg-slate-50 dark:bg-white/5 px-6 py-4 border-t border-slate-200 dark:border-white/10 flex justify-end">
+          <button onclick="closeComparePerfModal()" class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:brightness-105 transition-all">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+function closeComparePerfModal() {
+    const modal = document.getElementById('compare-perf-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function compareImprovementPerformance(campaignId, date, description) {
+    const modal = document.getElementById('compare-perf-modal');
+    if (!modal) return;
+
+    // Show modal & set loading state
+    modal.classList.remove('hidden');
+    document.getElementById('compare-loading').classList.remove('hidden');
+    document.getElementById('compare-content').classList.add('hidden');
+    document.getElementById('compare-error').classList.add('hidden');
+
+    // Set initial text info
+    document.getElementById('compare-campaign-name').textContent = 'Memuat...';
+    document.getElementById('compare-repair-desc').textContent = description || '-';
+    
+    const badge = document.getElementById('compare-verdict-badge');
+    badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-slate-100 text-slate-600 border-slate-300 dark:bg-white/5 dark:text-slate-300 dark:border-white/10";
+    badge.innerHTML = 'ANALYZING';
+
+    try {
+        let formattedDate = '';
+        if (date) {
+            const dateObj = new Date(date);
+            if (!isNaN(dateObj.getTime())) {
+                formattedDate = dateObj.toISOString().split('T')[0];
+            }
+        }
+        if (!formattedDate) {
+            formattedDate = new Date().toISOString().split('T')[0]; // fallback
+        }
+        const response = await fetch(`/api/campaigns/${campaignId}/compare-performance?date=${formattedDate}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Gagal memuat perbandingan performa.');
+        }
+
+        const comp = data.comparison;
+        const camp = data.campaign;
+
+        // Populate info
+        document.getElementById('compare-campaign-name').textContent = camp.campaign_name;
+        document.getElementById('compare-days-before').textContent = comp.daysCompared;
+        document.getElementById('compare-days-after').textContent = comp.daysCompared;
+        
+        const formatDateStr = (dStr) => {
+            const d = new Date(dStr);
+            return d.toLocaleDateString('id-ID', {day: 'numeric', month: 'short'});
+        };
+        document.getElementById('compare-range-before').textContent = `${formatDateStr(comp.beforeRange.since)} - ${formatDateStr(comp.beforeRange.until)}`;
+        document.getElementById('compare-range-after').textContent = `${formatDateStr(comp.afterRange.since)} - ${formatDateStr(comp.afterRange.until)}`;
+
+        // Populate Verdict Badge
+        const v = comp.verdict;
+        if (v === 'Berhasil') {
+            badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400";
+            badge.innerHTML = '<span class="material-symbols-outlined text-xs">trending_up</span> BERHASIL';
+        } else if (v === 'Makin Jelek') {
+            badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400";
+            badge.innerHTML = '<span class="material-symbols-outlined text-xs">trending_down</span> MAKIN JELEK';
+        } else {
+            badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400";
+            badge.innerHTML = '<span class="material-symbols-outlined text-xs">trending_flat</span> SAMA AJA';
+        }
+
+        // Helper to format values
+        const fmtNum = (v) => Number(v || 0).toLocaleString('id-ID');
+        const fmtCur = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0);
+        const fmtCtr = (v) => Number(v || 0).toFixed(2) + '%';
+        const fmtCpr = (v) => v > 0 ? fmtCur(v) : 'Rp0';
+
+        // Helper to render difference trend
+        const renderChange = (elId, diffVal, pctVal, isGood, isCurrency = false, isPercent = false) => {
+            const el = document.getElementById(elId);
+            if (!el) return;
+
+            let formattedDiff = isCurrency ? fmtCur(Math.abs(diffVal)) : (isPercent ? Math.abs(diffVal).toFixed(2) + '%' : fmtNum(Math.abs(diffVal)));
+            let text = '';
+            
+            if (diffVal > 0) {
+                text = `+${formattedDiff} (+${pctVal.toFixed(1)}%)`;
+            } else if (diffVal < 0) {
+                text = `-${formattedDiff} (-${Math.abs(pctVal).toFixed(1)}%)`;
+            } else {
+                text = 'Tetap (0%)';
+            }
+
+            if (isGood === true) {
+                el.className = 'font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5';
+                el.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">arrow_upward</span> ${text}`;
+            } else if (isGood === false) {
+                el.className = 'font-bold text-red-600 dark:text-red-400 flex items-center gap-0.5';
+                el.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">arrow_downward</span> ${text}`;
+            } else {
+                el.className = 'font-bold text-slate-500 dark:text-slate-400';
+                el.innerHTML = text;
+            }
+        };
+
+        // Populate metrics
+        const m = comp.metrics;
+        
+        document.getElementById('compare-before-spend').textContent = fmtCur(m.spend.before);
+        document.getElementById('compare-after-spend').textContent = fmtCur(m.spend.after);
+        renderChange('compare-diff-spend', m.spend.diff, m.spend.percentChange, m.spend.isGood, true);
+
+        document.getElementById('compare-before-results').textContent = fmtNum(m.results.before);
+        document.getElementById('compare-after-results').textContent = fmtNum(m.results.after);
+        renderChange('compare-diff-results', m.results.diff, m.results.percentChange, m.results.isGood);
+
+        document.getElementById('compare-before-ctr').textContent = fmtCtr(m.ctr.before);
+        document.getElementById('compare-after-ctr').textContent = fmtCtr(m.ctr.after);
+        renderChange('compare-diff-ctr', m.ctr.diff, m.ctr.percentChange, m.ctr.isGood, false, true);
+
+        document.getElementById('compare-before-cpr').textContent = fmtCpr(m.cpr.before);
+        document.getElementById('compare-after-cpr').textContent = fmtCpr(m.cpr.after);
+        renderChange('compare-diff-cpr', m.cpr.diff, m.cpr.percentChange, m.cpr.isGood, true);
+
+        // Hide loader & show content
+        document.getElementById('compare-loading').classList.add('hidden');
+        document.getElementById('compare-content').classList.remove('hidden');
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById('compare-loading').classList.add('hidden');
+        document.getElementById('compare-error').classList.remove('hidden');
+        document.getElementById('compare-error-text').textContent = err.message || 'Terjadi kesalahan saat mengambil data performa.';
+    }
+}
+
 function openImprovementModal(campaignId, campaignName) {
     const modal = document.getElementById('improvement-modal');
     const inputId = document.getElementById('input-imp-campaign-id');
@@ -2978,5 +3343,236 @@ async function triggerBatchSync(preset = null, timeRange = null) {
     }
 }
 
+  window.openClientPerformanceReportPage = function() {
+      const orderId = new URLSearchParams(window.location.search).get('id');
+      if (orderId) {
+          window.open(`client-performance.html?order_id=${orderId}`, '_blank');
+      }
+  };
+
+  window.loadPerformanceReport = async function(orderId) {
+      if (!orderId) return;
+      const loader = document.getElementById('perf-kpi-loading-indicator');
+      const container = document.getElementById('perf-kpi-container');
+      
+      if (loader) loader.classList.remove('hidden');
+      if (container) container.classList.add('hidden');
+      
+      try {
+          const campaignsRes = await fetch(`/api/orders/${orderId}/campaigns`);
+          const campaigns = await campaignsRes.json();
+          
+          let totalImpressions = 0;
+          let totalClicks = 0;
+          let totalResults = 0;
+          let resultType = 'klik Whatsapp';
+          
+          if (campaigns && campaigns.length > 0) {
+              campaigns.forEach(c => {
+                  totalImpressions += parseInt(c.impressions) || 0;
+                  totalClicks += parseInt(c.clicks) || 0;
+                  totalResults += parseInt(c.results) || 0;
+                  if (c.result_type) resultType = c.result_type;
+              });
+          }
+          
+          const totalCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100) : 0;
+          
+          document.getElementById('perf-preview-impressions').textContent = totalImpressions.toLocaleString('id-ID');
+          document.getElementById('perf-preview-results').textContent = totalResults.toLocaleString('id-ID');
+          document.getElementById('perf-preview-results-type').textContent = resultType;
+          document.getElementById('perf-preview-clicks').textContent = totalClicks.toLocaleString('id-ID');
+          document.getElementById('perf-preview-ctr').textContent = totalCtr.toFixed(2) + '%';
+          
+          // Save campaign list in global state for quick reference
+          window.currentOrderCampaigns = campaigns;
+          
+          if (loader) loader.classList.add('hidden');
+          if (container) container.classList.remove('hidden');
+      } catch (err) {
+          console.error(err);
+          if (loader) loader.innerHTML = `<span class="text-xs text-red-500">Gagal memuat ringkasan performa: ${err.message}</span>`;
+      }
+  };
+
+  window.triggerWaReportGenerator = function() {
+      // Pick first campaign by default if not specified
+      const campaigns = window.currentOrderCampaigns || [];
+      if (campaigns.length === 0) {
+          alert('Belum ada kampanye aktif terhubung ke order ini.');
+          return;
+      }
+      const c = campaigns[0];
+      triggerDirectCampaignReport(c.id, c.campaign_id, c.campaign_name);
+  };
+
+  window.triggerDirectCampaignReport = function(campaignId, metaCampaignId, campaignName) {
+      const modal = document.getElementById('wa-report-modal');
+      const inputCampaignId = document.getElementById('wa-report-campaign-id');
+      const inputDate = document.getElementById('wa-report-date');
+      const errorDiv = document.getElementById('wa-report-error');
+      
+      if (!modal) return;
+      
+      inputCampaignId.value = campaignId;
+      if (errorDiv) errorDiv.classList.add('hidden');
+      
+      // Default to yesterday's date
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const dateStr = yesterday.toISOString().split('T')[0];
+      inputDate.value = dateStr;
+      
+      modal.classList.remove('hidden');
+      loadWaReportData();
+  };
+
+  window.closeWaReportModal = function() {
+      const modal = document.getElementById('wa-report-modal');
+      if (modal) modal.classList.add('hidden');
+  };
+
+  window.loadWaReportData = async function() {
+      const campaignId = document.getElementById('wa-report-campaign-id').value;
+      const dateStr = document.getElementById('wa-report-date').value;
+      
+      const loading = document.getElementById('wa-report-loading');
+      const content = document.getElementById('wa-report-content');
+      const errorDiv = document.getElementById('wa-report-error');
+      const errorText = document.getElementById('wa-report-error-text');
+      const textarea = document.getElementById('wa-report-text');
+      
+      if (loading) loading.classList.remove('hidden');
+      if (content) content.classList.add('hidden');
+      if (errorDiv) errorDiv.classList.add('hidden');
+      
+      try {
+          const res = await fetch(`/api/campaigns/${campaignId}/daily-report?date=${dateStr}`);
+          const json = await res.json();
+          
+          if (!res.ok || !json.success) {
+              throw new Error(json.error || 'Gagal mengambil data laporan harian.');
+          }
+          
+          const stats = json.data;
+          const clientName = window.currentClient ? (window.currentClient.business_name || window.currentClient.name || '-') : '-';
+          
+          const formattedDate = dateStr.split('-').reverse().join('-'); // DD-MM-YYYY
+          
+          const text = `*Laporan Jasa Iklan UMKM*
+📅 ${formattedDate}
+👤 Data Klient
+KampanyeId: ${stats.campaign_id}
+Nama: *${clientName}*
+
+📊 Performa Iklan
+Jangkauan: ${stats.impressions.toLocaleString('id-ID')}
+Hasil: *${stats.results.toLocaleString('id-ID')} ${stats.result_type}*
+Video Ditonton: ${stats.video_views.toLocaleString('id-ID')}
+Komentar: ${stats.comments.toLocaleString('id-ID')}
+Linkklik: ${stats.link_clicks.toLocaleString('id-ID')}
+
+Catatan: Hasil = Jumlah klik whatsapp. Jumlah klik di dashboard bisa berbeda dengan real WhatsApp masuk karena beberapa faktor (misal: koneksi lambat, batal kirim, atau nomor tidak aktif). Semoga banyak yang DEAL ya Kak!
+Mau konsultasi? Langsung balas aja chatnya, mimin siap membantu.`;
+          
+          textarea.value = text;
+          
+          if (loading) loading.classList.add('hidden');
+          if (content) content.classList.remove('hidden');
+          
+      } catch (err) {
+          console.error(err);
+          if (loading) loading.classList.add('hidden');
+          if (errorDiv) {
+              errorText.textContent = err.message;
+              errorDiv.classList.remove('hidden');
+          }
+      }
+  };
+
+  window.copyWaReportText = function() {
+      const textarea = document.getElementById('wa-report-text');
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(textarea.value);
+      alert('Teks laporan berhasil disalin ke clipboard!');
+  };
+
+  window.sendWaReport = function() {
+      const textarea = document.getElementById('wa-report-text');
+      const text = textarea.value;
+      
+      let phone = '';
+      if (window.currentClient && window.currentClient.whatsapp) {
+          var raw = String(window.currentClient.whatsapp).trim().replace(/[^\d]/g, '');
+          if (raw.startsWith('0')) raw = '62' + raw.slice(1);
+          if (raw.startsWith('8')) raw = '62' + raw;
+          if (raw.startsWith('620')) raw = '62' + raw.slice(3);
+          phone = raw;
+      }
+      
+      if (!phone || phone.length < 8) {
+          alert('Nomor WhatsApp klien tidak valid atau kosong.');
+          return;
+      }
+      
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+  };
+
 </script>
+
+<!-- WhatsApp Report Modal -->
+<div id="wa-report-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/70" onclick="closeWaReportModal()"></div>
+    <div class="relative z-10 flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-500 text-xl font-bold">chat</span>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Salin Laporan WhatsApp</h3>
+                </div>
+                <button type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-white" onclick="closeWaReportModal()">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            <div class="mt-4 space-y-4">
+                <input type="hidden" id="wa-report-campaign-id" value="">
+                <label class="block">
+                    <span class="mb-2 block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Tanggal Laporan</span>
+                    <input type="date" id="wa-report-date" onchange="loadWaReportData()" class="w-full rounded-2xl border border-slate-200 dark:border-white/10 dark:bg-white/5 px-4 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                </label>
+                
+                <div id="wa-report-loading" class="hidden flex flex-col items-center justify-center py-8 gap-2">
+                    <span class="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
+                    <p class="text-xs text-slate-500">Mengambil data performa harian...</p>
+                </div>
+
+                <div id="wa-report-error" class="hidden flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl text-xs font-semibold">
+                    <span class="material-symbols-outlined text-sm">error</span>
+                    <span id="wa-report-error-text"></span>
+                </div>
+
+                <div id="wa-report-content" class="space-y-4">
+                    <label class="block">
+                        <span class="mb-2 block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Preview Laporan</span>
+                        <textarea id="wa-report-text" rows="10" class="w-full font-mono rounded-2xl border border-slate-200 dark:border-white/10 dark:bg-white/5 px-4 py-3 text-xs text-slate-800 dark:text-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"></textarea>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-white/10 pt-4">
+                <button type="button" class="h-[40px] px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 text-sm font-semibold" onclick="closeWaReportModal()">Batal</button>
+                <button type="button" class="h-[40px] px-4 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 text-sm font-semibold flex items-center gap-1.5" onclick="copyWaReportText()">
+                    <span class="material-symbols-outlined text-sm">content_copy</span>Salin Teks
+                </button>
+                <button type="button" class="h-[40px] px-4 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 text-sm font-semibold flex items-center gap-1.5" onclick="sendWaReport()">
+                    <span class="material-symbols-outlined text-sm">send</span>Kirim via WA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body></html>

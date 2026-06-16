@@ -518,6 +518,8 @@ document.addEventListener("DOMContentLoaded", function () {
       var csName = String(r.csName || '').trim();
       var csMeta = String(r.csPhone || r.csEmail || '').trim();
       var csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
+      var displayBusiness = r.businessName || r.business_name || r.clientName || r.client_name || '-';
+      var displayClient = (r.businessName || r.business_name) ? (r.clientName || r.client_name || '') : '';
       var tr = document.createElement('tr');
       tr.className = "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group cursor-pointer border-b border-slate-100 dark:border-white/5 last:border-0";
       tr.innerHTML = ''
@@ -526,11 +528,11 @@ document.addEventListener("DOMContentLoaded", function () {
         + '<td class="px-6 py-4">'
         + '<div class="flex flex-col">'
         + '<div class="flex items-center gap-2">'
-        + '<span class="text-sm font-semibold text-slate-900 dark:text-white">' + (r.clientName || '(Tanpa Nama)') + '</span>' 
+        + '<span class="text-sm font-semibold text-slate-900 dark:text-white">' + displayBusiness + '</span>' 
         + '<span class="text-[10px] font-medium bg-slate-100 border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded dark:bg-white/5 dark:border-white/10 dark:text-white/90 whitespace-nowrap">' + pkg + '</span>'
         + repeatIcon 
         + '</div>'
-        + (r.businessName ? '<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">' + r.businessName + '</div>' : '')
+        + (displayClient ? '<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">' + displayClient + '</div>' : '')
         + '</div>'
         + '</td>'
         + '<td class="px-6 py-4"><span id="type-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
@@ -591,10 +593,10 @@ document.addEventListener("DOMContentLoaded", function () {
             + '<div>'
             + '<p class="text-[10px] text-slate-500 dark:text-[#90aecb] font-black uppercase tracking-widest">ORDER #' + r.id + '</p>'
             + '<div class="flex items-center gap-2 mt-1">'
-            + '<h3 class="text-lg font-bold text-slate-900 dark:text-white">' + (r.clientName || '(Tanpa Nama)') + '</h3>'
+            + '<h3 class="text-lg font-bold text-slate-900 dark:text-white">' + displayBusiness + '</h3>'
             + (r.repeat_order ? '<span class="material-symbols-outlined text-primary text-[16px] animate-pulse">sync</span>' : '')
             + '</div>'
-            + (r.businessName ? '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + r.businessName + '</p>' : '')
+            + (displayClient ? '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + displayClient + '</p>' : '')
             + '</div>'
             + '<span class="' + statusClassMobile + ' text-[10px] font-black px-2 py-1 rounded uppercase">' + (r.status || 'Unknown') + '</span>'
             + '</div>'

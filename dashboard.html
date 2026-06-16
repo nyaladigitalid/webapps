@@ -89,7 +89,9 @@
             color: #64748b !important;
         }
         html:not(.dark) body[data-active="overview"] .text-white,
-        html:not(.dark) body[data-active="overview"] .text-white\/90 {
+        html:not(.dark) body[data-active="overview"] .text-white\/90,
+        html:not(.dark) body[data-active="overview"] .text-white\/80,
+        html:not(.dark) body[data-active="overview"] .text-white\/60 {
             color: #334155 !important;
         }
         html:not(.dark) body[data-active="overview"] .metric-card .text-lg {
@@ -220,13 +222,15 @@
             color: #0f172a !important;
         }
         html.theme-openai body[data-active="overview"] #btn-cs-new-order-top,
-        html.theme-openai body[data-active="overview"] #btn-cs-new-order {
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order,
+        html.theme-openai body[data-active="overview"] #btn-sync-meta-ads {
             align-items: center !important;
             gap: 6px !important;
             height: 36px !important;
             padding: 0 12px !important;
             border-radius: 10px !important;
             background: #ef7225 !important;
+            background-image: none !important;
             color: #ffffff !important;
             border: 1px solid #ef7225 !important;
             font-size: 12px !important;
@@ -235,13 +239,16 @@
             box-shadow: none !important;
         }
         html.theme-openai body[data-active="overview"] #btn-cs-new-order-top:hover,
-        html.theme-openai body[data-active="overview"] #btn-cs-new-order:hover {
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order:hover,
+        html.theme-openai body[data-active="overview"] #btn-sync-meta-ads:hover {
             background: #de6419 !important;
+            background-image: none !important;
             border-color: #de6419 !important;
             color: #ffffff !important;
         }
         html.theme-openai body[data-active="overview"] #btn-cs-new-order-top .material-symbols-outlined,
-        html.theme-openai body[data-active="overview"] #btn-cs-new-order .material-symbols-outlined {
+        html.theme-openai body[data-active="overview"] #btn-cs-new-order .material-symbols-outlined,
+        html.theme-openai body[data-active="overview"] #btn-sync-meta-ads .material-symbols-outlined {
             font-size: 16px !important;
             color: #ffffff !important;
         }
@@ -327,6 +334,10 @@
                             <span class="material-symbols-outlined text-sm">ios_share</span>
                             <span>Export laporan</span>
                         </button>
+                        <button id="btn-sync-meta-ads" class="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-bold text-white bg-gradient-to-br from-primary to-orange-600 shadow-lg hover:shadow-primary/25 transition-all">
+                            <span class="material-symbols-outlined text-sm">sync</span>
+                            <span>Sync Meta Ads</span>
+                        </button>
                         <a id="btn-cs-new-order-top" href="order.html?action=new" class="hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-bold text-white bg-gradient-to-br from-primary to-orange-600 shadow-lg hover:shadow-primary/25 transition-all">
                             <span class="material-symbols-outlined text-sm">add_circle</span>
                             <span>Input Order Baru</span>
@@ -345,7 +356,7 @@
                         </div>
                         <div class="flex items-end justify-between">
                             <p class="text-lg font-semibold" id="stat-ed-waiting">-</p>
-                            <p class="text-[10px] text-white/60">OTP Selesai</p>
+                            <p class="text-[10px] text-white/60">Menunggu Konten</p>
                         </div>
                     </div>
                     <!-- Editor: Siap Iklan -->
@@ -411,6 +422,77 @@
                         <div class="flex items-end justify-between">
                             <p class="text-lg font-semibold" id="stat-adv-commission">-</p>
                             <p class="text-[10px] text-white/60">Dari iklan tayang</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- Produksi Top Row -->
+                <section id="produksi-dashboard-content" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1 hidden">
+                    <!-- Active Ads -->
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-400">check_circle</span>
+                                <span>Iklan Aktif</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="produksi-active-count">-</p>
+                            <p class="text-[10px] text-white/60">Meta Ads</p>
+                        </div>
+                    </div>
+                    <!-- Repairing Tasks -->
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-orange-400">build</span>
+                                <span>Dalam Perbaikan (Bengkel)</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="produksi-repairing-count">-</p>
+                            <p class="text-[10px] text-white/60">Antrean Bengkel</p>
+                        </div>
+                    </div>
+                    <!-- Repaired Tasks -->
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sky-400">done_all</span>
+                                <span>Selesai Diperbaiki</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="produksi-repaired-count">-</p>
+                            <p class="text-[10px] text-white/60">Sudah Diperbaiki</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- Marketing Top Row -->
+                <section id="marketing-dashboard-content" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1 hidden">
+                    <!-- New Clients -->
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-cyan-400">group_add</span>
+                                <span>Klien Baru</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="marketing-new-clients-count">-</p>
+                            <p class="text-[10px] text-white/60">Bulan ini</p>
+                        </div>
+                    </div>
+                    <!-- Internal Ads Spend -->
+                    <div class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/80">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-rose-400">trending_up</span>
+                                <span>Spend Iklan Internal</span>
+                            </span>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <p class="text-lg font-semibold" id="marketing-internal-spend-total">-</p>
+                            <p class="text-[10px] text-white/60">Bulan ini</p>
                         </div>
                     </div>
                 </section>
@@ -487,11 +569,24 @@
                             <div class="flex items-center justify-between text-[11px] text-white/80">
                                 <span class="flex items-center gap-2">
                                     <span class="material-symbols-outlined text-pink-400">show_chart</span>
-                                    <span>Total Spen Iklan Klien</span>
+                                    <span>Total Spend Iklan Klien</span>
                                 </span>
                             </div>
                             <div class="flex items-end justify-between">
                                 <p class="text-lg font-semibold" id="stat-ads-spend">-</p>
+                                <p class="text-[10px] text-white/60">Bulan ini</p>
+                            </div>
+                        </div>
+                        <!-- Internal Ads Spend -->
+                        <div id="card-internal-ads-spend" class="metric-card rounded-2xl border border-white/10 px-4 py-3.5 flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-[11px] text-white/80">
+                                <span class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-rose-400">trending_up</span>
+                                    <span>Total Spend Iklan Internal</span>
+                                </span>
+                            </div>
+                            <div class="flex items-end justify-between">
+                                <p class="text-lg font-semibold" id="stat-internal-ads-spend">-</p>
                                 <p class="text-[10px] text-white/60">Bulan ini</p>
                             </div>
                         </div>
@@ -539,8 +634,11 @@
                                         <option value="baru">Baru</option>
                                         <option value="perpanjang">Perpanjang</option>
                                         <option value="pending">Pending</option>
+                                        <option value="menunggu otp">Menunggu OTP</option>
                                         <option value="proses konten">Proses Konten</option>
                                         <option value="siap iklan">Siap Iklan</option>
+                                        <option value="iklan tayang">Iklan Tayang</option>
+                                        <option value="sudah diperbaiki">Sudah Diperbaiki</option>
                                     </select>
                                     <span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[16px] pointer-events-none">expand_more</span>
                                 </div>
@@ -592,7 +690,6 @@
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                                            <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
                                             <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
@@ -1116,7 +1213,9 @@
             const tbody = document.getElementById('orders-table-body');
             if (!headDefault || !headOrders || !tbody) return;
 
-            if (roleLower === 'team bengkel' || roleLower === 'bengkel') {
+            const rNorm = (roleLower || '').replace(/[\s_-]/g, '');
+
+            if (roleLower === 'team bengkel' || roleLower === 'bengkel' || roleLower === 'produksi') {
                 headOrders.classList.add('hidden');
                 headDefault.classList.remove('hidden');
                 headDefault.innerHTML = `
@@ -1136,7 +1235,7 @@
                 return;
             }
 
-            if (roleLower === 'cs') {
+            if (rNorm === 'cs' || rNorm === 'superadmin' || rNorm === 'crm') {
                 headOrders.classList.add('hidden');
                 headDefault.classList.remove('hidden');
                 headDefault.innerHTML = `
@@ -1147,7 +1246,6 @@
                         <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
                         <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Pembayaran</th>
                         <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                        <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
                         <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
                         <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
                         <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-10"></th>
@@ -1163,7 +1261,6 @@
                     <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
                     <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Klien</th>
                     <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Iklan</th>
-                    <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">End Date</th>
                     <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">No WhatsApp</th>
                     <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Informasi CS</th>
                     <th class="px-6 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sisa</th>
@@ -1175,13 +1272,14 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const role = localStorage.getItem('role') || 'super_admin';
             const userId = localStorage.getItem('user_id') || localStorage.getItem('userId');
-            const isAdmin = (role || '').toLowerCase() === 'super_admin';
+            const roleLowerNormalized = (role || '').toLowerCase().replace(/[\s_-]/g, '');
+            const isAdmin = roleLowerNormalized === 'superadmin';
             const roleLower = (role || '').toLowerCase();
-            const canShowTopActions = roleLower === 'cs' || roleLower === 'super_admin';
+            const canShowTopActions = roleLower === 'cs' || roleLowerNormalized === 'superadmin';
             placeSharedOrdersTableForRole((role || '').toLowerCase());
             configureSharedOrdersTableForRole((role || '').toLowerCase());
             document.body.setAttribute('data-role', String(role || '').toLowerCase());
-            ['card-revenue','card-commissions','card-ads-spend'].forEach(id => {
+            ['card-revenue','card-commissions','card-ads-spend','card-internal-ads-spend'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = isAdmin ? '' : 'none';
             });
@@ -1199,6 +1297,38 @@
                     btnNewTop.style.display = 'none';
                 }
             }
+
+            const btnSyncMeta = document.getElementById('btn-sync-meta-ads');
+            if (btnSyncMeta) {
+                btnSyncMeta.style.display = isAdmin ? 'inline-flex' : 'none';
+                btnSyncMeta.addEventListener('click', async () => {
+                    const originalHTML = btnSyncMeta.innerHTML;
+                    btnSyncMeta.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Syncing...</span>';
+                    btnSyncMeta.disabled = true;
+                    try {
+                        const res = await fetch('/api/campaigns/sync-spend', { method: 'POST' });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            alert('Sinkronisasi data Meta Ads berhasil!');
+                            await loadAdminData();
+                        } else {
+                            alert('Gagal sinkronisasi: ' + (data.error || 'Terjadi kesalahan server'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Gagal terhubung ke server');
+                    } finally {
+                        btnSyncMeta.innerHTML = originalHTML;
+                        btnSyncMeta.disabled = false;
+                    }
+                });
+            }
+
+            // Hide custom role content rows first
+            const prodRowInit = document.getElementById('produksi-dashboard-content');
+            if (prodRowInit) prodRowInit.classList.add('hidden');
+            const mktRowInit = document.getElementById('marketing-dashboard-content');
+            if (mktRowInit) mktRowInit.classList.add('hidden');
 
             if ((role || '').toLowerCase() === 'cs') {
                 document.getElementById('admin-dashboard-content').classList.remove('hidden');
@@ -1258,6 +1388,42 @@
 
                 // Load Bengkel Data
                 await loadBengkelData(userId);
+                await loadAdminOrders(1);
+            } else if (role.toLowerCase() === 'produksi') {
+                // Produksi View
+                const prodRow = document.getElementById('produksi-dashboard-content');
+                if (prodRow) prodRow.classList.remove('hidden');
+                const adminGrid = document.querySelector('#admin-dashboard-content > section');
+                if (adminGrid) adminGrid.style.display = 'none';
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
+                document.getElementById('cs-dashboard-content').classList.add('hidden');
+                document.getElementById('editor-dashboard-content').classList.add('hidden');
+                document.getElementById('advertiser-dashboard-content').classList.add('hidden');
+                document.getElementById('bengkel-dashboard-content').classList.add('hidden');
+                document.getElementById('keuangan-dashboard-content').classList.add('hidden');
+                const btnNew = document.getElementById('btn-cs-new-order');
+                if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
+
+                // Load Produksi Data
+                await loadProduksiData(userId);
+                await loadAdminOrders(1);
+            } else if (role.toLowerCase() === 'marketing') {
+                // Marketing View
+                const mktRow = document.getElementById('marketing-dashboard-content');
+                if (mktRow) mktRow.classList.remove('hidden');
+                const adminGrid = document.querySelector('#admin-dashboard-content > section');
+                if (adminGrid) adminGrid.style.display = 'none';
+                document.getElementById('admin-dashboard-content').classList.remove('hidden');
+                document.getElementById('cs-dashboard-content').classList.add('hidden');
+                document.getElementById('editor-dashboard-content').classList.add('hidden');
+                document.getElementById('advertiser-dashboard-content').classList.add('hidden');
+                document.getElementById('bengkel-dashboard-content').classList.add('hidden');
+                document.getElementById('keuangan-dashboard-content').classList.add('hidden');
+                const btnNew = document.getElementById('btn-cs-new-order');
+                if (btnNew) { btnNew.classList.add('hidden'); btnNew.style.display = 'none'; }
+
+                // Load Marketing Data
+                await loadMarketingData(userId);
                 await loadAdminOrders(1);
             } else if ((role || '').toLowerCase() === 'crm') {
                 const adminGrid2 = document.querySelector('#admin-dashboard-content > section');
@@ -1458,7 +1624,7 @@
                 const cTop = document.getElementById('stat-adv-commission');
                 if (cTop) cTop.textContent = fmtCurrency.format(stats.advertiserCommissionTayangTotal || 0);
                 // Override ready count using current "Pesanan Terbaru" which is filtered to Siap Iklan for Advertiser
-                const dashReady = Array.isArray(window.dashAllOrders) ? window.dashAllOrders.length : 0;
+                const dashReady = Array.isArray(window.dashAllOrders) ? window.dashAllOrders.filter(o => String(o.status || '').toLowerCase() !== 'perpanjang').length : 0;
                 setText('stat-adv-ready', dashReady);
                 const arEl = document.getElementById('advertiser-ready-count');
                 if (arEl) arEl.textContent = String(dashReady);
@@ -1511,6 +1677,36 @@
              }
         }
 
+        async function loadProduksiData(userId) {
+             try {
+                const statsRes = await fetch(`/api/dashboard/stats?role=Produksi&user_id=${userId}`);
+                const stats = await statsRes.json();
+                const activeEl = document.getElementById('produksi-active-count');
+                const repairingEl = document.getElementById('produksi-repairing-count');
+                const repairedEl = document.getElementById('produksi-repaired-count');
+                if (activeEl) activeEl.textContent = String(stats.activeOrders || 0);
+                if (repairingEl) repairingEl.textContent = String(stats.pendingTasks || 0);
+                if (repairedEl) repairedEl.textContent = String(stats.completedTasks || 0);
+             } catch(e) {
+                 console.error('Error loading Produksi data', e);
+             }
+        }
+
+        async function loadMarketingData(userId) {
+             try {
+                const statsRes = await fetch(`/api/dashboard/stats?role=Marketing&user_id=${userId}`);
+                const stats = await statsRes.json();
+                const newClientsEl = document.getElementById('marketing-new-clients-count');
+                const internalSpendEl = document.getElementById('marketing-internal-spend-total');
+                if (newClientsEl) newClientsEl.textContent = String(stats.newClientsThisMonth || 0);
+                if (internalSpendEl) {
+                    internalSpendEl.textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.internalAdsSpendThisMonth || 0);
+                }
+             } catch(e) {
+                  console.error('Error loading Marketing data', e);
+             }
+        }
+
         async function loadAdminData() {
             try {
                 const statsRes = await fetch('/api/dashboard/stats');
@@ -1522,6 +1718,7 @@
                 document.getElementById('stat-extend-orders').textContent = stats.extendOrdersThisMonth || 0;
                 document.getElementById('stat-commissions').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.commissionsThisMonth || 0);
                 document.getElementById('stat-ads-spend').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.adsSpendThisMonth || 0);
+                document.getElementById('stat-internal-ads-spend').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.internalAdsSpendThisMonth || 0);
 
                 await loadAdminOrders(1);
             } catch (e) {
@@ -1581,9 +1778,10 @@
                 let qs = `limit=${limit}`;
                 if (roleNow === 'cs' && uid) qs = `assigned_to=${encodeURIComponent(uid)}&role=CS&limit=${limit}`;
                 else if (roleNow === 'crm') qs = `content_status=menunggu_otp&limit=${limit}`;
-                else if (roleNow === 'editor') qs = `content_status=otp_selesai&limit=${limit}`;
+                else if (roleNow === 'editor') qs = `content_status=menunggu_konten&limit=${limit}`;
                 else if (roleNow === 'advertiser') qs = `content_status=ready&limit=${limit}`;
                 else if (roleNow === 'team bengkel' || roleNow === 'bengkel') qs = `limit=${limit}`;
+                else if (roleNow === 'produksi') qs = `role=produksi&limit=${limit}`;
                 const res = await fetch(`/api/orders?${qs}`);
                 const json = await res.json();
                 const data = Array.isArray(json) ? json : (json.data || []);
@@ -1672,18 +1870,59 @@
         async function markOtpSelesai(orderId) {
             const roleLower = (localStorage.getItem('role') || '').toLowerCase();
             if (roleLower !== 'crm') return;
-            const userId = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
             const id = String(orderId || '').trim();
             if (!id) return;
-            if (!confirm('Ubah status menjadi OTP Selesai?')) return;
+            openCrmOtpModal(id);
+        }
+
+        function openCrmOtpModal(orderId) {
+            const modal = document.getElementById('crm-otp-modal');
+            const input = document.getElementById('crm-otp-order-id');
+            if (input) input.value = String(orderId || '');
+            
+            // Set default radio selection to "Menunggu Konten"
+            const radios = document.getElementsByName('crm_next_status');
+            for (let r of radios) {
+                if (r.value === 'Menunggu Konten') {
+                    r.checked = true;
+                }
+            }
+            
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCrmOtpModal() {
+            const modal = document.getElementById('crm-otp-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function submitCrmOtpStatus() {
+            const orderId = document.getElementById('crm-otp-order-id').value;
+            if (!orderId) return;
+            
+            let selectedStatus = 'Menunggu Konten';
+            const radios = document.getElementsByName('crm_next_status');
+            for (let r of radios) {
+                if (r.checked) {
+                    selectedStatus = r.value;
+                    break;
+                }
+            }
+            
+            const userId = localStorage.getItem('user_id') || localStorage.getItem('userId') || '';
+            
             try {
-                const resp = await fetch('/api/orders/' + encodeURIComponent(id) + '/content/status', {
+                const bodyStatus = selectedStatus === 'Menunggu Konten' ? 'OTP Selesai' : 'Siap Iklan';
+                
+                const resp = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/content/status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'OTP Selesai', user_id: userId || null })
+                    body: JSON.stringify({ status: bodyStatus, user_id: userId || null })
                 });
                 const rj = await resp.json();
                 if (!resp.ok || rj.error) throw new Error(rj.error || 'Gagal update status');
+                
+                closeCrmOtpModal();
                 await loadAdminOrders(1);
                 await loadCRMData(userId);
             } catch (e) {
@@ -1861,14 +2100,33 @@
             const raw = window.dashAllOrders || [];
             const roleLower = (localStorage.getItem('role') || '').toLowerCase();
             const filtered = raw.filter(o => {
+                if (roleLower === 'produksi') {
+                    const processLower = String(o.content_status || o.process_status || '').toLowerCase();
+                    const orderType = String(o.status || '').toLowerCase();
+                    const isPerpanjangSiapIklan = (orderType === 'perpanjang' || orderType === 'extend' || orderType === 'repeat') && processLower.includes('siap iklan');
+                    const isSudahDiperbaiki = processLower.includes('sudah diperbaiki');
+                    if (!isPerpanjangSiapIklan && !isSudahDiperbaiki) {
+                        return false;
+                    }
+                }
+                if (roleLower === 'team bengkel' || roleLower === 'bengkel') {
+                    const processLower = String(o.content_status || o.process_status || '').toLowerCase();
+                    if (!processLower.includes('iklan tayang') && !processLower.includes('sudah diperbaiki')) {
+                        return false;
+                    }
+                }
                 const s = String(o.status || '').toLowerCase();
+                const processLower = String(o.content_status || o.process_status || '').toLowerCase();
                 const statusMatch = (roleLower === 'crm') || (dashStatus === 'all') ||
-                    (dashStatus === 'active' && (s === 'active' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten')) ||
+                    (dashStatus === 'active' && (s === 'active' || s === 'aktif' || s === 'processing' || s === 'process' || s === 'running' || s === 'baru' || s === 'new' || s === 'siap iklan' || s === 'proses konten' || processLower.includes('otp') || processLower.includes('konten') || processLower.includes('iklan') || processLower.includes('diperbaiki') || processLower.includes('aktif'))) ||
                     (dashStatus === 'pending' && (s === 'pending' || s === 'draft')) ||
                     (dashStatus === 'baru' && (s === 'baru' || s === 'new')) ||
                     (dashStatus === 'perpanjang' && (s === 'perpanjang' || s === 'extend' || s === 'repeat')) ||
-                    (dashStatus === 'proses konten' && s === 'proses konten') ||
-                    (dashStatus === 'siap iklan' && s === 'siap iklan');
+                    (dashStatus === 'menunggu otp' && processLower.includes('otp')) ||
+                    (dashStatus === 'proses konten' && (s === 'proses konten' || processLower.includes('konten'))) ||
+                    (dashStatus === 'siap iklan' && (s === 'siap iklan' || processLower.includes('siap iklan'))) ||
+                    (dashStatus === 'iklan tayang' && (processLower.includes('tayang') || processLower.includes('aktif') || processLower.includes('running'))) ||
+                    (dashStatus === 'sudah diperbaiki' && processLower.includes('diperbaiki'));
                 const searchLower = dashSearch.toLowerCase();
                 const searchMatch = !dashSearch ||
                     String(o.id).toLowerCase().includes(searchLower) ||
@@ -1909,47 +2167,58 @@
                 } else {
                     pageItems.forEach(order => {
                         const tr = document.createElement('tr');
+                        const displayBusiness = order.businessName || order.business_name || order.clientName || order.client_name || '-';
+                        const displayClient = (order.businessName || order.business_name) ? (order.clientName || order.client_name || '') : '';
                         if (roleLower === 'crm') {
                             tr.className = "hover:bg-slate-50 transition-colors group cursor-pointer border-b border-slate-100 last:border-0";
                             const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
-                            const clientName = dashShortTwoWords(order.clientName || order.client_name || '');
-                            const businessName = dashShortTwoWords(order.businessName || order.business_name || '');
-                            const packageName = String(order.packageName || order.package_name || '-').trim() || '-';
-                            const clientWa = String(order.clientWhatsapp || order.client_whatsapp || order.whatsapp || '-').trim() || '-';
-                            const csName = dashShortTwoWords(order.csName || order.cs_name || '');
+                            const pkg = order.packageName || order.package_name || '-';
+                            const clientWa = order.clientWhatsapp || order.client_whatsapp || '-';
+                            const csName = String(order.csName || order.cs_name || '').trim();
+                            const csDisplay = csName || '-';
                             const paymentBadge = dashPaymentBadgeHtml(order.paymentStatus);
-                            tr.innerHTML = ''
-                                + `<td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>`
-                                + `<td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>`
-                                + `<td class="px-6 py-4"><div class="flex items-center gap-2"><span class="text-slate-900">${clientName || '-'}</span>${paymentBadge}</div></td>`
-                                + `<td class="px-6 py-4"><span class="text-slate-500">${businessName || '-'}</span></td>`
-                                + `<td class="px-6 py-4"><span class="text-slate-600">${packageName}</span></td>`
-                                + `<td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">-</span></td>`
-                                + `<td class="px-6 py-4"><span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">-</span></td>`
-                                + `<td class="px-6 py-4 text-sm text-slate-600">${clientWa}</td>`
-                                + `<td class="px-6 py-4"><div class="text-sm font-medium text-slate-600">${csName || '-'}</div></td>`
-                                + `<td class="px-6 py-4 text-right">
+                            tr.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium text-slate-500 text-center">${order.id}</td>
+                                <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${createdDate}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-slate-900">${displayBusiness}</span>
+                                            <span class="text-[10px] font-medium bg-slate-100 border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
+                                        </div>
+                                        ${displayClient ? `<div class="text-[11px] text-slate-500 mt-1">${displayClient}</div>` : ''}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">${paymentBadge}</td>
+                                <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200">-</span></td>
+                                <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-600"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
+                                <td class="px-6 py-4"><div class="text-sm font-medium text-slate-600">${csDisplay}</div></td>
+                                <td class="px-6 py-4 text-right">
                                     <div class="inline-flex items-center justify-end gap-2">
                                       <button type="button" data-otp-selesai="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">OTP Selesai</button>
                                       <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-slate-600 transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>
                                     </div>
-                                  </td>`;
+                                </td>
+                            `;
                         } else {
                             tr.className = 'hover:bg-white/5 transition-colors group cursor-pointer';
                             const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
                             const pkg = order.packageName || order.package_name || '-';
                             const clientWa = order.clientWhatsapp || order.client_whatsapp || '-';
                             const csName = String(order.csName || order.cs_name || '').trim();
-                            const csMeta = String(order.csPhone || order.cs_phone || order.csEmail || order.cs_email || '').trim();
-                            const csDisplay = csName ? (csMeta ? (csName + ' • ' + csMeta) : csName) : '-';
+                            const csDisplay = csName || '-';
                             const days = order.days_remaining == null ? '-' : String(order.days_remaining) + ' Hari';
                             const roleNow = (localStorage.getItem('role') || '').toLowerCase();
+                            const roleNowNormalized = roleNow.replace(/[\s_-]/g, '');
                             const processLower = String(order.content_status || order.process_status || '').toLowerCase();
                             const paymentStatus = dashNormalizePaymentStatus(order.paymentStatus);
                             const paymentBadge = dashPaymentBadgeHtml(paymentStatus);
                             let repairCountDisplay = Number(order.repairCount || 0);
                             if (!repairCountDisplay && processLower.includes('sudah diperbaiki') && (order.repairIssue || order.repairFix)) {
-                                repairCountDisplay = 1;
+                                  repairCountDisplay = 1;
                             }
                             const detailBtn = `<button type="button" data-bengkel-detail="${order.id}" class="inline-flex items-center justify-center rounded-lg border border-white/15 px-3 py-2 text-[11px] font-bold text-white hover:bg-white/5 transition-colors">Detail</button>`;
                             const actionHtml = roleNow === 'editor'
@@ -1969,6 +2238,14 @@
                                       <button type="button" data-bengkel-done="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">Catat Perbaikan</button>
                                       ${detailBtn}
                                    </div>`
+                                : roleNow === 'produksi'
+                                ? `<div class="inline-flex items-center justify-end gap-2">
+                                      ${processLower.includes('sudah diperbaiki')
+                                        ? `<button type="button" onclick="handleCompareForOrder(${order.id})" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] hover:bg-[#d96521] px-3 py-2 text-[11px] font-bold text-white transition-colors">Bandingkan</button>`
+                                        : ''
+                                      }
+                                      <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>
+                                   </div>`
                                 : roleNow === 'cs'
                                 ? `<a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>`
                                 : `<a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>`;
@@ -1976,7 +2253,7 @@
                                 order.repairIssue ? `Apa: ${order.repairIssue}` : '',
                                 order.repairFix ? `Cara: ${order.repairFix}` : ''
                             ].filter(Boolean).join('<br>');
-                            tr.innerHTML = (roleNow === 'team bengkel' || roleNow === 'bengkel')
+                            tr.innerHTML = (roleNow === 'team bengkel' || roleNow === 'bengkel' || roleNow === 'produksi')
                                 ? `
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
@@ -1991,11 +2268,11 @@
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
+                                                <span class="text-sm font-semibold text-white">${displayBusiness}</span>
                                                 <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
                                                 ${paymentBadge}
                                             </div>
-                                            <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
+                                            ${displayClient ? `<div class="text-[11px] text-slate-500 mt-1">${displayClient}</div>` : ''}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
@@ -2005,7 +2282,7 @@
                                     <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
                                     <td class="px-6 py-4 text-right">${actionHtml}</td>
                                 `
-                                : roleNow === 'cs'
+                                : (roleNow === 'cs' || roleNowNormalized === 'superadmin')
                                 ? `
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span id="status-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight whitespace-nowrap leading-none bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500">-</span>
@@ -2015,15 +2292,14 @@
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
+                                                <span class="text-sm font-semibold text-white">${displayBusiness}</span>
                                                 <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
                                             </div>
-                                            <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
+                                            ${displayClient ? `<div class="text-[11px] text-slate-500 mt-1">${displayClient}</div>` : ''}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">${paymentBadge}</td>
                                     <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                                    <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
                                     <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
                                     <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
                                     <td class="px-6 py-4 text-right">${actionHtml}</td>
@@ -2042,15 +2318,14 @@
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
                                             <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-white">${order.clientName || order.client_name || order.businessName || order.business_name || '-'}</span>
+                                                <span class="text-sm font-semibold text-white">${displayBusiness}</span>
                                                 <span class="text-[10px] font-medium bg-white/5 border border-white/10 text-white/90 px-1.5 py-0.5 rounded whitespace-nowrap">${pkg}</span>
                                                 ${paymentBadge}
                                             </div>
-                                            <div class="text-[11px] text-slate-500 mt-1">${order.businessName || order.business_name || ''}</div>
+                                            ${displayClient ? `<div class="text-[11px] text-slate-500 mt-1">${displayClient}</div>` : ''}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4"><span id="type-${order.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-white/10 text-white/70 border border-white/20">-</span></td>
-                                    <td class="px-6 py-4 text-sm text-slate-300">${(order.metaData && order.metaData.ads_end_date) ? order.metaData.ads_end_date : '-'}</td>
                                     <td class="px-6 py-4"><div class="flex items-center gap-2 text-slate-300"><span class="material-symbols-outlined text-[16px] text-green-500">chat</span><span class="text-sm font-medium">${clientWa}</span></div></td>
                                     <td class="px-6 py-4"><div class="text-sm font-medium text-slate-300">${csDisplay}</div></td>
                                     <td class="px-6 py-4"><span class="text-xs font-bold text-slate-300">${days}</span></td>
@@ -2123,19 +2398,20 @@
                                 try {
                                   const role = (localStorage.getItem('role') || '').toLowerCase();
                                   const procVal = String(st.process || '').toLowerCase();
-                                   if (role === 'cs' && !procVal.includes('menunggu')) {
-                                    tr.style.display = 'none';
-                                    return;
-                                   }
-                                   if (role === 'crm' && !procVal.includes('menunggu')) {
-                                    tr.style.display = 'none';
-                                    return;
-                                   }
-                                   if (role === 'editor' && !procVal.includes('otp selesai')) {
-                                    tr.style.display = 'none';
-                                    return;
+                                  if (role === 'crm' && !procVal.includes('menunggu otp')) {
+                                      tr.style.display = 'none';
+                                      return;
                                   }
-                                   if (role === 'advertiser') {
+                                  if (role === 'editor' && !procVal.includes('menunggu konten')) {
+                                      tr.style.display = 'none';
+                                      return;
+                                  }
+                                  if (role === 'advertiser') {
+                                      const orderType = String(order.status || '').toLowerCase();
+                                      if (orderType === 'perpanjang' && procVal.includes('siap iklan')) {
+                                          tr.style.display = 'none';
+                                          return;
+                                      }
                                       const adVal = String(st.ad || '').toLowerCase();
                                       const show = procVal.includes('siap iklan') || adVal.includes('aktif') || adVal.includes('tidak aktif');
                                       if (!show) {
@@ -2150,6 +2426,15 @@
                                         return;
                                     }
                                    }
+                                   if (role === 'produksi') {
+                                        const orderType = String(order.status || '').toLowerCase();
+                                        const isPerpanjangSiapIklan = orderType === 'perpanjang' && procVal.includes('siap iklan');
+                                        const isSudahDiperbaiki = procVal.includes('sudah diperbaiki');
+                                        if (!isPerpanjangSiapIklan && !isSudahDiperbaiki) {
+                                            tr.style.display = 'none';
+                                            return;
+                                        }
+                                   }
                                 } catch (_) {}
                                 if (typeEl) {
                                   const t = String(st.type || '').toLowerCase();
@@ -2163,8 +2448,8 @@
                                   const p = String(st.process || '').toLowerCase();
                                   let cls = 'bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-700/40 dark:text-slate-100 dark:border-slate-500';
                                   let txt = st.process || 'Menunggu';
-                                  if (p.includes('menunggu otp') || p.includes('menunggu')) cls = 'bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-400/50';
-                                  else if (p.includes('mulai konten') || p.includes('proses konten')) cls = 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/50';
+                                  if (p.includes('menunggu konten') || p.includes('mulai konten') || p.includes('proses konten')) cls = 'bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/50';
+                                  else if (p.includes('menunggu otp') || p.includes('menunggu')) cls = 'bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-400/50';
                                   else if (p.includes('siap iklan')) cls = 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-200 dark:border-cyan-400/50';
                                   else if (p.includes('iklan tayang')) cls = 'bg-sky-100 text-sky-800 border border-sky-300 dark:bg-sky-500/20 dark:text-sky-200 dark:border-sky-400/50';
                                   else if (p.includes('proses iklan')) cls = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-400/50';
@@ -2178,7 +2463,7 @@
                                 if (sel) {
                                     const roleLower = (localStorage.getItem('role') || '').toLowerCase();
                                     const p = String(st.process || '').toLowerCase();
-                                    if (roleLower === 'crm' || roleLower === 'editor' || roleLower === 'advertiser' || roleLower === 'team bengkel' || roleLower === 'bengkel') {
+                                    if (roleLower === 'crm' || roleLower === 'editor' || roleLower === 'advertiser' || roleLower === 'team bengkel' || roleLower === 'bengkel' || roleLower === 'produksi' || roleLower === 'marketing') {
                                         sel.style.display = 'none';
                                     } else {
                                         sel.innerHTML = '<option value="">Ubah...</option>';
@@ -2267,6 +2552,8 @@
                 if (revenueCard) revenueCard.style.display = 'none';
                 const adsSpendCard = document.getElementById('card-ads-spend');
                 if (adsSpendCard) adsSpendCard.style.display = 'none';
+                const internalAdsSpendCard = document.getElementById('card-internal-ads-spend');
+                if (internalAdsSpendCard) internalAdsSpendCard.style.display = 'none';
                 // Update titles
                 function setTitle(statId, title) {
                     const el = document.getElementById(statId);
@@ -2343,6 +2630,167 @@
                 console.error('Error loading keuangan data:', e);
             }
         }
+        function closeComparePerfModal() {
+            const modal = document.getElementById('compare-perf-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function handleCompareForOrder(orderId) {
+            const modal = document.getElementById('compare-perf-modal');
+            if (!modal) return;
+
+            // Show modal and set initial loading state
+            modal.classList.remove('hidden');
+            document.getElementById('compare-loading').classList.remove('hidden');
+            document.getElementById('compare-content').classList.add('hidden');
+            document.getElementById('compare-error').classList.add('hidden');
+
+            document.getElementById('compare-campaign-name').textContent = 'Memuat...';
+            document.getElementById('compare-repair-desc').textContent = '-';
+            
+            const badge = document.getElementById('compare-verdict-badge');
+            if (badge) {
+                badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-slate-100 text-slate-600 border-slate-300 dark:bg-white/5 dark:text-slate-300 dark:border-white/10";
+                badge.innerHTML = 'ANALYZING';
+            }
+
+            try {
+                // 1. Fetch campaigns for this order
+                const campaignsRes = await fetch(`/api/orders/${orderId}/campaigns`);
+                const campaigns = await campaignsRes.json();
+
+                if (!campaigns || campaigns.length === 0) {
+                    throw new Error("Belum ada kampanye iklan yang terhubung dengan pesanan ini.");
+                }
+
+                // Pick the first campaign for comparison
+                const campaign = campaigns[0];
+
+                // 2. Fetch repair/improvement logs for this order
+                const repairsRes = await fetch(`/api/orders/${orderId}/repairs`);
+                const repairsData = await repairsRes.json();
+                const repairsList = repairsData.data || [];
+
+                if (repairsList.length === 0) {
+                    throw new Error("Belum ada data perbaikan untuk pesanan ini.");
+                }
+
+                // Sort repairs to get the latest one
+                const sortedRepairs = repairsList.slice().sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+                const latestRepair = sortedRepairs[0];
+
+                let formattedDate = '';
+                if (latestRepair && latestRepair.created_at) {
+                    const dateObj = new Date(latestRepair.created_at);
+                    if (!isNaN(dateObj.getTime())) {
+                        formattedDate = dateObj.toISOString().split('T')[0];
+                    }
+                }
+                if (!formattedDate) {
+                    formattedDate = new Date().toISOString().split('T')[0]; // fallback
+                }
+
+                // 3. Perform comparison query
+                const response = await fetch(`/api/campaigns/${campaign.id}/compare-performance?date=${formattedDate}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Gagal memuat perbandingan performa.');
+                }
+
+                const comp = data.comparison;
+                const camp = data.campaign;
+
+                // Populate info
+                document.getElementById('compare-campaign-name').textContent = camp.campaign_name;
+                document.getElementById('compare-repair-desc').textContent = latestRepair.repair_fix || latestRepair.repair_issue || '-';
+                document.getElementById('compare-days-before').textContent = comp.daysCompared;
+                document.getElementById('compare-days-after').textContent = comp.daysCompared;
+                
+                const formatDateStr = (dStr) => {
+                    const d = new Date(dStr);
+                    return d.toLocaleDateString('id-ID', {day: 'numeric', month: 'short'});
+                };
+                document.getElementById('compare-range-before').textContent = `${formatDateStr(comp.beforeRange.since)} - ${formatDateStr(comp.beforeRange.until)}`;
+                document.getElementById('compare-range-after').textContent = `${formatDateStr(comp.afterRange.since)} - ${formatDateStr(comp.afterRange.until)}`;
+
+                // Populate Verdict Badge
+                const v = comp.verdict;
+                if (v === 'Berhasil') {
+                    badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400";
+                    badge.innerHTML = '<span class="material-symbols-outlined text-xs">trending_up</span> BERHASIL';
+                } else if (v === 'Makin Jelek') {
+                    badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400";
+                    badge.innerHTML = '<span class="material-symbols-outlined text-xs">trending_down</span> MAKIN JELEK';
+                } else {
+                    badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400";
+                    badge.innerHTML = '<span class="material-symbols-outlined text-xs">trending_flat</span> SAMA AJA';
+                }
+
+                // Helper to format values
+                const fmtNum = (v) => Number(v || 0).toLocaleString('id-ID');
+                const fmtCur = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0);
+                const fmtCtr = (v) => Number(v || 0).toFixed(2) + '%';
+                const fmtCpr = (v) => v > 0 ? fmtCur(v) : 'Rp0';
+
+                // Helper to render difference trend
+                const renderChange = (elId, diffVal, pctVal, isGood, isCurrency = false, isPercent = false) => {
+                    const el = document.getElementById(elId);
+                    if (!el) return;
+
+                    let formattedDiff = isCurrency ? fmtCur(Math.abs(diffVal)) : (isPercent ? Math.abs(diffVal).toFixed(2) + '%' : fmtNum(Math.abs(diffVal)));
+                    let text = '';
+                    
+                    if (diffVal > 0) {
+                        text = `+${formattedDiff} (+${pctVal.toFixed(1)}%)`;
+                    } else if (diffVal < 0) {
+                        text = `-${formattedDiff} (-${Math.abs(pctVal).toFixed(1)}%)`;
+                    } else {
+                        text = 'Tetap (0%)';
+                    }
+
+                    if (isGood === true) {
+                        el.className = 'font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5';
+                        el.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">arrow_upward</span> ${text}`;
+                    } else if (isGood === false) {
+                        el.className = 'font-bold text-red-600 dark:text-red-400 flex items-center gap-0.5';
+                        el.innerHTML = `<span class="material-symbols-outlined text-xs font-bold">arrow_downward</span> ${text}`;
+                    } else {
+                        el.className = 'font-bold text-slate-500 dark:text-slate-400';
+                        el.innerHTML = text;
+                    }
+                };
+
+                // Populate metrics
+                const m = comp.metrics;
+                
+                document.getElementById('compare-before-spend').textContent = fmtCur(m.spend.before);
+                document.getElementById('compare-after-spend').textContent = fmtCur(m.spend.after);
+                renderChange('compare-diff-spend', m.spend.diff, m.spend.percentChange, m.spend.isGood, true);
+
+                document.getElementById('compare-before-results').textContent = fmtNum(m.results.before);
+                document.getElementById('compare-after-results').textContent = fmtNum(m.results.after);
+                renderChange('compare-diff-results', m.results.diff, m.results.percentChange, m.results.isGood);
+
+                document.getElementById('compare-before-ctr').textContent = fmtCtr(m.ctr.before);
+                document.getElementById('compare-after-ctr').textContent = fmtCtr(m.ctr.after);
+                renderChange('compare-diff-ctr', m.ctr.diff, m.ctr.percentChange, m.ctr.isGood, false, true);
+
+                document.getElementById('compare-before-cpr').textContent = fmtCpr(m.cpr.before);
+                document.getElementById('compare-after-cpr').textContent = fmtCpr(m.cpr.after);
+                renderChange('compare-diff-cpr', m.cpr.diff, m.cpr.percentChange, m.cpr.isGood, true);
+
+                // Hide loader & show content
+                document.getElementById('compare-loading').classList.add('hidden');
+                document.getElementById('compare-content').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Compare performance error:', error);
+                document.getElementById('compare-loading').classList.add('hidden');
+                document.getElementById('compare-error-text').textContent = error.message;
+                document.getElementById('compare-error').classList.remove('hidden');
+            }
+        }
     </script>
     <div id="bengkel-done-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-slate-950/70" onclick="closeBengkelDoneModal()"></div>
@@ -2394,6 +2842,196 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div id="crm-otp-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-950/70" onclick="closeCrmOtpModal()"></div>
+        <div class="relative z-10 flex min-h-full items-center justify-center p-4">
+            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">Ubah Status OTP Selesai</h3>
+                        <p class="mt-1 text-sm text-slate-500">Tentukan tujuan status selanjutnya untuk order ini.</p>
+                    </div>
+                    <button type="button" class="text-slate-400 hover:text-slate-600" onclick="closeCrmOtpModal()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <input type="hidden" id="crm-otp-order-id" value="">
+                <div class="mt-6 space-y-4">
+                    <span class="block text-sm font-semibold text-slate-700">Pilih Status Selanjutnya:</span>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                            <input type="radio" name="crm_next_status" value="Menunggu Konten" checked class="text-[#ef7225] focus:ring-[#ef7225]/20">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-semibold text-slate-900">Menunggu Konten (Default)</span>
+                                <span class="text-xs text-slate-500">Kirim ke Editor untuk dibuatkan konten/video baru.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                            <input type="radio" name="crm_next_status" value="Siap Iklan" class="text-[#ef7225] focus:ring-[#ef7225]/20">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-semibold text-slate-900">Siap Iklan</span>
+                                <span class="text-xs text-slate-500">Lewati antrian Editor (konten/video sudah siap untuk tayang).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="mt-6 flex items-center justify-end gap-3">
+                    <button type="button" class="h-[44px] min-w-[120px] rounded-2xl border border-slate-200 px-5 text-sm font-semibold text-slate-500 hover:bg-slate-50" onclick="closeCrmOtpModal()">Batal</button>
+                    <button type="button" class="h-[44px] min-w-[120px] rounded-2xl bg-[#ef7225] px-5 text-sm font-semibold text-white hover:bg-[#d96521]" onclick="submitCrmOtpStatus()">Konfirmasi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Performance Modal -->
+    <div class="relative z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="compare-perf-modal">
+      <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"></div>
+      <div class="fixed inset-0 z-50 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-slate-200 dark:border-white/10 flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-slate-50 dark:bg-white/5 px-6 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">analytics</span>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Bandingkan Performa Perbaikan</h3>
+              </div>
+              <button onclick="closeComparePerfModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+              <!-- Campaign Info & Verdict -->
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-200 dark:border-white/10">
+                <div>
+                  <p class="text-xs text-slate-500">Nama Kampanye</p>
+                  <h4 id="compare-campaign-name" class="text-sm font-semibold text-slate-900 dark:text-white">-</h4>
+                  <p class="text-[11px] text-slate-400 mt-1">Perbaikan: <span id="compare-repair-desc" class="italic">-</span></p>
+                </div>
+                <div class="flex flex-col items-start md:items-end">
+                  <p class="text-xs text-slate-500 mb-1">Status Perbaikan</p>
+                  <span id="compare-verdict-badge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-slate-100 text-slate-600 border-slate-300 dark:bg-white/5 dark:text-slate-300 dark:border-white/10">
+                    ANALYZING
+                  </span>
+                </div>
+              </div>
+
+              <!-- Loading state -->
+              <div id="compare-loading" class="flex flex-col items-center justify-center py-12 gap-3">
+                <span class="material-symbols-outlined animate-spin text-3xl text-primary">progress_activity</span>
+                <p class="text-xs text-slate-500">Mengambil data performa dari Meta Ads...</p>
+              </div>
+
+              <!-- Error state -->
+              <div id="compare-error" class="hidden flex flex-col items-center justify-center py-12 gap-3 text-red-500 text-center">
+                <span class="material-symbols-outlined text-4xl text-red-500">warning</span>
+                <p id="compare-error-text" class="text-sm font-medium max-w-md"></p>
+              </div>
+
+              <!-- Content state -->
+              <div id="compare-content" class="hidden space-y-6">
+                <!-- Info Periode -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div class="p-3 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5">
+                    <span class="text-slate-500 font-medium block mb-1">Sebelum Perbaikan (<span id="compare-days-before">7</span> hari)</span>
+                    <span id="compare-range-before" class="font-bold text-slate-800 dark:text-slate-200">-</span>
+                  </div>
+                  <div class="p-3 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5">
+                    <span class="text-slate-500 font-medium block mb-1">Setelah Perbaikan (<span id="compare-days-after">7</span> hari)</span>
+                    <span id="compare-range-after" class="font-bold text-slate-800 dark:text-slate-200">-</span>
+                  </div>
+                </div>
+
+                <!-- Comparison Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Result Card -->
+                  <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                        <span>Hasil (Leads / Chat)</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">chat</span>
+                      </div>
+                      <div class="flex items-baseline gap-2">
+                        <span id="compare-before-results" class="text-xl font-bold font-mono text-slate-500">-</span>
+                        <span class="text-xs text-slate-400">vs</span>
+                        <span id="compare-after-results" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                      </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                      <span class="text-slate-400">Perubahan</span>
+                      <span id="compare-diff-results" class="font-bold">-</span>
+                    </div>
+                  </div>
+
+                  <!-- CPR Card -->
+                  <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                        <span>Biaya per Hasil (CPR)</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">payments</span>
+                      </div>
+                      <div class="flex items-baseline gap-2">
+                        <span id="compare-before-cpr" class="text-xl font-bold font-mono text-slate-500">-</span>
+                        <span class="text-xs text-slate-400">vs</span>
+                        <span id="compare-after-cpr" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                      </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                      <span class="text-slate-400">Perubahan</span>
+                      <span id="compare-diff-cpr" class="font-bold">-</span>
+                    </div>
+                  </div>
+
+                  <!-- CTR Card -->
+                  <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                        <span>Rasio Klik (CTR)</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">ads_click</span>
+                      </div>
+                      <div class="flex items-baseline gap-2">
+                        <span id="compare-before-ctr" class="text-xl font-bold font-mono text-slate-500">-</span>
+                        <span class="text-xs text-slate-400">vs</span>
+                        <span id="compare-after-ctr" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                      </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                      <span class="text-slate-400">Perubahan</span>
+                      <span id="compare-diff-ctr" class="font-bold">-</span>
+                    </div>
+                  </div>
+
+                  <!-- Spend Card -->
+                  <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                        <span>Biaya Iklan (Spend)</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm">monetization_on</span>
+                      </div>
+                      <div class="flex items-baseline gap-2">
+                        <span id="compare-before-spend" class="text-xl font-bold font-mono text-slate-500">-</span>
+                        <span class="text-xs text-slate-400">vs</span>
+                        <span id="compare-after-spend" class="text-2xl font-bold font-mono text-slate-900 dark:text-white">-</span>
+                      </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                      <span class="text-slate-400">Perubahan</span>
+                      <span id="compare-diff-spend" class="font-bold">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="bg-slate-50 dark:bg-white/5 px-6 py-4 border-t border-slate-200 dark:border-white/10 flex justify-end">
+              <button onclick="closeComparePerfModal()" class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:brightness-105 transition-all">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 </body>
 </html>

@@ -382,7 +382,6 @@ html.theme-openai body.orders-clean .orders-client-line {
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Tanggal</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Klien</th>
-<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Usaha</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Paket / Produk</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status Iklan</th>
               <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status</th>
@@ -586,8 +585,8 @@ html.theme-openai body.orders-clean .orders-client-line {
                         <div>
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Status Pembayaran</label>
                             <select id="payment-status" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary">
-                                <option value="DP" selected>DP</option>
-                                <option value="Lunas">Lunas</option>
+                                <option value="DP">DP</option>
+                                <option value="Lunas" selected>Lunas</option>
                             </select>
                             <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">DP boleh diproses, tetapi status Iklan Tayang hanya bisa untuk order yang sudah lunas.</p>
                         </div>
@@ -777,8 +776,8 @@ document.addEventListener("DOMContentLoaded", function () {
       var pkg = r.packageName || '-';
       var createdDate = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
       var clientWa = r.clientWhatsapp || '-';
-      var clientName = shortDisplayName(r.clientName || '(Tanpa Nama)');
-      var businessName = shortDisplayName(r.businessName || '-');
+      var displayBusiness = r.businessName || r.business_name || r.clientName || r.client_name || '-';
+      var displayClient = (r.businessName || r.business_name) ? (r.clientName || r.client_name || '') : '';
       var packageName = String(pkg || '-').trim() || '-';
       var csDisplay = shortDisplayName(r.csName || '');
       var tr = document.createElement('tr');
@@ -786,8 +785,14 @@ document.addEventListener("DOMContentLoaded", function () {
       tr.innerHTML = ''
         + '<td class="px-6 py-4 text-sm font-medium text-slate-500 dark:text-[#90aecb] text-center">'+ r.id +'</td>'
         + '<td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] whitespace-nowrap">'+ createdDate +'</td>'
-        + '<td class="px-6 py-4"><span class="orders-client-line text-slate-900 dark:text-white">' + clientName + '</span></td>'
-        + '<td class="px-6 py-4"><span class="orders-client-line text-slate-500 dark:text-slate-400">' + businessName + '</span></td>'
+        + '<td class="px-6 py-4">'
+        + '<div class="flex flex-col">'
+        + '<div class="flex items-center gap-2">'
+        + '<span class="text-sm font-semibold text-slate-900 dark:text-white">' + displayBusiness + '</span>'
+        + '</div>'
+        + (displayClient ? '<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">' + displayClient + '</div>' : '')
+        + '</div>'
+        + '</td>'
         + '<td class="px-6 py-4"><div class="flex items-center gap-2"><span class="orders-client-line text-slate-600 dark:text-white/90">' + packageName + '</span>' + repeatIcon + '</div></td>'
         + '<td class="px-6 py-4"><span id="type-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
         + '<td class="px-6 py-4"><span id="status-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
@@ -797,7 +802,7 @@ document.addEventListener("DOMContentLoaded", function () {
       tr.addEventListener('click', function(e){
         var t = e.target;
         if (t && (t.closest && t.closest('button'))) return;
-        window.location.href = 'orderdetail.html?id=' + encodeURIComponent(r.id);
+        window.location.href = 'orderdetail.html?id=' + encodeURIComponent(r.id) + '&src=data_crm&v=20260511';
       });
       tbody.appendChild(tr);
 
@@ -843,10 +848,10 @@ document.addEventListener("DOMContentLoaded", function () {
             + '<div>'
             + '<p class="text-[10px] text-slate-500 dark:text-[#90aecb] font-black uppercase tracking-widest">ORDER #' + r.id + '</p>'
             + '<div class="flex items-center gap-2 mt-1">'
-            + '<h3 class="text-lg font-bold text-slate-900 dark:text-white">' + (r.clientName || '(Tanpa Nama)') + '</h3>'
+            + '<h3 class="text-lg font-bold text-slate-900 dark:text-white">' + displayBusiness + '</h3>'
             + (r.repeat_order ? '<span class="material-symbols-outlined text-primary text-[16px] animate-pulse">sync</span>' : '')
             + '</div>'
-            + (r.businessName ? '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + r.businessName + '</p>' : '')
+            + (displayClient ? '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + displayClient + '</p>' : '')
             + '</div>'
             + '<span class="' + statusClassMobile + ' text-[10px] font-black px-2 py-1 rounded uppercase">' + (r.status || 'Unknown') + '</span>'
             + '</div>'
@@ -1282,6 +1287,10 @@ document.addEventListener("DOMContentLoaded", function () {
                           <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Target Audience</label>
                           <textarea name="ads_audience" rows="2" class="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-primary" placeholder="Lokasi, Umur, Minat..."></textarea>
                       </div>
+                      <div class="md:col-span-2 flex items-center gap-2 mt-1">
+                          <input type="checkbox" name="create_new_video" id="order-create-new-video" class="rounded border-slate-300 text-primary focus:ring-primary/40">
+                          <label for="order-create-new-video" class="text-xs font-medium text-slate-500 dark:text-slate-400">Ada Perubahan Konten/Video Baru (Khusus Perpanjang)</label>
+                      </div>
                   </div>
               `;
               break;
@@ -1579,7 +1588,11 @@ document.addEventListener("DOMContentLoaded", function () {
       var inputs = dynamicFieldsContainer.querySelectorAll('input, select, textarea');
       inputs.forEach(input => {
           if (input.name) {
-              metaData[input.name] = input.value;
+              if (input.type === 'checkbox') {
+                  metaData[input.name] = input.checked;
+              } else {
+                  metaData[input.name] = input.value;
+              }
           }
       });
 
@@ -1613,6 +1626,7 @@ document.addEventListener("DOMContentLoaded", function () {
               metaData: metaData,
               status: orderStatus,
               repeatOrder: isRepeatOrder,
+              createNewVideo: document.getElementById('order-create-new-video') ? document.getElementById('order-create-new-video').checked : false,
               paymentStatus: paymentStatus,
               paymentDpAmount: paymentDpAmount,
               csId: document.getElementById('assignment-cs') ? document.getElementById('assignment-cs').value : null
@@ -1634,8 +1648,12 @@ document.addEventListener("DOMContentLoaded", function () {
           alert('Pesanan berhasil dibuat! ID: ' + data.orderId);
           closeOrderModal();
           
-          // Refresh Table
-          window.location.reload(); 
+          const roleNormalized = String(userRole || '').toLowerCase();
+          if (roleNormalized === 'cs') {
+              window.location.href = 'dashboard.html';
+          } else {
+              window.location.reload(); 
+          }
       })
       .catch(err => {
           console.error(err);
@@ -1665,7 +1683,8 @@ document.addEventListener("DOMContentLoaded", function () {
       total:"", cs:"", status:""
     };
     function isKeyLine(l){
-      return /^Tanggal:|^Nama:|^Nama Usaha:|^Jenis Usaha:|^No Whatsapp Bisnis:|^Alamat:|^Durasi:|^Deskripsi produk\/jasa:|^\*?Keunggulan usaha|^\*?keunikan usaha|^Promo:|^Lokasi:|^Usia:|^Jenis kelamin:|^Total Bayar:|^Cs:|^Status:/i.test(l);
+      var clean = l.replace(/^[\s\-*•]+/, "").trim();
+      return /^(Tanggal|Nama|Nama\s+Usaha|Jenis\s+Usaha|No\s+Whatsapp|Whatsapp|Alamat|Durasi|Deskripsi|Keunggulan|Keunikan|Promo|Lokasi|Usia|Jenis\s+kelamin|Total\s+Bayar|Total|Cs|Status)\s*:/i.test(clean);
     }
     var i=0, n=lines.length;
     function captureMultiline(startIdx){
@@ -1679,33 +1698,38 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     while(i<n){
       var line=lines[i];
-      if (/^Tanggal:/i.test(line)){ result.tanggal=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Nama:/i.test(line)){ result.nama=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Nama Usaha:/i.test(line)){ result.usaha=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Jenis Usaha:/i.test(line)){ result.jenisUsaha=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^No Whatsapp Bisnis:/i.test(line)){ result.wa=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Alamat:/i.test(line)){ 
-        var rest=line.replace(/^Alamat:/i,"").trim();
+      var clean = line.replace(/^[\s\-*•]+/, "").trim();
+      
+      if (/^Tanggal\s*:/i.test(clean)){ result.tanggal=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Nama\s+Usaha\s*:/i.test(clean)){ result.usaha=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Nama\s*:/i.test(clean)){ result.nama=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Jenis\s+Usaha\s*:/i.test(clean)){ result.jenisUsaha=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^(No\s+Whatsapp\s+Bisnis|No\s+Whatsapp|Whatsapp)\s*:/i.test(clean)){ result.wa=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Alamat(\s+usaha)?\s*:/i.test(clean)){ 
+        var rest=clean.replace(/^Alamat(\s+usaha)?\s*:/i,"").trim();
         if (rest){ result.alamat=rest; i++; continue; }
         var cap=captureMultiline(i+1); result.alamat=cap.value; i=cap.next; continue;
       }
-      if (/^Durasi:/i.test(line)){ result.durasi=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Deskripsi produk\/jasa:/i.test(line)){
+      if (/^Durasi\s*:/i.test(clean)){ result.durasi=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^(Deskripsi\s+produk\/jasa|Deskripsi)\s*:/i.test(clean)){
+        var rest2=clean.replace(/^(Deskripsi\s+produk\/jasa|Deskripsi)\s*:/i,"").trim();
+        if (rest2) { result.deskripsi=rest2; i++; continue; }
         var cap2=captureMultiline(i+1); result.deskripsi=cap2.value; i=cap2.next; continue;
       }
-      if (/^\*?Keunggulan usaha/i.test(line)){
-        result.keunggulan=line.split(":").slice(1).join(":").trim(); i++; continue;
+      if (/^Keunggulan(\s+usaha)?(\s*\(wajib\))?\s*:/i.test(clean)){
+        var val = clean.split(":").slice(1).join(":").replace(/^\*/, "").trim();
+        result.keunggulan=val; i++; continue;
       }
-      if (/^\*?keunikan usaha/i.test(line)){
-        result.keunikan=line.split(":").slice(1).join(":").trim(); i++; continue;
+      if (/^Keunikan(\s+usaha)?(\s*\(wajib\))?\s*:/i.test(clean)){
+        result.keunikan=clean.split(":").slice(1).join(":").trim(); i++; continue;
       }
-      if (/^Promo:/i.test(line)){ result.promo=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Lokasi:/i.test(line)){ result.lokasi=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Usia:/i.test(line)){ result.usia=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Jenis kelamin:/i.test(line)){ result.gender=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Total Bayar:/i.test(line)){ result.total=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Cs:/i.test(line)){ result.cs=line.split(":").slice(1).join(":").trim(); i++; continue; }
-      if (/^Status:/i.test(line)){ result.status=line.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Promo\s*:/i.test(clean)){ result.promo=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Lokasi\s*:/i.test(clean)){ result.lokasi=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Usia\s*:/i.test(clean)){ result.usia=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Jenis\s+kelamin\s*:/i.test(clean)){ result.gender=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^(Total\s+Bayar|Total)\s*:/i.test(clean)){ result.total=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Cs\s*:/i.test(clean)){ result.cs=clean.split(":").slice(1).join(":").trim(); i++; continue; }
+      if (/^Status\s*:/i.test(clean)){ result.status=clean.split(":").slice(1).join(":").trim(); i++; continue; }
       i++;
     }
     return result;

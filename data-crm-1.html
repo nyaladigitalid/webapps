@@ -385,7 +385,6 @@ html.theme-openai body.orders-clean .orders-client-line {
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider w-16 text-center">#</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Tanggal</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Klien</th>
-<th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Nama Usaha</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Paket / Produk</th>
 <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status Iklan</th>
               <th class="px-6 py-4 text-[11px] font-black text-slate-500 dark:text-[#90aecb] uppercase tracking-wider">Status</th>
@@ -763,7 +762,8 @@ document.addEventListener("DOMContentLoaded", function () {
       var createdDate = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-';
       var clientWa = r.clientWhatsapp || '-';
       var clientName = shortDisplayName(r.clientName || '(Tanpa Nama)');
-      var businessName = shortDisplayName(r.businessName || '-');
+      var displayBusiness = r.businessName || r.business_name || r.clientName || r.client_name || '-';
+      var displayClient = (r.businessName || r.business_name) ? (r.clientName || r.client_name || '') : '';
       var packageName = String(pkg || '-').trim() || '-';
       var csDisplay = shortDisplayName(r.csName || '');
       var tr = document.createElement('tr');
@@ -771,8 +771,14 @@ document.addEventListener("DOMContentLoaded", function () {
       tr.innerHTML = ''
         + '<td class="px-6 py-4 text-sm font-medium text-slate-500 dark:text-[#90aecb] text-center">'+ r.id +'</td>'
         + '<td class="px-6 py-4 text-sm text-slate-500 dark:text-[#90aecb] whitespace-nowrap">'+ createdDate +'</td>'
-        + '<td class="px-6 py-4"><span class="orders-client-line text-slate-900 dark:text-white">' + clientName + '</span></td>'
-        + '<td class="px-6 py-4"><span class="orders-client-line text-slate-500 dark:text-slate-400">' + businessName + '</span></td>'
+        + '<td class="px-6 py-4">'
+        + '<div class="flex flex-col">'
+        + '<div class="flex items-center gap-2">'
+        + '<span class="text-sm font-semibold text-slate-900 dark:text-white">' + displayBusiness + '</span>'
+        + '</div>'
+        + (displayClient ? '<div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">' + displayClient + '</div>' : '')
+        + '</div>'
+        + '</td>'
         + '<td class="px-6 py-4"><div class="flex items-center gap-2"><span class="orders-client-line text-slate-600 dark:text-white/90">' + packageName + '</span>' + repeatIcon + '</div></td>'
         + '<td class="px-6 py-4"><span id="type-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
         + '<td class="px-6 py-4"><span id="status-'+ r.id +'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-500 border border-slate-200 dark:bg-white/10 dark:text-white/70 dark:border-white/20">-</span></td>'
@@ -828,10 +834,10 @@ document.addEventListener("DOMContentLoaded", function () {
             + '<div>'
             + '<p class="text-[10px] text-slate-500 dark:text-[#90aecb] font-black uppercase tracking-widest">ORDER #' + r.id + '</p>'
             + '<div class="flex items-center gap-2 mt-1">'
-            + '<h3 class="text-lg font-bold text-slate-900 dark:text-white">' + (r.clientName || '(Tanpa Nama)') + '</h3>'
+            + '<h3 class="text-lg font-bold text-slate-900 dark:text-white">' + displayBusiness + '</h3>'
             + (r.repeat_order ? '<span class="material-symbols-outlined text-primary text-[16px] animate-pulse">sync</span>' : '')
             + '</div>'
-            + (r.businessName ? '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + r.businessName + '</p>' : '')
+            + (displayClient ? '<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">' + displayClient + '</p>' : '')
             + '</div>'
             + '<span class="' + statusClassMobile + ' text-[10px] font-black px-2 py-1 rounded uppercase">' + (r.status || 'Unknown') + '</span>'
             + '</div>'

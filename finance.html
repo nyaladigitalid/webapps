@@ -734,14 +734,25 @@ html.theme-openai body.finance-clean #cash-btn-add-expense {
   color: #ffffff !important;
   border: 1px solid #ef7225 !important;
 }
+html.theme-openai body.finance-clean #report-export-pdf {
+  background: #ef7225 !important;
+  color: #ffffff !important;
+  border: 1px solid #ef7225 !important;
+}
 html.theme-openai body.finance-clean #cash-btn-add-income:hover,
 html.theme-openai body.finance-clean #cash-btn-add-expense:hover {
   background: #de6419 !important;
   border-color: #de6419 !important;
   color: #ffffff !important;
 }
+html.theme-openai body.finance-clean #report-export-pdf:hover {
+  background: #de6419 !important;
+  border-color: #de6419 !important;
+  color: #ffffff !important;
+}
 html.theme-openai body.finance-clean #cash-btn-add-income .material-symbols-outlined,
 html.theme-openai body.finance-clean #cash-btn-add-expense .material-symbols-outlined,
+html.theme-openai body.finance-clean #report-export-pdf .material-symbols-outlined,
 html.theme-openai body.finance-clean .cash-delete-transaction,
 html.theme-openai body.finance-clean .cash-delete-transaction .material-symbols-outlined {
   color: #ffffff !important;
@@ -858,6 +869,10 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
             <span class="material-symbols-outlined text-[18px]">badge</span>
             Gaji
           </button>
+          <button type="button" data-finance-tab-btn="report" class="finance-tab-btn shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors">
+            <span class="material-symbols-outlined text-[18px]">description</span>
+            Laporan
+          </button>
         </div>
       </div>
       <div class="space-y-5">
@@ -961,6 +976,92 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
 </div>
 </div>
       <!-- Summary Row Removed -->
+</section>
+
+<section id="finance-tab-report" data-finance-tab-panel="report" class="hidden space-y-5">
+<div class="finance-kpi-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+  <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+    <div class="finance-kpi-head flex justify-between items-start gap-3">
+      <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Pemasukan</span>
+      <div class="finance-kpi-icon rounded-lg bg-emerald-500/10 text-emerald-500">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+    </div>
+    <h3 id="report-kpi-income" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+    <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Akumulasi order pada periode laporan</p>
+  </div>
+  <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+    <div class="finance-kpi-head flex justify-between items-start gap-3">
+      <span class="finance-kpi-label text-slate-400 text-sm font-medium">Total Pengeluaran</span>
+      <div class="finance-kpi-icon rounded-lg bg-red-500/10 text-red-500">
+        <span class="material-symbols-outlined">trending_down</span>
+      </div>
+    </div>
+    <h3 id="report-kpi-expense" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+    <p class="finance-kpi-foot text-slate-400 text-xs font-medium">Spend iklan dan komisi pada periode yang sama</p>
+  </div>
+  <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+    <div class="finance-kpi-head flex justify-between items-start gap-3">
+      <span class="finance-kpi-label text-slate-400 text-sm font-medium">Laba Bersih</span>
+      <div class="finance-kpi-icon rounded-lg bg-primary/10 text-primary">
+        <span class="material-symbols-outlined">monitoring</span>
+      </div>
+    </div>
+    <h3 id="report-kpi-net-profit" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">Rp 0</h3>
+    <p id="report-kpi-margin" class="finance-kpi-foot text-slate-400 text-xs font-medium">Margin bersih: 0%</p>
+  </div>
+  <div class="finance-kpi-card metric-card rounded-xl flex flex-col">
+    <div class="finance-kpi-head flex justify-between items-start gap-3">
+      <span class="finance-kpi-label text-slate-400 text-sm font-medium">Jumlah Order</span>
+      <div class="finance-kpi-icon rounded-lg bg-slate-500/10 text-slate-500">
+        <span class="material-symbols-outlined">receipt_long</span>
+      </div>
+    </div>
+    <h3 id="report-kpi-orders" class="finance-kpi-value text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+    <p id="report-kpi-period" class="finance-kpi-foot text-slate-400 text-xs font-medium">Periode laporan: -</p>
+  </div>
+</div>
+
+<div class="finance-summary-breakdown space-y-3">
+  <div class="finance-summary-controls flex flex-col md:flex-row gap-4 justify-between items-end">
+    <div class="w-full md:w-auto">
+      <label class="block text-xs font-medium text-slate-400 mb-1">Bulan Laporan</label>
+      <div class="flex gap-2 items-end">
+        <div>
+          <input id="report-month-input" type="month" class="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:ring-primary focus:border-primary h-[38px]">
+          <input id="report-start-date" type="hidden">
+          <input id="report-end-date" type="hidden">
+        </div>
+        <button id="report-apply-period" type="button" class="finance-filter-btn px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center h-[38px]">
+          <span class="material-symbols-outlined text-lg">filter_list</span>
+        </button>
+      </div>
+    </div>
+    <div class="w-full md:w-auto flex justify-end">
+      <button id="report-export-pdf" type="button" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 h-[38px] min-w-[132px]">
+        <span class="material-symbols-outlined text-lg">picture_as_pdf</span>
+        Export PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="glass-card rounded-xl overflow-hidden border border-white/10">
+    <table class="finance-table finance-summary-table w-full text-left border-collapse">
+      <thead class="bg-white/5">
+        <tr>
+          <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Komponen</th>
+          <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 text-right">Nominal</th>
+          <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Catatan</th>
+        </tr>
+      </thead>
+      <tbody id="report-summary-body" class="divide-y divide-white/5">
+        <tr>
+          <td colspan="3" class="px-6 py-8 text-center text-slate-500 italic">Memuat laporan...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 </section>
 
 <!-- Approval Komisi -->
@@ -1292,7 +1393,7 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
       </div>
     </div>
 
-    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
+    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs font-medium text-amber-800">
       Data gaji muncul jika Anda input pengeluaran di Buku Kas dengan kategori Gaji/Payroll, Bonus, atau Kasbon lalu pilih Karyawan. Komisi otomatis ikut ke payroll saat statusnya sudah approved, memakai bulan approval. Untuk benefit seperti Chat GPT, internet, atau tools, pilih Karyawan lalu isi Catatan agar tercatat jelas di slip gaji.
     </div>
 
@@ -1442,10 +1543,12 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         const financeMonthInput = document.getElementById('finance-month-input');
         const approvalMonthInput = document.getElementById('approval-month-input');
         const cashMonthInput = document.getElementById('cash-month-input');
+        const reportMonthInput = document.getElementById('report-month-input');
 
         if (financeMonthInput) financeMonthInput.value = getCurrentMonthValue();
         if (approvalMonthInput) approvalMonthInput.value = getCurrentMonthValue();
         if (cashMonthInput) cashMonthInput.value = getCurrentMonthValue();
+        if (reportMonthInput) reportMonthInput.value = getCurrentMonthValue();
 
         const [initialFinanceStart, initialFinanceEnd] = getMonthDateRange(financeMonthInput?.value || getCurrentMonthValue());
         if(financeStartDate) financeStartDate.value = initialFinanceStart;
@@ -1544,6 +1647,7 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         setApprovalDateInputs(approvalStart, approvalEnd);
         applyApprovalFilters({ reload: true });
         loadLedgerAndPayout();
+        initReportTab();
         initCashTab();
         initPayrollTab();
     });
@@ -1633,6 +1737,7 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         ],
         expense: [
             { value: 'Ad Spend', label: 'Ad Spend' },
+            { value: 'Fee WL', label: 'Fee WL' },
             { value: 'Komisi', label: 'Komisi' },
             { value: 'Operasional', label: 'Operasional' },
             { value: 'Kasbon', label: 'Kasbon' },
@@ -1656,6 +1761,22 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     const payrollKpiKasbon = document.getElementById('payroll-kpi-kasbon');
     const payrollKpiService = document.getElementById('payroll-kpi-service');
     const payrollKpiReceived = document.getElementById('payroll-kpi-received');
+    const reportMonthInput = document.getElementById('report-month-input');
+    const reportStartDateInput = document.getElementById('report-start-date');
+    const reportEndDateInput = document.getElementById('report-end-date');
+    const reportApplyPeriodBtn = document.getElementById('report-apply-period');
+    const reportExportPdfBtn = document.getElementById('report-export-pdf');
+    const reportSummaryBody = document.getElementById('report-summary-body');
+    const reportKpiIncome = document.getElementById('report-kpi-income');
+    const reportKpiExpense = document.getElementById('report-kpi-expense');
+    const reportKpiNetProfit = document.getElementById('report-kpi-net-profit');
+    const reportKpiMargin = document.getElementById('report-kpi-margin');
+    const reportKpiOrders = document.getElementById('report-kpi-orders');
+    const reportKpiPeriod = document.getElementById('report-kpi-period');
+    let reportOrders = [];
+    let reportCurrentStartDate = '';
+    let reportCurrentEndDate = '';
+    let reportSummarySnapshot = null;
     let currentPayrollMonthLabel = '';
     let payrollLogoDataUrlPromise = null;
 
@@ -2011,6 +2132,228 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
     function setApprovalDateInputs(start, end) {
         if (approvalStartDateInput) approvalStartDateInput.value = start;
         if (approvalEndDateInput) approvalEndDateInput.value = end;
+    }
+
+    function setReportDateInputs(start, end) {
+        if (reportStartDateInput) reportStartDateInput.value = start;
+        if (reportEndDateInput) reportEndDateInput.value = end;
+    }
+
+    function getReportPeriodLabel(start, end) {
+        const startDate = start ? new Date(start) : null;
+        const endDate = end ? new Date(end) : null;
+        if (!startDate || Number.isNaN(startDate.getTime()) || !endDate || Number.isNaN(endDate.getTime())) {
+            return '-';
+        }
+        const sameMonth = startDate.getFullYear() === endDate.getFullYear() && startDate.getMonth() === endDate.getMonth();
+        if (sameMonth) {
+            return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(startDate);
+        }
+        return `${new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(startDate)} - ${new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(endDate)}`;
+    }
+
+    function buildReportRows(summary) {
+        const safeSummary = summary || {};
+        return [
+            {
+                label: 'Pendapatan Order',
+                amount: Number(safeSummary.revenue || 0),
+                note: `Total pemasukan dari ${Number(safeSummary.orderCount || 0)} order pada periode laporan.`
+            },
+            {
+                label: 'Spend Iklan',
+                amount: Number(safeSummary.adSpend || 0),
+                note: 'Akumulasi biaya iklan aktual dari seluruh order terfilter.'
+            },
+            {
+                label: 'Komisi Tim',
+                amount: Number(safeSummary.commission || 0),
+                note: 'Komisi yang tercatat pada order periode laporan.'
+            },
+            {
+                label: 'Total Pengeluaran',
+                amount: Number(safeSummary.totalExpense || 0),
+                note: 'Gabungan spend iklan dan komisi tim.'
+            },
+            {
+                label: 'Laba Kotor',
+                amount: Number(safeSummary.grossProfit || 0),
+                note: 'Pendapatan order dikurangi spend iklan.'
+            },
+            {
+                label: 'Laba Bersih',
+                amount: Number(safeSummary.netProfit || 0),
+                note: `Margin bersih ${Number(safeSummary.netMargin || 0).toFixed(1)}% untuk periode ini.`
+            }
+        ];
+    }
+
+    function calculateReportSummary(rows) {
+        const safeRows = Array.isArray(rows) ? rows : [];
+        const summary = safeRows.reduce((acc, row) => {
+            const revenue = Number(row.total_income || 0);
+            const adSpend = Number(row.total_expense || 0);
+            const commission = Number(row.total_commission_paid || 0);
+            acc.revenue += revenue;
+            acc.adSpend += adSpend;
+            acc.commission += commission;
+            acc.orderCount += 1;
+            return acc;
+        }, { revenue: 0, adSpend: 0, commission: 0, orderCount: 0 });
+        summary.totalExpense = summary.adSpend + summary.commission;
+        summary.grossProfit = summary.revenue - summary.adSpend;
+        summary.netProfit = summary.revenue - summary.totalExpense;
+        summary.netMargin = summary.revenue > 0 ? (summary.netProfit / summary.revenue) * 100 : 0;
+        summary.periodLabel = getReportPeriodLabel(reportCurrentStartDate, reportCurrentEndDate);
+        return summary;
+    }
+
+    function renderReportSummary() {
+        if (!reportSummaryBody) return;
+        const summary = calculateReportSummary(reportOrders);
+        reportSummarySnapshot = summary;
+        const rows = buildReportRows(summary);
+        if (reportKpiIncome) reportKpiIncome.textContent = formatRupiah(summary.revenue);
+        if (reportKpiExpense) reportKpiExpense.textContent = formatRupiah(summary.totalExpense);
+        if (reportKpiNetProfit) {
+            reportKpiNetProfit.textContent = formatRupiah(summary.netProfit);
+            reportKpiNetProfit.classList.remove('text-emerald-400', 'text-red-400', 'text-emerald-600', 'text-red-600');
+            reportKpiNetProfit.classList.add(summary.netProfit >= 0 ? 'text-emerald-400' : 'text-red-400');
+        }
+        if (reportKpiMargin) reportKpiMargin.textContent = `Margin bersih: ${summary.netMargin.toFixed(1)}%`;
+        if (reportKpiOrders) reportKpiOrders.textContent = String(summary.orderCount);
+        if (reportKpiPeriod) reportKpiPeriod.textContent = `Periode laporan: ${summary.periodLabel}`;
+
+        reportSummaryBody.innerHTML = rows.map((row) => {
+            const amountClass = row.label === 'Laba Bersih'
+                ? (row.amount >= 0 ? 'text-emerald-600' : 'text-red-600')
+                : (row.label === 'Laba Kotor'
+                    ? (row.amount >= 0 ? 'text-sky-600' : 'text-red-600')
+                    : (row.label === 'Pendapatan Order' ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-100'));
+            return `
+                <tr>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-700 dark:text-slate-100">${escapeHtml(row.label)}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-right ${amountClass}">${formatRupiah(row.amount)}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-300">${escapeHtml(row.note)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function loadReportSummary() {
+        if (!reportSummaryBody) return;
+        reportSummaryBody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-slate-500 italic">Memuat laporan...</td></tr>';
+        try {
+            const [startDate, endDate] = getMonthDateRange(reportMonthInput?.value || getCurrentMonthValue());
+            reportCurrentStartDate = startDate;
+            reportCurrentEndDate = endDate;
+            setReportDateInputs(startDate, endDate);
+            const res = await fetch(`/api/finance/orders?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Gagal memuat laporan keuangan');
+            reportOrders = Array.isArray(data) ? data : [];
+            renderReportSummary();
+        } catch (error) {
+            reportOrders = [];
+            reportSummarySnapshot = null;
+            if (reportKpiIncome) reportKpiIncome.textContent = formatRupiah(0);
+            if (reportKpiExpense) reportKpiExpense.textContent = formatRupiah(0);
+            if (reportKpiNetProfit) reportKpiNetProfit.textContent = formatRupiah(0);
+            if (reportKpiMargin) reportKpiMargin.textContent = 'Margin bersih: 0%';
+            if (reportKpiOrders) reportKpiOrders.textContent = '0';
+            if (reportKpiPeriod) reportKpiPeriod.textContent = 'Periode laporan: -';
+            reportSummaryBody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-red-400">${escapeHtml(error.message || 'Terjadi kesalahan')}</td></tr>`;
+        }
+    }
+
+    function exportReportPdf() {
+        const snapshot = reportSummarySnapshot || calculateReportSummary(reportOrders);
+        if (!window.jspdf || typeof window.jspdf.jsPDF !== 'function') {
+            alert('Library PDF belum tersedia. Silakan refresh halaman lalu coba lagi.');
+            return;
+        }
+        const rows = buildReportRows(snapshot);
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            const marginX = 40;
+            let cursorY = 48;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(15, 23, 42);
+            doc.text('Laporan Keuangan', marginX, cursorY);
+
+            cursorY += 18;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Periode: ${snapshot.periodLabel || '-'}`, marginX, cursorY);
+
+            cursorY += 18;
+            doc.autoTable({
+                startY: cursorY,
+                margin: { left: marginX, right: marginX },
+                head: [['Ringkasan', 'Nilai']],
+                body: [
+                    ['Jumlah Order', String(snapshot.orderCount || 0)],
+                    ['Total Pemasukan', formatRupiah(snapshot.revenue || 0)],
+                    ['Total Pengeluaran', formatRupiah(snapshot.totalExpense || 0)],
+                    ['Laba Bersih', formatRupiah(snapshot.netProfit || 0)],
+                    ['Margin Bersih', `${Number(snapshot.netMargin || 0).toFixed(1)}%`]
+                ],
+                theme: 'grid',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 10,
+                    cellPadding: 7,
+                    textColor: [15, 23, 42],
+                    lineColor: [226, 232, 240],
+                    lineWidth: 0.6
+                },
+                headStyles: {
+                    fillColor: [248, 250, 252],
+                    textColor: [15, 23, 42],
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    1: { halign: 'right' }
+                }
+            });
+
+            cursorY = doc.lastAutoTable.finalY + 18;
+            doc.autoTable({
+                startY: cursorY,
+                margin: { left: marginX, right: marginX },
+                head: [['Komponen', 'Nominal', 'Catatan']],
+                body: rows.map((row) => [row.label, formatRupiah(row.amount), row.note]),
+                theme: 'grid',
+                styles: {
+                    font: 'helvetica',
+                    fontSize: 9,
+                    cellPadding: 6,
+                    textColor: [15, 23, 42],
+                    lineColor: [226, 232, 240],
+                    lineWidth: 0.6
+                },
+                headStyles: {
+                    fillColor: [248, 250, 252],
+                    textColor: [15, 23, 42],
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    1: { halign: 'right', cellWidth: 110 }
+                }
+            });
+
+            const safePeriod = String(snapshot.periodLabel || 'laporan')
+                .replace(/[\\/:*?"<>|]+/g, '-')
+                .replace(/\s+/g, '-')
+                .toLowerCase();
+            doc.save(`laporan-keuangan-${safePeriod}.pdf`);
+        } catch (error) {
+            alert(error?.message || 'Gagal membuat file PDF laporan.');
+        }
     }
 
     function applyApprovalFilters(options = {}) {
@@ -2899,6 +3242,23 @@ html.theme-openai body.finance-clean .finance-order-detail-card .text-\[11px\] {
         if (cashModalCategory) cashModalCategory.addEventListener('change', updateCashEmployeeVisibility);
         loadPayrollEmployeeOptions();
         loadPayrollSummary();
+    }
+
+    function initReportTab() {
+        if (!reportMonthInput) return;
+        reportMonthInput.value = reportMonthInput.value || getCurrentMonthValue();
+        if (reportApplyPeriodBtn) {
+            reportApplyPeriodBtn.addEventListener('click', loadReportSummary);
+        }
+        reportMonthInput.addEventListener('change', loadReportSummary);
+        if (reportExportPdfBtn) {
+            reportExportPdfBtn.addEventListener('click', exportReportPdf);
+        }
+        const [start, end] = getMonthDateRange(reportMonthInput.value || getCurrentMonthValue());
+        reportCurrentStartDate = start;
+        reportCurrentEndDate = end;
+        setReportDateInputs(start, end);
+        loadReportSummary();
     }
 
     function initCashTab() {

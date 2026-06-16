@@ -115,6 +115,7 @@ body {
                         <tr>
                             <th class="px-4 py-3">Nama Akun</th>
                             <th class="px-4 py-3">Account ID (act_)</th>
+                            <th class="px-4 py-3 text-center w-28">Akun Internal</th>
                             <th class="px-4 py-3 w-32 text-center">Action</th>
                         </tr>
                     </thead>
@@ -205,7 +206,7 @@ function switchTab(tabName) {
         document.getElementById(`content-${tabName}`).classList.remove('hidden');
     }
 
-    function addAdAccount(name = '', id = '') {
+    function addAdAccount(name = '', id = '', isInternal = 0) {
         const container = document.getElementById('ad-accounts-container');
         const tr = document.createElement('tr');
         tr.className = "group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors";
@@ -218,6 +219,10 @@ function switchTab(tabName) {
             <td class="px-4 py-2">
                 <input type="text" name="account_ids[]" value="${id}" placeholder="1234567890" 
                        class="w-full bg-transparent border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm px-0 py-1 transition-colors font-mono">
+            </td>
+            <td class="px-4 py-2 text-center">
+                <input type="checkbox" name="account_internals[]" ${isInternal ? 'checked' : ''} 
+                       class="rounded border-slate-200 dark:border-white/10 text-primary focus:ring-primary focus:ring-offset-0 bg-transparent">
             </td>
             <td class="px-4 py-2 text-center">
                 <div class="flex items-center justify-center gap-1">
@@ -370,7 +375,7 @@ function switchTab(tabName) {
                 const container = document.getElementById('ad-accounts-container');
                 container.innerHTML = ''; // Clear default
                 if (config.accounts && Array.isArray(config.accounts) && config.accounts.length > 0) {
-                    config.accounts.forEach(acc => addAdAccount(acc.name, acc.id));
+                    config.accounts.forEach(acc => addAdAccount(acc.name, acc.id, acc.is_internal));
                 } else {
                     addAdAccount(); // Default empty row
                 }
@@ -408,11 +413,17 @@ function switchTab(tabName) {
         };
         
         // Parse Accounts
-        const accNames = formData.getAll('account_names[]');
-        const accIds = formData.getAll('account_ids[]');
-        accNames.forEach((name, i) => {
-            if (name && accIds[i]) {
-                data.accounts.push({ name, id: accIds[i] });
+        const rows = document.querySelectorAll('#ad-accounts-container tr');
+        rows.forEach(row => {
+            const nameInput = row.querySelector('input[name="account_names[]"]');
+            const idInput = row.querySelector('input[name="account_ids[]"]');
+            const isInternalCheckbox = row.querySelector('input[name="account_internals[]"]');
+            if (nameInput && idInput && nameInput.value.trim() && idInput.value.trim()) {
+                data.accounts.push({
+                    name: nameInput.value.trim(),
+                    id: idInput.value.trim(),
+                    is_internal: isInternalCheckbox && isInternalCheckbox.checked ? 1 : 0
+                });
             }
         });
         

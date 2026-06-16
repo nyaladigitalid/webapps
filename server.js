@@ -20,7 +20,15 @@ app.use(express.json({
     }
 }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname)); // Serve static files from root
+app.use(express.static(__dirname, {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+    }
+})); // Serve static files from root without cache for html/js/css
 app.use((req, res, next) => {
     if (req.path && String(req.path).startsWith('/api/')) {
         const origin = req.headers.origin ? String(req.headers.origin) : '*';
@@ -408,6 +416,62 @@ async function ensureCampaignsSchema() {
         console.log('Campaigns schema ready');
     } catch (e) {
         console.error('Error ensuring campaigns schema:', e);
+    }
+}
+
+async function ensureAdAccountsSchema() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE ad_accounts ADD COLUMN is_internal TINYINT(1) DEFAULT 0`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        try {
+            await p.query(`ALTER TABLE ad_accounts ADD UNIQUE KEY uniq_ad_account_id (account_id)`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_KEYNAME') throw e;
+        }
+        console.log('ad_accounts schema ready');
+    } catch (e) {
+        console.error('Error ensuring ad_accounts schema:', e);
+    }
+}
+
+
+async function ensureCampaignsNullableColumns() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE campaigns MODIFY order_id INT NULL`);
+        } catch (e) {
+            console.error('Error making campaigns.order_id nullable:', e);
+        }
+        try {
+            await p.query(`ALTER TABLE campaigns MODIFY client_id INT NULL`);
+        } catch (e) {
+            console.error('Error making campaigns.client_id nullable:', e);
+        }
+        console.log('Campaigns nullable columns ready');
+    } catch (e) {
+        console.error('Error in ensureCampaignsNullableColumns:', e);
+    }
+}
+
+async function ensureTransactionsCampaignIdColumn() {
+    try {
+        const p = await getPool();
+        try {
+            await p.query(`ALTER TABLE transactions ADD COLUMN campaign_id VARCHAR(100) NULL`);
+        } catch (e) {
+            const code = String((e && e.code) || '');
+            if (code !== 'ER_DUP_FIELDNAME') throw e;
+        }
+        console.log('transactions campaign_id column ready');
+    } catch (e) {
+        console.error('Error ensuring transactions campaign_id column:', e);
     }
 }
 
@@ -892,7 +956,10 @@ ensureOrdersExtraColumns();
 ensureOrdersRenewalColumns();
 ensureOrdersTimingColumns();
 ensureMetaAdsConfigSchema();
+ensureAdAccountsSchema();
 ensureCampaignsSchema();
+ensureCampaignsNullableColumns();
+ensureTransactionsCampaignIdColumn();
 ensureCommissionLedgerSchema();
 ensureOrderContentsWorkflowSchema();
 ensureOrderRepairHistorySchema();
@@ -1430,13 +1497,22 @@ app.get('/api/dashboard/stats', async (req, res) => {
                   AND MONTH(t.created_at) = MONTH(CURRENT_DATE())
                   AND YEAR(t.created_at) = YEAR(CURRENT_DATE())
             `);
-            // Ads spending this month: transactions type 'expense' in current month
+            // Ads spending this month: client vs internal categories
             const [spend] = await pool.query(`
                 SELECT SUM(t.amount) as total
                 FROM transactions t
                 WHERE t.type = 'expense'
-                  AND MONTH(t.created_at) = MONTH(CURRENT_DATE())
-                  AND YEAR(t.created_at) = YEAR(CURRENT_DATE())
+                  AND (t.category = 'Biaya Iklan Klien' OR t.category IS NULL OR t.category = 'ad_spend')
+                  AND MONTH(COALESCE(t.trx_date, t.created_at)) = MONTH(CURRENT_DATE())
+                  AND YEAR(COALESCE(t.trx_date, t.created_at)) = YEAR(CURRENT_DATE())
+            `);
+            const [internalSpend] = await pool.query(`
+                SELECT SUM(t.amount) as total
+                FROM transactions t
+                WHERE t.type = 'expense'
+                  AND t.category = 'Biaya Iklan Internal'
+                  AND MONTH(COALESCE(t.trx_date, t.created_at)) = MONTH(CURRENT_DATE())
+                  AND YEAR(COALESCE(t.trx_date, t.created_at)) = YEAR(CURRENT_DATE())
             `);
 
             stats.activeOrders = ordersCount[0].count;
@@ -1446,7 +1522,9 @@ app.get('/api/dashboard/stats', async (req, res) => {
             stats.revenueThisMonth = rev[0].total || 0;
             stats.commissionsThisMonth = commPaid[0].total || 0;
             stats.adsSpendThisMonth = spend[0].total || 0;
+            stats.internalAdsSpendThisMonth = internalSpend[0].total || 0;
             stats.activeCampaigns = 0; // TODO: compute from campaigns table if available
+
         }
 
         if (role === 'CS' && userId) {
@@ -1527,6 +1605,50 @@ app.get('/api/dashboard/stats', async (req, res) => {
              stats.completedTasks = completed[0].count || 0;
              stats.commissionThisMonth = commissionTotal;
         }
+        else if (role === 'Produksi' || role.toLowerCase() === 'produksi') {
+             const [activeCampaigns] = await pool.query(`
+                 SELECT COUNT(DISTINCT o.id) as count
+                 FROM orders o
+                 JOIN campaigns c ON o.id = c.order_id
+                 WHERE o.status NOT IN ('cancelled', 'completed')
+                   AND c.status = 'ACTIVE'
+             `);
+             const [repairingCount] = await pool.query(`
+                 SELECT COUNT(DISTINCT oc.order_id) as count
+                 FROM order_contents oc
+                 WHERE LOWER(oc.status) LIKE '%iklan tayang%'
+             `);
+             const [repairedCount] = await pool.query(`
+                 SELECT COUNT(DISTINCT oc.order_id) as count
+                 FROM order_contents oc
+                 LEFT JOIN orders o ON oc.order_id = o.id
+                 WHERE LOWER(oc.status) LIKE '%sudah diperbaiki%'
+                    OR (LOWER(oc.status) LIKE '%siap iklan%' AND LOWER(o.status) = 'perpanjang')
+             `);
+             
+             stats.activeOrders = activeCampaigns[0].count || 0;
+             stats.pendingTasks = repairingCount[0].count || 0;
+             stats.completedTasks = repairedCount[0].count || 0;
+        }
+        else if (role === 'Marketing' || role.toLowerCase() === 'marketing') {
+             const [newClients] = await pool.query(`
+                 SELECT COUNT(DISTINCT o.client_id) as count
+                 FROM orders o
+                 WHERE o.status = 'Baru'
+                   AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+                   AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+             `);
+             const [internalSpend] = await pool.query(`
+                 SELECT SUM(t.amount) as total
+                 FROM transactions t
+                 WHERE t.type = 'expense'
+                   AND t.category = 'Biaya Iklan Internal'
+                   AND MONTH(COALESCE(t.trx_date, t.created_at)) = MONTH(CURRENT_DATE())
+                   AND YEAR(COALESCE(t.trx_date, t.created_at)) = YEAR(CURRENT_DATE())
+             `);
+             stats.newClientsThisMonth = newClients[0].count || 0;
+             stats.internalAdsSpendThisMonth = internalSpend[0].total || 0;
+        }
 
         res.json(stats);
     } catch (e) {
@@ -1544,7 +1666,7 @@ app.get('/api/dashboard/crm-stats', async (req, res) => {
             SELECT COUNT(DISTINCT oc.order_id) as count
             FROM order_contents oc
             JOIN order_assignments oa ON oa.order_id = oc.order_id AND oa.role = 'CRM' AND oa.user_id = ?
-            WHERE LOWER(oc.status) = 'otp selesai'
+            WHERE LOWER(oc.status) = 'menunggu konten'
               AND MONTH(COALESCE(oc.updated_at, oc.created_at)) = MONTH(CURRENT_DATE())
               AND YEAR(COALESCE(oc.updated_at, oc.created_at)) = YEAR(CURRENT_DATE())
         `, [userId]);
@@ -2118,6 +2240,313 @@ app.get('/api/campaigns', async (req, res) => {
     }
 });
 
+// Helper to normalize phone numbers
+function normalizePhone(phone) {
+    if (!phone) return '';
+    let cleaned = phone.toString().replace(/\D/g, '');
+    if (cleaned.startsWith('08')) {
+        cleaned = '62' + cleaned.substring(1);
+    } else if (cleaned.startsWith('6208')) {
+        cleaned = '62' + cleaned.substring(4);
+    }
+    return cleaned;
+}
+
+// Helper to extract phone numbers (sequences of 9 to 15 digits) from campaign name
+function extractPhonesFromCampaignName(campaignName) {
+    if (!campaignName) return [];
+    const matches = campaignName.match(/\b\d{9,15}\b/g);
+    if (!matches) return [];
+    return matches.map(normalizePhone);
+}
+
+// Helper to parse date from campaign name (e.g. DDMMYYYY in DDMMYYYY+Duration format)
+function parseCampaignDate(campaignName) {
+    if (!campaignName) return null;
+    const match = campaignName.match(/\b(\d{2})(\d{2})(\d{4})\+\d+\b/);
+    if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1; // 0-indexed
+        const year = parseInt(match[3], 10);
+        // Ignore the placeholder 30121899
+        if (day === 30 && month === 11 && year === 1899) {
+            return null;
+        }
+        return new Date(year, month, day);
+    }
+    return null;
+}
+
+// Helper to find the best order for a client based on status and campaign date proximity
+function findBestOrderId(ordersList, campaignDate) {
+    if (!ordersList || ordersList.length === 0) return null;
+    if (ordersList.length === 1) return ordersList[0].id;
+
+    const activeStatuses = ['Aktif', 'Perpanjang', 'Proses', 'Baru', 'pending'];
+
+    const scoredOrders = ordersList.map(order => {
+        let score = 0;
+
+        // 1. Status scoring
+        if (activeStatuses.includes(order.status)) {
+            score += 1000;
+            score += (activeStatuses.length - activeStatuses.indexOf(order.status)) * 10;
+        } else if (order.status === 'Selesai') {
+            score += 100;
+        }
+
+        // 2. Date proximity scoring
+        if (campaignDate && order.created_at) {
+            const orderTime = new Date(order.created_at).getTime();
+            const campaignTime = campaignDate.getTime();
+            const diffDays = Math.abs(orderTime - campaignTime) / (1000 * 60 * 60 * 24);
+            
+            if (diffDays <= 30) {
+                score += Math.max(0, 500 - diffDays * 15);
+            }
+        }
+
+        return { order, score };
+    });
+
+    scoredOrders.sort((a, b) => {
+        if (b.score !== a.score) {
+            return b.score - a.score;
+        }
+        const timeA = a.order.created_at ? new Date(a.order.created_at).getTime() : 0;
+        const timeB = b.order.created_at ? new Date(b.order.created_at).getTime() : 0;
+        return timeB - timeA;
+    });
+
+    return scoredOrders[0].order.id;
+}
+
+async function syncMetaSpend() {
+    const token = await getMetaAccessToken();
+    if (!token) {
+        console.log('[Meta Ads Spend Sync] Access token not configured. Skipping sync.');
+        return { success: false, reason: 'missing_token' };
+    }
+
+    try {
+        // Fetch all clients and orders to construct mapping maps in memory
+        const [clients] = await pool.query('SELECT id, whatsapp FROM clients');
+        const [orders] = await pool.query('SELECT id, client_id, status, created_at FROM orders');
+        
+        const clientPhoneMap = new Map();
+        for (const client of clients) {
+            const normalized = normalizePhone(client.whatsapp);
+            if (normalized) {
+                clientPhoneMap.set(normalized, client.id);
+            }
+        }
+        
+        const clientOrdersMap = new Map();
+        for (const order of orders) {
+            if (!clientOrdersMap.has(order.client_id)) {
+                clientOrdersMap.set(order.client_id, []);
+            }
+            clientOrdersMap.get(order.client_id).push(order);
+        }
+
+        const [accounts] = await pool.query('SELECT account_id, name, is_internal FROM ad_accounts');
+        console.log(`[Meta Ads Spend Sync] Starting sync for ${accounts.length} ad accounts.`);
+
+        for (const acc of accounts) {
+            const rawAcctId = acc.account_id || '';
+            const acct = rawAcctId.startsWith('act_') ? rawAcctId : `act_${rawAcctId}`;
+            console.log(`[Meta Ads Spend Sync] Processing account: ${acc.name} (${acct})`);
+
+            // 1. Sync Cumulative Stats (lifetime) to update campaigns table
+            try {
+                const url = `https://graph.facebook.com/v21.0/${acct}/insights?level=campaign&fields=campaign_id,campaign_name,spend,impressions,clicks,actions&date_preset=maximum&limit=1000&access_token=${encodeURIComponent(token)}`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+                
+                if (data && data.error) {
+                    console.error(`[Meta Ads Spend Sync] Error from Meta Graph API for account ${acct} (cumulative):`, data.error.message);
+                } else if (data && Array.isArray(data.data)) {
+                    for (const item of data.data) {
+                        const campaignId = item.campaign_id;
+                        const spend = parseFloat(item.spend) || 0;
+                        const impressions = parseInt(item.impressions) || 0;
+                        const clicks = parseInt(item.clicks) || 0;
+                        
+                        // Count results from actions
+                        let results = 0;
+                        if (item.actions && Array.isArray(item.actions)) {
+                            const msgReply = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_first_reply_started' || a.action_type === 'messaging_first_reply_starts');
+                            const leads = item.actions.find(a => a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead');
+                            const linkClicks = item.actions.find(a => a.action_type === 'link_click');
+                            results = msgReply ? parseInt(msgReply.value) : (leads ? parseInt(leads.value) : (linkClicks ? parseInt(linkClicks.value) : 0));
+                        }
+
+                        const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+
+                        // Check if campaign exists in DB
+                        const [existing] = await pool.query('SELECT id, client_id, order_id FROM campaigns WHERE campaign_id = ? LIMIT 1', [campaignId]);
+                        
+                        // Parse phone and resolve client & order
+                        let resolvedClientId = null;
+                        let resolvedOrderId = null;
+                        const campaignName = item.campaign_name || '';
+                        
+                        const extractedPhones = extractPhonesFromCampaignName(campaignName);
+                        if (extractedPhones.length > 0) {
+                            for (const phone of extractedPhones) {
+                                if (clientPhoneMap.has(phone)) {
+                                    resolvedClientId = clientPhoneMap.get(phone);
+                                    break;
+                                }
+                            }
+                            
+                            if (resolvedClientId) {
+                                const ordersList = clientOrdersMap.get(resolvedClientId) || [];
+                                const campDate = parseCampaignDate(campaignName);
+                                resolvedOrderId = findBestOrderId(ordersList, campDate);
+                            }
+                        }
+
+                        if (existing.length > 0) {
+                            const dbClientId = existing[0].client_id;
+                            const dbOrderId = existing[0].order_id;
+                            
+                            // If client_id or order_id in DB is null but we resolved them, update them too!
+                            const finalClientId = dbClientId !== null ? dbClientId : resolvedClientId;
+                            const finalOrderId = dbOrderId !== null ? dbOrderId : resolvedOrderId;
+                            
+                            await pool.query(
+                                `UPDATE campaigns SET spend = ?, impressions = ?, clicks = ?, ctr = ?, results = ?, client_id = ?, order_id = ?, updated_at = NOW() WHERE campaign_id = ?`,
+                                [spend, impressions, clicks, ctr, results, finalClientId, finalOrderId, campaignId]
+                            );
+                        } else {
+                            // If campaign doesn't exist, we insert it!
+                            // For internal accounts, client_id and order_id are NULL.
+                            // For client accounts, they are finalClientId and finalOrderId.
+                            const isInternal = !!acc.is_internal;
+                            const finalClientId = isInternal ? null : resolvedClientId;
+                            const finalOrderId = isInternal ? null : resolvedOrderId;
+                            
+                            await pool.query(
+                                `INSERT INTO campaigns (order_id, client_id, campaign_id, campaign_name, ad_account_id, status, impressions, clicks, ctr, spend, results, created_at, updated_at, result_type)
+                                 VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, NOW(), NOW(), 'Results')`,
+                                [finalOrderId, finalClientId, campaignId, campaignName || (isInternal ? 'Kampanye Internal' : 'Kampanye Klien'), acc.account_id, impressions, clicks, ctr, spend, results]
+                            );
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error(`[Meta Ads Spend Sync] Failed syncing cumulative stats for account ${acct}:`, err);
+            }
+
+            // 2. Sync Daily Transactions (last 30 days to cover the current month and late adjustments)
+            try {
+                const url = `https://graph.facebook.com/v21.0/${acct}/insights?level=campaign&fields=campaign_id,campaign_name,spend&time_increment=1&date_preset=last_30d&limit=1000&access_token=${encodeURIComponent(token)}`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+
+                if (data && data.error) {
+                    console.error(`[Meta Ads Spend Sync] Error from Meta Graph API for account ${acct} (daily):`, data.error.message);
+                } else if (data && Array.isArray(data.data)) {
+                    for (const item of data.data) {
+                        const campaignId = item.campaign_id;
+                        const spend = parseFloat(item.spend) || 0;
+                        const trxDate = item.date_start; // YYYY-MM-DD
+
+                        if (spend <= 0) continue; // Skip zero spend
+
+                        // Check campaign details to determine client or internal status
+                        const [camp] = await pool.query('SELECT client_id, order_id, campaign_name FROM campaigns WHERE campaign_id = ? LIMIT 1', [campaignId]);
+
+                        let clientId = null;
+                        let orderId = null;
+                        let category = 'Biaya Iklan Internal';
+                        let note = `Biaya Iklan Internal Nyala Digital: ${item.campaign_name || 'Kampanye Meta'}`;
+
+                        if (camp.length > 0) {
+                            clientId = camp[0].client_id;
+                            orderId = camp[0].order_id;
+                            if (clientId !== null || orderId !== null) {
+                                category = 'Biaya Iklan Klien';
+                                note = `Biaya Iklan Klien: ${camp[0].campaign_name}`;
+                            }
+                        } else if (!acc.is_internal) {
+                            category = 'Biaya Iklan Klien';
+                            note = `Biaya Iklan Klien (Unmapped): ${item.campaign_name}`;
+                        }
+
+                        // Check if a transaction for this campaign and date already exists
+                        const [existingTx] = await pool.query(
+                            'SELECT id FROM transactions WHERE campaign_id = ? AND trx_date = ? LIMIT 1',
+                            [campaignId, trxDate]
+                        );
+
+                        if (existingTx.length > 0) {
+                            // Update transaction
+                            await pool.query(
+                                'UPDATE transactions SET amount = ?, category = ?, note = ?, order_id = ?, client_id = ?, updated_at = NOW() WHERE id = ?',
+                                [spend, category, note, orderId, clientId, existingTx[0].id]
+                            );
+                        } else {
+                            // Insert new transaction
+                            await pool.query(
+                                'INSERT INTO transactions (type, amount, category, note, trx_date, order_id, client_id, campaign_id, created_at, updated_at) VALUES ("expense", ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+                                [spend, category, note, trxDate, orderId, clientId, campaignId]
+                            );
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error(`[Meta Ads Spend Sync] Failed syncing daily stats for account ${acct}:`, err);
+            }
+        }
+        console.log('[Meta Ads Spend Sync] Synchronization finished.');
+        return { success: true };
+    } catch (e) {
+        console.error('[Meta Ads Spend Sync] Critical sync error:', e);
+        return { success: false, error: e.message };
+    }
+}
+
+app.post('/api/campaigns/sync-spend', async (req, res) => {
+    try {
+        const result = await syncMetaSpend();
+        if (result.success) {
+            res.json({ success: true });
+        } else {
+            res.status(500).json({ error: result.reason || result.error || 'Sync failed' });
+        }
+    } catch (e) {
+        console.error('Manual sync route error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+function startDailyMetaSync() {
+    const scheduleNextSync = () => {
+        const now = new Date();
+        const next = new Date(now);
+        next.setHours(1, 0, 0, 0); // 01:00 AM
+        if (next <= now) {
+            next.setDate(next.getDate() + 1); // tomorrow at 01:00 AM
+        }
+        const delay = next.getTime() - now.getTime();
+        console.log(`[Meta Ads Spend Sync] Next automatic sync scheduled at ${next.toLocaleString()} (in ${(delay / 1000 / 60).toFixed(1)} minutes)`);
+        
+        setTimeout(async () => {
+            try {
+                console.log('[Meta Ads Spend Sync] Running scheduled daily sync...');
+                await syncMetaSpend();
+            } catch (err) {
+                console.error('[Meta Ads Spend Sync] Scheduled sync failed:', err);
+            }
+            scheduleNextSync(); // schedule for the next day
+        }, delay);
+    };
+    scheduleNextSync();
+}
+
+
 app.post('/api/campaigns/:id/sync', async (req, res) => {
     try {
         const { id } = req.params;
@@ -2128,6 +2557,300 @@ app.post('/api/campaigns/:id/sync', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+
+// Compare Campaign Repair Performance
+app.get('/api/campaigns/:id/compare-performance', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { date } = req.query; // YYYY-MM-DD format
+
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: 'Parameter tanggal perbaikan (date) wajib diisi dengan format YYYY-MM-DD.' });
+        }
+
+        // 1. Get campaign details from DB
+        const [camps] = await pool.query('SELECT campaign_id, campaign_name, ad_account_id FROM campaigns WHERE id = ? LIMIT 1', [id]);
+        if (camps.length === 0) {
+            return res.status(404).json({ error: 'Kampanye tidak ditemukan di database.' });
+        }
+        const campaign = camps[0];
+        const campaignId = campaign.campaign_id;
+        const adAccountId = campaign.ad_account_id;
+
+        // 2. Calculate comparison ranges (up to 7 days before and after, symmetric)
+        const repairDate = new Date(date);
+        if (isNaN(repairDate.getTime())) {
+            return res.status(400).json({ error: 'Format tanggal perbaikan tidak valid.' });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        repairDate.setHours(0, 0, 0, 0);
+
+        // Days elapsed after the repair date (excluding the repair day itself)
+        const daysAfter = Math.floor((today.getTime() - repairDate.getTime()) / (24 * 60 * 60 * 1000));
+        
+        // We need at least 1 day after the repair date to compare
+        if (daysAfter <= 0) {
+            return res.status(400).json({ 
+                error: 'Data performa setelah perbaikan belum terkumpul. Mohon tunggu setidaknya 1 hari setelah tanggal perbaikan.' 
+            });
+        }
+
+        const N = Math.min(7, daysAfter); // Symmetric range length (1 to 7 days)
+
+        // Date ranges:
+        // Before: [repairDate - N days, repairDate - 1 day]
+        // After: [repairDate + 1 day, repairDate + N days]
+        const beforeSinceDate = new Date(repairDate);
+        beforeSinceDate.setDate(repairDate.getDate() - N);
+        const beforeUntilDate = new Date(repairDate);
+        beforeUntilDate.setDate(repairDate.getDate() - 1);
+
+        const afterSinceDate = new Date(repairDate);
+        afterSinceDate.setDate(repairDate.getDate() + 1);
+        const afterUntilDate = new Date(repairDate);
+        afterUntilDate.setDate(repairDate.getDate() + N);
+
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        const beforeRange = { since: formatDate(beforeSinceDate), until: formatDate(beforeUntilDate) };
+        const afterRange = { since: formatDate(afterSinceDate), until: formatDate(afterUntilDate) };
+
+        // 3. Get Meta API Token
+        const token = await getMetaAccessToken();
+        if (!token) {
+            return res.status(400).json({ error: 'Access token Meta Ads belum dikonfigurasi.' });
+        }
+
+        // Helper function to query Meta Graph API insights
+        const fetchInsightsForRange = async (since, until) => {
+            const timeRange = JSON.stringify({ since, until });
+            const url = `https://graph.facebook.com/v21.0/${campaignId}/insights` +
+                `?time_range=${encodeURIComponent(timeRange)}` +
+                `&fields=spend,impressions,clicks,actions` +
+                `&access_token=${encodeURIComponent(token)}`;
+            
+            const resp = await fetch(url);
+            const data = await resp.json();
+            
+            if (!resp.ok || !data) {
+                throw new Error(data?.error?.message || `Meta API error (${resp.status})`);
+            }
+            
+            if (!data.data || data.data.length === 0) {
+                // Return zeroed metrics if no insights for this period
+                return { spend: 0, impressions: 0, clicks: 0, results: 0, ctr: 0, cpr: 0 };
+            }
+            
+            const item = data.data[0];
+            const spend = parseFloat(item.spend) || 0;
+            const impressions = parseInt(item.impressions) || 0;
+            const clicks = parseInt(item.clicks) || 0;
+            const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+            
+            let results = 0;
+            if (item.actions && Array.isArray(item.actions)) {
+                const msgReply = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_first_reply_started' || a.action_type === 'messaging_first_reply_starts');
+                const leads = item.actions.find(a => a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead');
+                const linkClicks = item.actions.find(a => a.action_type === 'link_click');
+                results = msgReply ? parseInt(msgReply.value) : (leads ? parseInt(leads.value) : (linkClicks ? parseInt(linkClicks.value) : 0));
+            }
+            
+            const cpr = results > 0 ? spend / results : 0;
+            
+            return { spend, impressions, clicks, results, ctr, cpr };
+        };
+
+        // Fetch stats in parallel
+        const [beforeStats, afterStats] = await Promise.all([
+            fetchInsightsForRange(beforeRange.since, beforeRange.until),
+            fetchInsightsForRange(afterRange.since, afterRange.until)
+        ]);
+
+        // 4. Calculate comparisons
+        const calculateChange = (beforeVal, afterVal, isLowerBetter = false) => {
+            const diff = afterVal - beforeVal;
+            let percentChange = 0;
+            if (beforeVal > 0) {
+                percentChange = (diff / beforeVal) * 100;
+            } else if (afterVal > 0) {
+                percentChange = 100; // From 0 to positive
+            }
+            
+            // Determine if the change is positive (good) or negative (bad)
+            let isGood = false;
+            if (Math.abs(diff) < 0.001) {
+                isGood = null; // No change
+            } else {
+                isGood = isLowerBetter ? (diff < 0) : (diff > 0);
+            }
+            
+            return {
+                before: beforeVal,
+                after: afterVal,
+                diff,
+                percentChange,
+                isGood
+            };
+        };
+
+        const comparison = {
+            daysCompared: N,
+            beforeRange,
+            afterRange,
+            metrics: {
+                spend: calculateChange(beforeStats.spend, afterStats.spend, true),
+                results: calculateChange(beforeStats.results, afterStats.results, false),
+                ctr: calculateChange(beforeStats.ctr, afterStats.ctr, false),
+                cpr: calculateChange(beforeStats.cpr, afterStats.cpr, true)
+            }
+        };
+
+        // 5. Determine Verdict
+        // Logic: 
+        // - If results is 0 in both, "Sama Aja" (or no comparison possible)
+        // - If CPR decreased by > 5% or (Results increased by > 10% and CPR increased < 10%), verdict is "Berhasil" (Success)
+        // - If CPR increased by > 10% or (Results decreased by > 15% and CPR didn't decrease significantly), verdict is "Makin Jelek" (Worse)
+        // - Otherwise, "Sama Aja" (No significant change)
+        let verdict = 'Sama Aja';
+        const cprChange = comparison.metrics.cpr.percentChange;
+        const resultsChange = comparison.metrics.results.percentChange;
+        
+        if (beforeStats.results === 0 && afterStats.results === 0) {
+            verdict = 'Sama Aja';
+        } else if (cprChange < -5) {
+            verdict = 'Berhasil';
+        } else if (resultsChange > 10 && cprChange < 5) {
+            verdict = 'Berhasil';
+        } else if (cprChange > 10) {
+            verdict = 'Makin Jelek';
+        } else if (resultsChange < -15 && cprChange > -5) {
+            verdict = 'Makin Jelek';
+        } else {
+            verdict = 'Sama Aja';
+        }
+        
+        comparison.verdict = verdict;
+
+        res.json({
+            success: true,
+            campaign: {
+                id,
+                campaign_id: campaignId,
+                campaign_name: campaign.campaign_name,
+                ad_account_id: adAccountId
+            },
+            comparison
+        });
+
+    } catch (e) {
+        console.error('Compare performance error:', e);
+        res.status(500).json({ error: e.message || 'Internal server error' });
+    }
+});
+
+
+// Get Daily Performance Report Stats
+app.get('/api/campaigns/:id/daily-report', async (req, res) => {
+    try {
+        const { id } = req.params;
+        let { date } = req.query; // YYYY-MM-DD format
+
+        // Default to yesterday
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            date = yesterday.toISOString().split('T')[0];
+        }
+
+        // 1. Get campaign details from DB
+        const [camps] = await pool.query('SELECT campaign_id, campaign_name, ad_account_id FROM campaigns WHERE id = ? LIMIT 1', [id]);
+        if (camps.length === 0) {
+            return res.status(404).json({ error: 'Kampanye tidak ditemukan di database.' });
+        }
+        const campaign = camps[0];
+        const campaignId = campaign.campaign_id;
+
+        // 2. Get Meta API Token
+        const token = await getMetaAccessToken();
+        if (!token) {
+            return res.status(400).json({ error: 'Access token Meta Ads belum dikonfigurasi.' });
+        }
+
+        // 3. Query Meta Graph API insights for the specific day
+        const timeRange = JSON.stringify({ since: date, until: date });
+        const url = `https://graph.facebook.com/v21.0/${campaignId}/insights` +
+            `?time_range=${encodeURIComponent(timeRange)}` +
+            `&fields=spend,impressions,clicks,actions` +
+            `&access_token=${encodeURIComponent(token)}`;
+        
+        const resp = await fetch(url);
+        const data = await resp.json();
+        
+        if (!resp.ok) {
+            throw new Error(data?.error?.message || `Meta API error (${resp.status})`);
+        }
+
+        const stats = {
+            date,
+            campaign_id: campaignId,
+            campaign_name: campaign.campaign_name,
+            impressions: 0,
+            clicks: 0,
+            results: 0,
+            result_type: 'klik Whatsapp',
+            video_views: 0,
+            comments: 0,
+            link_clicks: 0
+        };
+
+        if (data.data && data.data.length > 0) {
+            const item = data.data[0];
+            stats.impressions = parseInt(item.impressions) || 0;
+            stats.clicks = parseInt(item.clicks) || 0;
+
+            if (item.actions && Array.isArray(item.actions)) {
+                // Find Results
+                const msgReply = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_first_reply_started' || a.action_type === 'messaging_first_reply_starts');
+                const leads = item.actions.find(a => a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead');
+                const linkClicks = item.actions.find(a => a.action_type === 'link_click');
+
+                if (msgReply) {
+                    stats.results = parseInt(msgReply.value) || 0;
+                    stats.result_type = 'klik Whatsapp';
+                } else if (leads) {
+                    stats.results = parseInt(leads.value) || 0;
+                    stats.result_type = 'Leads';
+                } else if (linkClicks) {
+                    stats.results = parseInt(linkClicks.value) || 0;
+                    stats.result_type = 'Link Clicks';
+                }
+
+                // Find Video Views (Thruplay / video_view)
+                const thruplay = item.actions.find(a => a.action_type === 'thruplay');
+                const videoView = item.actions.find(a => a.action_type === 'video_view');
+                stats.video_views = thruplay ? parseInt(thruplay.value) : (videoView ? parseInt(videoView.value) : 0);
+
+                // Find Comments
+                const comment = item.actions.find(a => a.action_type === 'comment');
+                stats.comments = comment ? parseInt(comment.value) : 0;
+
+                // Find Link Clicks
+                if (linkClicks) {
+                    stats.link_clicks = parseInt(linkClicks.value) || 0;
+                }
+            }
+        }
+
+        res.json({ success: true, data: stats });
+    } catch (e) {
+        console.error('Daily report API error:', e);
+        res.status(500).json({ error: e.message || 'Internal server error' });
+    }
+});
+
+
 
 app.post('/api/campaigns/create', async (req, res) => {
     try {
@@ -2478,6 +3201,116 @@ app.get('/api/orders/:id/campaigns', async (req, res) => {
     }
 });
 
+// Performance Breakdowns by Order (Trend, Region, Demographics)
+app.get('/api/orders/:id/performance-breakdowns', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const token = await getMetaAccessToken();
+        if (!token) {
+            return res.json({ trend: [], regions: [], demographics: [] });
+        }
+
+        // Fetch campaigns linked to this order
+        const [campaigns] = await pool.query(
+            'SELECT campaign_id, campaign_name FROM campaigns WHERE order_id = ? AND campaign_id IS NOT NULL AND campaign_id <> ""',
+            [id]
+        );
+
+        if (campaigns.length === 0) {
+            return res.json({ trend: [], regions: [], demographics: [] });
+        }
+
+        const aggregatedTrend = {};
+        const aggregatedRegions = {};
+        const aggregatedDemographics = {};
+
+        // Helper to request from Meta API
+        const fetchMetaInsights = async (campaignId, endpointName, queryParams) => {
+            const url = `https://graph.facebook.com/v21.0/${campaignId}/insights?access_token=${encodeURIComponent(token)}&${queryParams}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (data && data.error) {
+                console.error(`[Meta Breakdown Sync] API error for campaign ${campaignId} (${endpointName}):`, data.error.message);
+                return [];
+            }
+            return data && Array.isArray(data.data) ? data.data : [];
+        };
+
+        // Fetch insights in parallel for each campaign
+        await Promise.all(campaigns.map(async (camp) => {
+            const campaignId = camp.campaign_id;
+
+            // 1. Fetch 7 days trend
+            const trendData = await fetchMetaInsights(campaignId, 'trend', 'fields=date_start,spend,impressions,clicks,actions&time_increment=1&date_preset=last_7d&limit=100');
+            
+            // 2. Fetch Region breakdown
+            const regionData = await fetchMetaInsights(campaignId, 'region', 'fields=impressions,clicks,spend&breakdowns=region&date_preset=maximum&limit=500');
+
+            // 3. Fetch Age/Gender breakdown
+            const demoData = await fetchMetaInsights(campaignId, 'demographics', 'fields=impressions,clicks,spend&breakdowns=age,gender&date_preset=maximum&limit=500');
+
+            // Process Trend
+            trendData.forEach(item => {
+                const date = item.date_start;
+                if (!aggregatedTrend[date]) {
+                    aggregatedTrend[date] = { date, spend: 0, impressions: 0, clicks: 0, results: 0 };
+                }
+                aggregatedTrend[date].spend += parseFloat(item.spend) || 0;
+                aggregatedTrend[date].impressions += parseInt(item.impressions) || 0;
+                aggregatedTrend[date].clicks += parseInt(item.clicks) || 0;
+
+                let results = 0;
+                if (item.actions && Array.isArray(item.actions)) {
+                    const msgReply = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_first_reply_started' || a.action_type === 'messaging_first_reply_starts');
+                    const leads = item.actions.find(a => a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead');
+                    const linkClicks = item.actions.find(a => a.action_type === 'link_click');
+                    results = msgReply ? parseInt(msgReply.value) : (leads ? parseInt(leads.value) : (linkClicks ? parseInt(linkClicks.value) : 0));
+                }
+                aggregatedTrend[date].results += results;
+            });
+
+            // Process Regions
+            regionData.forEach(item => {
+                const region = item.region || 'Unknown';
+                if (!aggregatedRegions[region]) {
+                    aggregatedRegions[region] = { region, impressions: 0, clicks: 0, spend: 0 };
+                }
+                aggregatedRegions[region].impressions += parseInt(item.impressions) || 0;
+                aggregatedRegions[region].clicks += parseInt(item.clicks) || 0;
+                aggregatedRegions[region].spend += parseFloat(item.spend) || 0;
+            });
+
+            // Process Demographics
+            demoData.forEach(item => {
+                const age = item.age || 'Unknown';
+                const gender = item.gender || 'Unknown';
+                const key = `${age}_${gender}`;
+                if (!aggregatedDemographics[key]) {
+                    aggregatedDemographics[key] = { age, gender, impressions: 0, clicks: 0, spend: 0 };
+                }
+                aggregatedDemographics[key].impressions += parseInt(item.impressions) || 0;
+                aggregatedDemographics[key].clicks += parseInt(item.clicks) || 0;
+                aggregatedDemographics[key].spend += parseFloat(item.spend) || 0;
+            });
+        }));
+
+        // Format and sort outputs
+        const trendList = Object.values(aggregatedTrend).sort((a, b) => a.date.localeCompare(b.date));
+        const regionList = Object.values(aggregatedRegions).sort((a, b) => b.impressions - a.impressions);
+        const demoList = Object.values(aggregatedDemographics);
+
+        res.json({
+            trend: trendList,
+            regions: regionList,
+            demographics: demoList
+        });
+
+    } catch (e) {
+        console.error('Performance breakdowns API error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Campaigns by Client (with order status)
 app.get('/api/clients/:id/campaigns', async (req, res) => {
     try {
@@ -2551,7 +3384,7 @@ app.get('/api/dashboard/editor-stats', async (req, res) => {
         const [otpSelesai] = await pool.query(`
             SELECT COUNT(DISTINCT oc.order_id) as count
             FROM order_contents oc
-            WHERE LOWER(oc.status) = 'otp selesai'
+            WHERE LOWER(oc.status) = 'menunggu konten'
         `);
         const [ready] = await pool.query(`
             SELECT COUNT(DISTINCT oc.order_id) as count
@@ -2589,6 +3422,7 @@ app.get('/api/dashboard/advertiser-stats', async (req, res) => {
         FROM orders o
         JOIN order_contents oc ON oc.order_id = o.id
         WHERE LOWER(oc.status) = 'siap iklan'
+          AND LOWER(o.status) != 'perpanjang'
     `);
     const [tayang] = await pool.query(`
         SELECT COUNT(DISTINCT o.id) as count
@@ -2617,7 +3451,7 @@ app.get('/api/dashboard/advertiser-stats', async (req, res) => {
 app.get('/api/meta-config', async (_req, res) => {
     try {
         await ensureMetaAdsConfigSchema();
-        const [accounts] = await pool.query('SELECT account_id as id, name FROM ad_accounts ORDER BY name ASC');
+        const [accounts] = await pool.query('SELECT account_id as id, name, is_internal FROM ad_accounts ORDER BY name ASC');
         const [fanspages] = await pool.query('SELECT fanspage_id as id, name FROM fanspages ORDER BY name ASC');
         let pixel_id = '';
         let access_token = '';
@@ -2643,8 +3477,10 @@ app.get('/api/meta-config', async (_req, res) => {
 
 app.post('/api/meta-config', async (req, res) => {
     try {
+        console.log('--- POST /api/meta-config payload:', JSON.stringify(req.body));
         const { accounts, pixel_id, access_token } = req.body;
         await ensureMetaAdsConfigSchema();
+
         
         const connection = await pool.getConnection();
         try {
@@ -2688,8 +3524,8 @@ app.post('/api/meta-config', async (req, res) => {
                          await connection.query("DELETE FROM ad_accounts WHERE account_id = ?", [acc.id]);
                      } else {
                          await connection.query(
-                             "INSERT INTO ad_accounts (config_id, account_id, name) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)",
-                             [configId, acc.id, acc.name]
+                             "INSERT INTO ad_accounts (config_id, account_id, name, is_internal) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), is_internal = VALUES(is_internal)",
+                             [configId, acc.id, acc.name, acc.is_internal ? 1 : 0]
                          );
                      }
                  }
@@ -2773,26 +3609,26 @@ app.get('/api/orders', async (req, res) => {
             else if (roleFilter === 'team bengkel' || roleFilter === 'bengkel' || roleFilter === 'team_bengkel') whereClauses.push(`oa.role = 'Team Bengkel'`);
         }
 
-        if (content_status) {
+        if (content_status || roleFilter === 'produksi') {
             query += ` JOIN order_contents oc ON oc.order_id = o.id `;
+        }
+        if (roleFilter === 'produksi') {
+            whereClauses.push(`(LOWER(oc.status) LIKE '%sudah diperbaiki%' OR (LOWER(oc.status) LIKE '%siap iklan%' AND LOWER(o.status) = 'perpanjang'))`);
+        }
+        if (content_status) {
             const cs = String(content_status).toLowerCase();
             let target = '';
             if (cs === 'otp') target = 'Proses OTP';
             else if (cs === 'menunggu') target = 'Menunggu';
-            else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = '__MENUNGGU_OTP_OR_LEGACY__';
-            else if (cs === 'otp_selesai' || cs === 'otp-selesai') target = 'OTP Selesai';
+            else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = 'Menunggu OTP';
+            else if (cs === 'otp_selesai' || cs === 'otp-selesai' || cs === 'menunggu_konten') target = 'Menunggu Konten';
             else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
             else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
             else if (cs === 'iklan_tayang' || cs === 'tayang') target = 'Iklan Tayang';
             else if (cs === 'sudah_diperbaiki' || cs === 'done_bengkel') target = 'Sudah Diperbaiki';
             if (target) {
-                if (target === '__MENUNGGU_OTP_OR_LEGACY__') {
-                    whereClauses.push(`(LOWER(oc.status) LIKE LOWER(?) OR LOWER(oc.status) = 'menunggu')`);
-                    params.push('%Menunggu OTP%');
-                } else {
-                    whereClauses.push(`LOWER(oc.status) LIKE LOWER(?)`);
-                    params.push(`%${target}%`);
-                }
+                whereClauses.push(`LOWER(oc.status) LIKE LOWER(?)`);
+                params.push(`%${target}%`);
             }
         }
 
@@ -2836,26 +3672,26 @@ app.get('/api/orders', async (req, res) => {
             else if (roleFilter === 'team bengkel' || roleFilter === 'bengkel' || roleFilter === 'team_bengkel') countWhere.push(`oa.role = 'Team Bengkel'`);
         }
 
-        if (content_status) {
+        if (content_status || roleFilter === 'produksi') {
             countQuery += ` JOIN order_contents oc ON oc.order_id = o.id `;
+        }
+        if (roleFilter === 'produksi') {
+            countWhere.push(`(LOWER(oc.status) LIKE '%sudah diperbaiki%' OR (LOWER(oc.status) LIKE '%siap iklan%' AND LOWER(o.status) = 'perpanjang'))`);
+        }
+        if (content_status) {
             const cs = String(content_status).toLowerCase();
             let target = '';
             if (cs === 'otp') target = 'Proses OTP';
             else if (cs === 'menunggu') target = 'Menunggu';
-            else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = '__MENUNGGU_OTP_OR_LEGACY__';
-            else if (cs === 'otp_selesai' || cs === 'otp-selesai') target = 'OTP Selesai';
+            else if (cs === 'menunggu_otp' || cs === 'waiting_otp') target = 'Menunggu OTP';
+            else if (cs === 'otp_selesai' || cs === 'otp-selesai' || cs === 'menunggu_konten') target = 'Menunggu Konten';
             else if (cs === 'content' || cs === 'proses_konten') target = 'Proses Konten';
             else if (cs === 'ready' || cs === 'siap_iklan') target = 'Siap Iklan';
             else if (cs === 'iklan_tayang' || cs === 'tayang') target = 'Iklan Tayang';
             else if (cs === 'sudah_diperbaiki' || cs === 'done_bengkel') target = 'Sudah Diperbaiki';
             if (target) {
-                if (target === '__MENUNGGU_OTP_OR_LEGACY__') {
-                    countWhere.push(`(LOWER(oc.status) LIKE LOWER(?) OR LOWER(oc.status) = 'menunggu')`);
-                    countParams.push('%Menunggu OTP%');
-                } else {
-                    countWhere.push(`LOWER(oc.status) LIKE LOWER(?)`);
-                    countParams.push(`%${target}%`);
-                }
+                countWhere.push(`LOWER(oc.status) LIKE LOWER(?)`);
+                countParams.push(`%${target}%`);
             }
         }
 
@@ -3018,9 +3854,27 @@ app.post('/api/orders', async (req, res) => {
             status = status || 'Baru';
         }
 
+        const createNewVideo = Boolean(orderPayload.createNewVideo ?? orderPayload.create_new_video ?? body.createNewVideo ?? body.create_new_video ?? false);
         const serviceType = orderPayload.serviceType || orderPayload.service_type || null;
         const metaDataRaw = orderPayload.metaData ?? orderPayload.meta_data ?? null;
-        const metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+        let metaData = metaDataRaw && typeof metaDataRaw !== 'string' ? JSON.stringify(metaDataRaw) : metaDataRaw;
+        if (createNewVideo) {
+            let metaObj = {};
+            if (metaDataRaw && typeof metaDataRaw === 'object') {
+                metaObj = { ...metaDataRaw };
+            } else if (typeof metaDataRaw === 'string' && metaDataRaw.trim()) {
+                try {
+                    metaObj = JSON.parse(metaDataRaw);
+                } catch (_) {
+                    metaObj = { legacy_meta: metaDataRaw };
+                }
+            }
+            metaObj.renewal = {
+                create_new_video: createNewVideo,
+                updated_at: new Date().toISOString()
+            };
+            metaData = JSON.stringify(metaObj);
+        }
         const paymentInputStatus = orderPayload.paymentStatus || orderPayload.payment_status || body.paymentStatus || body.payment_status;
         const paymentInputDpAmount = orderPayload.paymentDpAmount || orderPayload.payment_dp_amount || body.paymentDpAmount || body.payment_dp_amount;
 
@@ -3167,7 +4021,18 @@ app.post('/api/orders', async (req, res) => {
             await accrueCsCommissionOnOrderLunas(connection, orderId);
         }
 
-        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
+        let initialStatus = 'Menunggu';
+        if ((status || '').toLowerCase() === 'baru') {
+            initialStatus = 'Menunggu OTP';
+        } else if ((status || '').toLowerCase() === 'perpanjang') {
+            if (createNewVideo) {
+                initialStatus = 'Menunggu Konten';
+            } else {
+                initialStatus = 'Siap Iklan';
+            }
+        } else {
+            initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
+        }
         await connection.query(
             'INSERT INTO order_contents (order_id, status) VALUES (?, ?)',
             [orderId, initialStatus]
@@ -3348,7 +4213,7 @@ app.post('/api/orders/:id/renew', async (req, res) => {
             await accrueCsCommissionOnOrderLunas(connection, newOrderId);
         }
 
-        const initialStatus = (userRole === 'cs' || userRole === 'crm') ? getInitialWaitingStatusByMonth() : 'Proses OTP';
+        const initialStatus = createNewVideo ? 'Menunggu Konten' : 'Siap Iklan';
         await connection.query(
             'INSERT INTO order_contents (order_id, status) VALUES (?, ?)',
             [newOrderId, initialStatus]
@@ -4631,7 +5496,8 @@ app.post('/api/orders/:id/content/status', async (req, res) => {
             ['menunggu otp', 'Menunggu OTP'],
             ['proses otp', 'Proses OTP'],
             ['otp diterima', 'OTP Diterima'],
-            ['otp selesai', 'OTP Selesai'],
+            ['otp selesai', 'Menunggu Konten'],
+            ['menunggu konten', 'Menunggu Konten'],
             ['proses crm', 'Proses CRM'],
             ['pending klien', 'Pending Klien'],
             ['no response', 'No Response'],
@@ -4673,7 +5539,7 @@ app.post('/api/orders/:id/content/status', async (req, res) => {
             await pool.query('INSERT INTO order_contents (order_id, status) VALUES (?, ?)', [id, nextStatus]);
         }
 
-        if (nextStatus === 'OTP Selesai') {
+        if (nextStatus === 'Menunggu Konten' || nextStatus === 'Siap Iklan') {
             try {
                 const crmUserIdRaw = body.userId || body.user_id;
                 let crmUserId = crmUserIdRaw ? parseInt(crmUserIdRaw) : null;
@@ -5617,6 +6483,14 @@ app.listen(PORT, HOST, () => {
     const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
     console.log(`Server running on http://${displayHost}:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Start background Meta Ads spend sync scheduler
+    try {
+        startDailyMetaSync();
+    } catch (err) {
+        console.error('Failed to start daily Meta Ads sync scheduler:', err);
+    }
+
     // #region debug-point A:startup-ping
     (() => {
         try {
