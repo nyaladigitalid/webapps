@@ -22,6 +22,27 @@ function normalizePhone(phone) {
     return cleaned;
 }
 
+function normalizeGender(val) {
+    if (!val) return null;
+    const clean = String(val).trim().toLowerCase();
+    if (clean.includes('laki') && clean.includes('perempuan')) {
+        return 'semua';
+    }
+    if (clean.includes('pria') && clean.includes('wanita')) {
+        return 'semua';
+    }
+    if (clean.includes('semua') || clean.includes('bebas') || clean.includes('pria dan wanita') || clean.includes('campur') || clean.includes('semua jenis')) {
+        return 'semua';
+    }
+    if (clean.includes('perempuan') || clean.includes('wanita')) {
+        return 'perempuan';
+    }
+    if (clean.includes('laki') || clean.includes('pria')) {
+        return 'laki-laki';
+    }
+    return String(val).trim().slice(0, 20);
+}
+
 function parseExcelDate(val) {
     if (!val) return null;
     if (typeof val === 'number') {
@@ -342,17 +363,18 @@ async function run() {
 
                     // D. Sync Targeting (order_targets)
                     if (lokasi || usia || jenisKelamin) {
+                        const finalGender = normalizeGender(jenisKelamin);
                         // Check if order_targets already exists
                         const [targets] = await conn.query('SELECT id FROM order_targets WHERE order_id = ?', [order_id]);
                         if (targets.length > 0) {
                             await conn.query(
                                 'UPDATE order_targets SET locations = ?, age_range = ?, gender = ? WHERE order_id = ?',
-                                [lokasi, usia, jenisKelamin, order_id]
+                                [lokasi, usia, finalGender, order_id]
                             );
                         } else {
                             await conn.query(
                                 'INSERT INTO order_targets (order_id, locations, age_range, gender) VALUES (?, ?, ?, ?)',
-                                [order_id, lokasi, usia, jenisKelamin]
+                                [order_id, lokasi, usia, finalGender]
                             );
                         }
                     }
