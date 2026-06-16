@@ -1189,6 +1189,14 @@
         <div id="include-footer"></div>
     </div>
     <script>
+        function downloadOrderPDF(event, orderId) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            window.open(`client-performance.html?order_id=${orderId}&auto_download=true&auto_close=true`, '_blank');
+        }
+
         function placeSharedOrdersTableForRole(roleLower) {
             const ordersSection = document.getElementById('dashboard-recent-orders');
             const adminContainer = document.getElementById('admin-dashboard-content');
@@ -2199,7 +2207,10 @@
                                 <td class="px-6 py-4 text-right">
                                     <div class="inline-flex items-center justify-end gap-2">
                                       <button type="button" data-otp-selesai="${order.id}" class="inline-flex items-center justify-center rounded-lg bg-[#ef7225] px-3 py-2 text-[11px] font-bold text-white hover:bg-[#d96521] transition-colors">OTP Selesai</button>
-                                      <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-slate-600 transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>
+                                      <button type="button" onclick="downloadOrderPDF(event, ${order.id})" class="text-rose-400 hover:text-rose-600 transition-colors flex items-center justify-center p-1.5 hover:bg-slate-100 rounded" title="Download PDF Performa Iklan">
+                                          <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                      </button>
+                                      <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center p-1.5 hover:bg-slate-100 rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></a>
                                     </div>
                                 </td>
                             `;
@@ -2247,8 +2258,18 @@
                                       <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>
                                    </div>`
                                 : roleNow === 'cs'
-                                ? `<a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>`
-                                : `<a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined text-xl">more_vert</span></a>`;
+                                ? `<div class="inline-flex items-center justify-end gap-2">
+                                       <button type="button" onclick="downloadOrderPDF(event, ${order.id})" class="text-rose-400 hover:text-rose-300 transition-colors flex items-center justify-center p-1.5 hover:bg-white/10 rounded" title="Download PDF Performa Iklan">
+                                           <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                       </button>
+                                       <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors flex items-center justify-center p-1.5 hover:bg-white/10 rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></a>
+                                    </div>`
+                                : `<div class="inline-flex items-center justify-end gap-2">
+                                       <button type="button" onclick="downloadOrderPDF(event, ${order.id})" class="text-rose-400 hover:text-rose-300 transition-colors flex items-center justify-center p-1.5 hover:bg-white/10 rounded" title="Download PDF Performa Iklan">
+                                           <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                       </button>
+                                       <a href="orderdetail.html?id=${order.id}" class="text-slate-400 hover:text-white transition-colors flex items-center justify-center p-1.5 hover:bg-white/10 rounded"><span class="material-symbols-outlined text-[18px]">more_vert</span></a>
+                                    </div>`;
                             const repairNote = [
                                 order.repairIssue ? `Apa: ${order.repairIssue}` : '',
                                 order.repairFix ? `Cara: ${order.repairFix}` : ''

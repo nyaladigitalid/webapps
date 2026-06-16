@@ -471,6 +471,13 @@
 
                 renderReport();
 
+                // Auto-download PDF if parameter is present
+                if (getQueryParam('auto_download') === 'true') {
+                    setTimeout(() => {
+                        downloadPDF();
+                    }, 1500);
+                }
+
             } catch (err) {
                 console.error(err);
                 showError(err.message || 'Terjadi kesalahan saat memuat data performa.');
@@ -810,9 +817,15 @@
                     // Generate PDF
                     html2pdf().set(opt).from(element).save().then(() => {
                         cleanup();
+                        if (getQueryParam('auto_close') === 'true') {
+                            window.close();
+                        }
                     }).catch(err => {
                         console.error('PDF export error:', err);
                         cleanup();
+                        if (getQueryParam('auto_close') === 'true') {
+                            window.close();
+                        }
                     });
                 }, 500);
             });
