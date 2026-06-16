@@ -3478,57 +3478,50 @@ app.get('/api/meta-config', async (_req, res) => {
 app.post('/api/meta-config', async (req, res) => {
     try {
         console.log('--- POST /api/meta-config payload:', JSON.stringify(req.body));
-        const { accounts, pixel_id, access_token } = req.body;
+        const { accounts, fanspages, pixel_id, access_token } = req.body;
         await ensureMetaAdsConfigSchema();
 
-        
         const connection = await pool.getConnection();
         try {
             await connection.beginTransaction();
 
+            // Find configId
+            let configId = 1;
+            const [configs] = await connection.query('SELECT id FROM meta_ads_configs LIMIT 1');
+            if (configs.length > 0) {
+                configId = configs[0].id;
+            } else {
+                const [resCreate] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
+                configId = resCreate.insertId;
+            }
+
             if (pixel_id !== undefined) {
-                let configId = 1;
-                const [configs] = await connection.query('SELECT id FROM meta_ads_configs LIMIT 1');
-                if (configs.length > 0) {
-                    configId = configs[0].id;
-                } else {
-                    const [resCreate] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
-                    configId = resCreate.insertId;
-                }
                 await connection.query('UPDATE meta_ads_configs SET pixel_id = ? WHERE id = ?', [pixel_id, configId]);
             }
             if (access_token !== undefined) {
-                let configId = 1;
-                const [configs] = await connection.query('SELECT id FROM meta_ads_configs ORDER BY id DESC LIMIT 1');
-                if (configs.length > 0) {
-                    configId = configs[0].id;
-                } else {
-                    const [resCreate] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
-                    configId = resCreate.insertId;
-                }
                 await connection.query('UPDATE meta_ads_configs SET access_token = ? WHERE id = ?', [String(access_token || '').trim(), configId]);
             }
 
+            // Sync Ad Accounts: Delete all existing, then insert new ones
             if (Array.isArray(accounts)) {
-                 let configId = 1;
-                 const [configs] = await connection.query("SELECT id FROM meta_ads_configs LIMIT 1");
-                 if (configs.length > 0) {
-                     configId = configs[0].id;
-                 } else {
-                     const [res] = await connection.query("INSERT INTO meta_ads_configs (name) VALUES ('Default')");
-                     configId = res.insertId;
-                 }
+                await connection.query("DELETE FROM ad_accounts WHERE config_id = ?", [configId]);
+                for (const acc of accounts) {
+                    await connection.query(
+                        "INSERT INTO ad_accounts (config_id, account_id, name, is_internal) VALUES (?, ?, ?, ?)",
+                        [configId, acc.id, acc.name, acc.is_internal ? 1 : 0]
+                    );
+                }
+            }
 
-                 for (const acc of accounts) {
-                     if (acc.deleted) {
-                         await connection.query("DELETE FROM ad_accounts WHERE account_id = ?", [acc.id]);
-                     } else {
-                         await connection.query(
-                             "INSERT INTO ad_accounts (config_id, account_id, name, is_internal) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), is_internal = VALUES(is_internal)",
-                             [configId, acc.id, acc.name, acc.is_internal ? 1 : 0]
-                         );
-                     }
-                 }
+            // Sync Fanspages: Delete all existing, then insert new ones
+            if (Array.isArray(fanspages)) {
+                await connection.query("DELETE FROM fanspages WHERE config_id = ?", [configId]);
+                for (const fp of fanspages) {
+                    await connection.query(
+                        "INSERT INTO fanspages (config_id, fanspage_id, name, account_id) VALUES (?, ?, ?, ?)",
+                        [configId, fp.id, fp.name, fp.accountId || null]
+                    );
+                }
             }
 
             await connection.commit();
@@ -3541,7 +3534,7 @@ app.post('/api/meta-config', async (req, res) => {
         }
     } catch (e) {
         console.error('Meta config save error:', e);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error: ' + e.message });
     }
 });
 
