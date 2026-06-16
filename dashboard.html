@@ -901,6 +901,59 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- H-1 Ad Performance Reports Section -->
+                    <section class="glass-panel rounded-2xl overflow-hidden mt-6">
+                        <div class="p-6 border-b border-white/5 flex flex-wrap items-center justify-between gap-4 bg-white/[0.02]">
+                            <div>
+                                <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-rose-400">send_and_archive</span>
+                                    Kirim Laporan Performa H-1 (WhatsApp)
+                                </h4>
+                                <p class="text-xs text-slate-400 mt-1">Kirimkan hasil iklan kemarin secara manual ke masing-masing klien via WhatsApp.</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <!-- Date Filter (Yesterday by default) -->
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-400">Tanggal:</span>
+                                    <input type="date" id="crm-report-date" class="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all">
+                                </div>
+                                <!-- Sent Filter -->
+                                <div class="relative">
+                                    <select id="crm-report-status-filter" class="appearance-none bg-white/5 border border-white/10 text-white text-xs font-medium rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary/50 cursor-pointer hover:bg-white/10 transition-colors">
+                                        <option value="0" class="bg-slate-800">Belum Dikirim</option>
+                                        <option value="1" class="bg-slate-800">Sudah Dikirim</option>
+                                        <option value="all" class="bg-slate-800">Semua</option>
+                                    </select>
+                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[16px] pointer-events-none">expand_more</span>
+                                </div>
+                                <!-- Sync Manual Button -->
+                                <button type="button" id="btn-crm-sync-yesterday" class="h-8 px-3 rounded-lg bg-primary hover:bg-primary/80 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+                                    <span class="material-symbols-outlined text-sm">sync</span>
+                                    Sync Kemarin
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-white/5 border-b border-white/5">
+                                    <tr>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Klien / Kampanye</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Jangkauan</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Hasil (WhatsApp)</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Video / Komen / Link</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Status</th>
+                                        <th class="px-6 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="crm-reports-body" class="divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Memuat data laporan...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </div>
 
                 <!-- Editor Dashboard -->
@@ -1571,8 +1624,205 @@
                     const crmCards = document.getElementById('crm-cards');
                     if (crmCards) crmCards.classList.add('hidden');
                 }
+                
+                // Initialize daily performance reports for CRM
+                initCRMDailyReports();
             } catch (e) {
                 console.error('CRM stats load error:', e);
+            }
+        }
+
+        function initCRMDailyReports() {
+            const dateInput = document.getElementById('crm-report-date');
+            const statusFilter = document.getElementById('crm-report-status-filter');
+            const syncBtn = document.getElementById('btn-crm-sync-yesterday');
+
+            if (!dateInput) return;
+
+            // Set default date to yesterday in local timezone
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yyyy = yesterday.getFullYear();
+            const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const dd = String(yesterday.getDate()).padStart(2, '0');
+            const yesterdayStr = `${yyyy}-${mm}-${dd}`;
+            
+            if (!dateInput.value) {
+                dateInput.value = yesterdayStr;
+            }
+
+            // Bind events if not bound
+            if (!window.crmEventsBound) {
+                dateInput.addEventListener('change', () => loadCRMDailyReports());
+                statusFilter.addEventListener('change', () => loadCRMDailyReports());
+                if (syncBtn) {
+                    syncBtn.addEventListener('click', () => syncCRMReportsYesterday());
+                }
+                window.crmEventsBound = true;
+            }
+
+            loadCRMDailyReports();
+        }
+
+        async function loadCRMDailyReports() {
+            const tbody = document.getElementById('crm-reports-body');
+            if (!tbody) return;
+
+            const date = document.getElementById('crm-report-date').value;
+            const isSent = document.getElementById('crm-report-status-filter').value;
+
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Memuat data laporan...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/crm/daily-reports?date=${date}&is_sent=${isSent}`);
+                const json = await res.json();
+                const data = json.data || [];
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Tidak ada data laporan untuk tanggal dan filter ini. Silakan klik "Sync Kemarin" jika data belum disinkronkan.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(r => {
+                    const statusBadge = r.is_sent 
+                        ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight leading-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Sudah Dikirim</span>`
+                        : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight leading-none bg-amber-500/10 text-amber-400 border border-amber-500/20">Belum Dikirim</span>`;
+                    
+                    const indoDate = r.date ? r.date.split('T')[0].split('-').reverse().join('-') : '';
+                    const resultsText = `${r.results} ${r.result_type || 'klik Whatsapp'}`;
+
+                    // WhatsApp Message Template
+                    const message = `*Laporan Jasa Iklan UMKM* 📊 ${indoDate} 📊
+Data Klient
+KampanyeId: ${r.campaign_id}
+Nama: *${r.client_name || '-'}* 
+
+📊 Performa Iklan
+Jangkauan: ${r.impressions || 0}
+Hasil: *${resultsText}*
+Video Ditonton: ${r.video_views || 0}
+Komentar: ${r.comments || 0}
+Linkklik: ${r.link_clicks || 0}
+
+Catatan: Hasil = Jumlah klik whatsapp jumlahnya suka berbeda dengan real Whatsapp masuk. Semoga banyak yang DEAL ya Kak!
+Mau konsultasi? Langsung balas aja chatnya, mimin siap membantu.😊`;
+
+                    // Generate clean WhatsApp link
+                    let cleanPhone = String(r.client_whatsapp || '').replace(/[^0-9]/g, '');
+                    if (cleanPhone.startsWith('0')) {
+                        cleanPhone = '62' + cleanPhone.slice(1);
+                    }
+                    const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}` : '#';
+
+                    const actionBtn = cleanPhone
+                        ? `<button type="button" onclick="sendWhatsAppReport(event, ${r.id}, '${waLink}')" class="inline-flex items-center justify-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-colors shadow-sm">
+                             <span class="material-symbols-outlined text-sm">chat</span> Kirim WA
+                           </button>`
+                        : `<span class="text-xs text-slate-500 italic">No WA tidak valid</span>`;
+
+                    return `
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-semibold text-white">${r.client_name || '-'}</span>
+                                    <span class="text-[10px] text-slate-500 mt-0.5">ID Kampanye: ${r.campaign_id}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono mt-0.5">${r.campaign_name || '-'}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm text-slate-300 font-medium">${r.impressions.toLocaleString('id-ID')}</td>
+                            <td class="px-6 py-4 text-center text-sm text-emerald-400 font-bold">${resultsText}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex flex-col text-[11px] text-slate-400">
+                                    <span>Views: ${r.video_views}</span>
+                                    <span>Komen: ${r.comments}</span>
+                                    <span>Link Clicks: ${r.link_clicks}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">${statusBadge}</td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="inline-flex items-center gap-3 justify-end">
+                                    <label class="inline-flex items-center gap-1 cursor-pointer" title="Tandai sudah/belum dikirim">
+                                        <input type="checkbox" ${r.is_sent ? 'checked' : ''} onchange="toggleReportSent(${r.id}, this.checked)" class="rounded bg-white/5 border-white/10 text-primary focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                                        <span class="text-[10px] text-slate-400">Mark</span>
+                                    </label>
+                                    ${actionBtn}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-rose-500 italic">Gagal mengambil data laporan performa.</td></tr>';
+            }
+        }
+
+        async function sendWhatsAppReport(event, reportId, waLink) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            // Open WA link in new tab
+            window.open(waLink, '_blank');
+
+            // Mark as sent in DB
+            try {
+                await fetch(`/api/crm/daily-reports/${reportId}/mark-sent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_sent: 1 })
+                });
+                // Reload data to reflect change
+                loadCRMDailyReports();
+            } catch (err) {
+                console.error('Failed to mark report as sent:', err);
+            }
+        }
+
+        async function toggleReportSent(reportId, isChecked) {
+            try {
+                await fetch(`/api/crm/daily-reports/${reportId}/mark-sent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_sent: isChecked ? 1 : 0 })
+                });
+                // Reload list to update badges/filters
+                loadCRMDailyReports();
+            } catch (err) {
+                console.error('Failed to toggle sent status:', err);
+            }
+        }
+
+        async function syncCRMReportsYesterday() {
+            const syncBtn = document.getElementById('btn-crm-sync-yesterday');
+            if (!syncBtn) return;
+
+            const originalHTML = syncBtn.innerHTML;
+            syncBtn.disabled = true;
+            syncBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Syncing...';
+
+            const date = document.getElementById('crm-report-date').value;
+
+            try {
+                const res = await fetch('/api/crm/daily-reports/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date })
+                });
+                
+                if (res.ok) {
+                    alert('Sinkronisasi data performa h-1 berhasil dilakukan!');
+                    loadCRMDailyReports();
+                } else {
+                    const json = await res.json();
+                    throw new Error(json.error || 'Gagal sinkronisasi');
+                }
+            } catch (err) {
+                alert(`Gagal sinkronisasi data: ${err.message}`);
+            } finally {
+                syncBtn.innerHTML = originalHTML;
+                syncBtn.disabled = false;
             }
         }
 

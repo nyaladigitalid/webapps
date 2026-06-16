@@ -419,6 +419,39 @@ async function ensureCampaignsSchema() {
     }
 }
 
+async function ensureDailyReportsSchema() {
+    try {
+        const p = await getPool();
+        await p.query(`
+            CREATE TABLE IF NOT EXISTS daily_campaign_reports (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                date DATE NOT NULL,
+                campaign_id VARCHAR(100) NOT NULL,
+                campaign_name VARCHAR(255) NOT NULL,
+                impressions INT DEFAULT 0,
+                clicks INT DEFAULT 0,
+                results INT DEFAULT 0,
+                result_type VARCHAR(100) DEFAULT 'klik Whatsapp',
+                video_views INT DEFAULT 0,
+                comments INT DEFAULT 0,
+                link_clicks INT DEFAULT 0,
+                client_name VARCHAR(255) DEFAULT '',
+                client_whatsapp VARCHAR(100) DEFAULT '',
+                order_id INT NULL,
+                client_id INT NULL,
+                is_sent TINYINT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uniq_date_campaign (date, campaign_id),
+                KEY idx_daily_reports_date (date),
+                KEY idx_daily_reports_sent (is_sent)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `);
+        console.log('daily_campaign_reports schema ready');
+    } catch (e) {
+        console.error('Error ensuring daily_campaign_reports schema:', e);
+    }
+}
+
 async function ensureAdAccountsSchema() {
     try {
         const p = await getPool();
@@ -967,6 +1000,7 @@ ensureCsEditorAssignmentsTable();
 createScalevTable();
 createScalevWebhookEventsTable();
 createScalevLeadsTable();
+ensureDailyReportsSchema();
 
 app.post('/api/webhooks/scalev', async (req, res) => {
     ensureEnv();
@@ -1605,7 +1639,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
              stats.completedTasks = completed[0].count || 0;
              stats.commissionThisMonth = commissionTotal;
         }
-        else if (role === 'Produksi' || role.toLowerCase() === 'produksi') {
+        else if (role === 'Produksi' || (role && role.toLowerCase() === 'produksi')) {
              const [activeCampaigns] = await pool.query(`
                  SELECT COUNT(DISTINCT o.id) as count
                  FROM orders o
@@ -1630,7 +1664,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
              stats.pendingTasks = repairingCount[0].count || 0;
              stats.completedTasks = repairedCount[0].count || 0;
         }
-        else if (role === 'Marketing' || role.toLowerCase() === 'marketing') {
+        else if (role === 'Marketing' || (role && role.toLowerCase() === 'marketing')) {
              const [newClients] = await pool.query(`
                  SELECT COUNT(DISTINCT o.client_id) as count
                  FROM orders o
@@ -2500,10 +2534,168 @@ async function syncMetaSpend() {
                 console.error(`[Meta Ads Spend Sync] Failed syncing daily stats for account ${acct}:`, err);
             }
         }
+        try {
+            await syncDailyPerformance();
+        } catch (dailyErr) {
+            console.error('[Meta Ads Spend Sync] Failed to run syncDailyPerformance:', dailyErr);
+        }
+
         console.log('[Meta Ads Spend Sync] Synchronization finished.');
         return { success: true };
     } catch (e) {
         console.error('[Meta Ads Spend Sync] Critical sync error:', e);
+        return { success: false, error: e.message };
+    }
+}
+
+async function syncDailyPerformance(dateStr) {
+    // If no dateStr is provided, default to yesterday
+    if (!dateStr) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateStr = yesterday.toISOString().split('T')[0];
+    }
+    
+    console.log(`[Meta Daily Sync] Starting daily report sync for date: ${dateStr}`);
+    
+    const token = await getMetaAccessToken();
+    if (!token) {
+        console.log('[Meta Daily Sync] Access token not configured. Skipping daily performance sync.');
+        return { success: false, reason: 'missing_token' };
+    }
+
+    try {
+        await ensureDailyReportsSchema(); // safety check
+        
+        // Fetch campaigns and clients mapping to lookup orders
+        const [campaignsList] = await pool.query('SELECT campaign_id, client_id, order_id FROM campaigns');
+        const campaignMap = new Map();
+        for (const camp of campaignsList) {
+            campaignMap.set(camp.campaign_id, { client_id: camp.client_id, order_id: camp.order_id });
+        }
+
+        const [clientsList] = await pool.query('SELECT id, name, business_name, whatsapp FROM clients');
+        const clientMap = new Map();
+        for (const cl of clientsList) {
+            clientMap.set(cl.id, cl);
+        }
+
+        const [accounts] = await pool.query('SELECT account_id, name FROM ad_accounts');
+        console.log(`[Meta Daily Sync] Syncing daily insights for ${accounts.length} ad accounts.`);
+
+        for (const acc of accounts) {
+            const rawAcctId = acc.account_id || '';
+            const acct = rawAcctId.startsWith('act_') ? rawAcctId : `act_${rawAcctId}`;
+            console.log(`[Meta Daily Sync] Processing daily insights for account: ${acc.name} (${acct})`);
+
+            try {
+                const timeRange = JSON.stringify({ since: dateStr, until: dateStr });
+                const url = `https://graph.facebook.com/v21.0/${acct}/insights` +
+                    `?level=campaign` +
+                    `&time_range=${encodeURIComponent(timeRange)}` +
+                    `&fields=campaign_id,campaign_name,impressions,clicks,actions` +
+                    `&limit=1000` +
+                    `&access_token=${encodeURIComponent(token)}`;
+                
+                const resp = await fetch(url);
+                const data = await resp.json();
+                
+                if (data && data.error) {
+                    console.error(`[Meta Daily Sync] Error from Meta Graph API for account ${acct}:`, data.error.message);
+                } else if (data && Array.isArray(data.data)) {
+                    console.log(`[Meta Daily Sync] Found ${data.data.length} campaigns with activity for yesterday.`);
+                    for (const item of data.data) {
+                        const campaignId = item.campaign_id;
+                        const campaignName = item.campaign_name || '';
+                        const impressions = parseInt(item.impressions) || 0;
+                        const clicks = parseInt(item.clicks) || 0;
+                        
+                        // Ignore campaigns with 0 impressions/reach
+                        if (impressions === 0) continue;
+
+                        let results = 0;
+                        let resultType = 'klik Whatsapp';
+                        let videoViews = 0;
+                        let comments = 0;
+                        let linkClicks = 0;
+
+                        if (item.actions && Array.isArray(item.actions)) {
+                            const msgReply = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_first_reply_started' || a.action_type === 'messaging_first_reply_starts');
+                            const leads = item.actions.find(a => a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead');
+                            const lClicks = item.actions.find(a => a.action_type === 'link_click');
+                            
+                            if (msgReply) {
+                                results = parseInt(msgReply.value) || 0;
+                                resultType = 'klik Whatsapp';
+                            } else if (leads) {
+                                results = parseInt(leads.value) || 0;
+                                resultType = 'Leads';
+                            } else if (lClicks) {
+                                results = parseInt(lClicks.value) || 0;
+                                resultType = 'Link Clicks';
+                            }
+
+                            const thruplay = item.actions.find(a => a.action_type === 'thruplay');
+                            const videoView = item.actions.find(a => a.action_type === 'video_view');
+                            videoViews = thruplay ? parseInt(thruplay.value) : (videoView ? parseInt(videoView.value) : 0);
+
+                            const comment = item.actions.find(a => a.action_type === 'comment');
+                            comments = comment ? parseInt(comment.value) : 0;
+
+                            if (lClicks) {
+                                linkClicks = parseInt(lClicks.value) || 0;
+                            }
+                        }
+
+                        // Match client & order details
+                        let clientId = null;
+                        let orderId = null;
+                        let clientName = '';
+                        let clientWhatsapp = '';
+
+                        if (campaignMap.has(campaignId)) {
+                            const match = campaignMap.get(campaignId);
+                            clientId = match.client_id;
+                            orderId = match.order_id;
+                            if (clientId && clientMap.has(clientId)) {
+                                const cl = clientMap.get(clientId);
+                                clientName = cl.business_name || cl.name || '';
+                                clientWhatsapp = cl.whatsapp || '';
+                            }
+                        }
+
+                        // Write to DB
+                        await pool.query(`
+                            INSERT INTO daily_campaign_reports (
+                                date, campaign_id, campaign_name, impressions, clicks, results, result_type,
+                                video_views, comments, link_clicks, client_name, client_whatsapp, order_id, client_id
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE
+                                impressions = VALUES(impressions),
+                                clicks = VALUES(clicks),
+                                results = VALUES(results),
+                                result_type = VALUES(result_type),
+                                video_views = VALUES(video_views),
+                                comments = VALUES(comments),
+                                link_clicks = VALUES(link_clicks),
+                                client_name = VALUES(client_name),
+                                client_whatsapp = VALUES(client_whatsapp),
+                                order_id = VALUES(order_id),
+                                client_id = VALUES(client_id)
+                        `, [
+                            dateStr, campaignId, campaignName, impressions, clicks, results, resultType,
+                            videoViews, comments, linkClicks, clientName, clientWhatsapp, orderId, clientId
+                        ]);
+                    }
+                }
+            } catch (err) {
+                console.error(`[Meta Daily Sync] Failed syncing daily reports for account ${acct}:`, err);
+            }
+        }
+        console.log(`[Meta Daily Sync] Finished daily report sync for date: ${dateStr}`);
+        return { success: true };
+    } catch (e) {
+        console.error('[Meta Daily Sync] Critical daily sync error:', e);
         return { success: false, error: e.message };
     }
 }
@@ -2850,6 +3042,76 @@ app.get('/api/campaigns/:id/daily-report', async (req, res) => {
     }
 });
 
+
+// CRM Daily Reports Endpoint
+app.get('/api/crm/daily-reports', async (req, res) => {
+    try {
+        let { date, is_sent, limit, page } = req.query;
+        
+        // Default date to yesterday
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            date = yesterday.toISOString().split('T')[0];
+        }
+
+        let query = 'SELECT * FROM daily_campaign_reports WHERE date = ?';
+        const params = [date];
+
+        if (is_sent !== undefined && is_sent !== 'all') {
+            query += ' AND is_sent = ?';
+            params.push(parseInt(is_sent) || 0);
+        }
+
+        query += ' ORDER BY impressions DESC, results DESC';
+
+        // Add pagination if requested
+        if (limit && page) {
+            const limitVal = parseInt(limit) || 50;
+            const pageVal = parseInt(page) || 1;
+            const offset = (pageVal - 1) * limitVal;
+            query += ' LIMIT ? OFFSET ?';
+            params.push(limitVal, offset);
+        }
+
+        const [rows] = await pool.query(query, params);
+        res.json({ success: true, date, data: rows });
+    } catch (err) {
+        console.error('Failed to fetch CRM daily reports:', err);
+        res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+});
+
+// CRM Mark Daily Report as Sent Endpoint
+app.post('/api/crm/daily-reports/:id/mark-sent', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_sent } = req.body || {};
+        const isSentVal = is_sent !== undefined ? (is_sent ? 1 : 0) : 1;
+
+        await pool.query('UPDATE daily_campaign_reports SET is_sent = ? WHERE id = ?', [isSentVal, id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Failed to update CRM report sent status:', err);
+        res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+});
+
+// CRM Trigger Manual Sync for a Specific Date
+app.post('/api/crm/daily-reports/sync', async (req, res) => {
+    try {
+        const { date } = req.body || {};
+        const result = await syncDailyPerformance(date);
+        if (result.success) {
+            res.json({ success: true });
+        } else {
+            res.status(500).json({ error: result.error || 'Sync failed' });
+        }
+    } catch (e) {
+        console.error('Manual daily report sync error:', e);
+        res.status(500).json({ error: e.message || 'Internal server error' });
+    }
+});
 
 
 app.post('/api/campaigns/create', async (req, res) => {
